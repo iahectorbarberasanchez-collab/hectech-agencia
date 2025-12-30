@@ -126,15 +126,20 @@ const Hero = () => {
             </a>
           </div>
 
-          <div className="flex items-center gap-4 text-sm text-gray-500 pt-4">
-            <div className="flex -space-x-2">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="w-8 h-8 rounded-full bg-gray-700 border border-black flex items-center justify-center text-xs text-white">
-                  <span className="opacity-50">User</span>
-                </div>
-              ))}
+          {/* Métricas de Impacto */}
+          <div className="grid grid-cols-3 gap-4 pt-6">
+            <div className="glass-card p-4 rounded-xl text-center">
+              <div className="text-3xl font-bold text-[#00FF94] mb-1">+15h</div>
+              <div className="text-xs text-gray-400">Ahorradas/semana</div>
             </div>
-            <p>+50 negocios automatizados este mes</p>
+            <div className="glass-card p-4 rounded-xl text-center">
+              <div className="text-3xl font-bold text-[#00C2FF] mb-1">40%</div>
+              <div className="text-xs text-gray-400">Más conversiones</div>
+            </div>
+            <div className="glass-card p-4 rounded-xl text-center">
+              <div className="text-3xl font-bold text-purple-400 mb-1">24/7</div>
+              <div className="text-xs text-gray-400">Disponibilidad</div>
+            </div>
           </div>
         </div>
 
@@ -227,7 +232,67 @@ const Benefits = () => {
       </div>
     </section>
   );
+}
+
+const VideoDemo = () => {
+  const [showVideo, setShowVideo] = useState(false);
+
+  return (
+    <section className="py-24 relative overflow-hidden bg-gradient-to-b from-[#0A0A0A] to-black">
+      <div className="absolute inset-0 circuit-bg opacity-10 pointer-events-none"></div>
+
+      <div className="max-w-6xl mx-auto px-6 relative z-10">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">
+            Mira cómo <span className="text-gradient">transformamos negocios</span>
+          </h2>
+          <p className="text-gray-400 max-w-2xl mx-auto">
+            Un vistazo rápido a cómo la IA puede automatizar tu negocio en minutos, no meses.
+          </p>
+        </div>
+
+        <div className="relative group cursor-pointer" onClick={() => setShowVideo(true)}>
+          <div className="aspect-video rounded-3xl overflow-hidden border border-white/10 relative">
+            <div className="absolute inset-0 bg-gradient-to-tr from-[#00FF94]/20 to-[#00C2FF]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-24 h-24 rounded-full bg-[#00FF94] flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-[0_0_50px_rgba(0,255,148,0.5)]">
+                <Play size={40} className="text-black ml-1" fill="black" />
+              </div>
+            </div>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-white text-2xl font-bold mb-2">Ver Demo en Acción</div>
+                <div className="text-gray-300 text-sm">2 minutos que cambiarán tu negocio</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {showVideo && (
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-6" onClick={() => setShowVideo(false)}>
+            <div className="relative w-full max-w-5xl" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => setShowVideo(false)} className="absolute -top-12 right-0 text-white hover:text-[#00FF94] transition-colors">
+                <X size={32} />
+              </button>
+              <div className="aspect-video rounded-2xl overflow-hidden border border-white/20">
+                <iframe
+                  width="100%"
+                  height="100%"
+                  src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1"
+                  title="Demo HECTECH"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full"
+                ></iframe>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
 };
+
 
 const SmartAudit = () => {
   const [business, setBusiness] = useState('');
@@ -615,6 +680,7 @@ export default function Home() {
       <Navbar />
       <Hero />
       <Benefits />
+      <VideoDemo />
       <DemoShowcase />
       <SmartAudit />
       <Services />
