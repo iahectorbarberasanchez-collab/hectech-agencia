@@ -8,9 +8,50 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Hectech | Agencia de IA para Negocios Locales",
-  description: "Transformamos tu negocio local con inteligencia artificial. Chatbots, automatizaciones con n8n y desarrollo web a medida.",
-  keywords: ["IA", "Inteligencia Artificial", "Automatización", "n8n", "Chatbots", "Desarrollo Web", "Negocios Locales"],
+  title: "HECTECH | Automatización con IA para Negocios Locales",
+  description: "Ahorra +15 horas semanales y aumenta tus ventas un 40% con chatbots inteligentes y automatización IA. Auditoría gratuita. Atención 24/7 para tu negocio.",
+  keywords: [
+    "automatización con IA",
+    "chatbots inteligentes",
+    "automatización negocios",
+    "IA para empresas",
+    "n8n automatización",
+    "chatbot WhatsApp",
+    "agencia IA España",
+    "automatización procesos",
+    "inteligencia artificial negocios",
+    "consultoría IA"
+  ],
+  authors: [{ name: "HECTECH" }],
+  creator: "HECTECH Automation Agency",
+  publisher: "HECTECH",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'es_ES',
+    url: 'https://hectech-agencia.vercel.app',
+    title: 'HECTECH | Automatización con IA para Negocios',
+    description: 'Ahorra +15 horas semanales con chatbots inteligentes y automatización IA. Auditoría gratuita.',
+    siteName: 'HECTECH',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'HECTECH | Automatización con IA',
+    description: 'Ahorra +15 horas semanales con IA. Auditoría gratuita.',
+  },
+  verification: {
+    google: 'google-site-verification-code',
+  },
 };
 
 export default function RootLayout({

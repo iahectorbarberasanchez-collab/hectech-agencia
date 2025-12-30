@@ -128,15 +128,15 @@ const Hero = () => {
 
           {/* Métricas de Impacto */}
           <div className="grid grid-cols-3 gap-4 pt-6">
-            <div className="glass-card p-4 rounded-xl text-center">
+            <div className="glass-card p-4 rounded-xl text-center animate-scale-in hover:animate-pulse-glow transition-all" style={{ animationDelay: '0.1s' }}>
               <div className="text-3xl font-bold text-[#00FF94] mb-1">+15h</div>
               <div className="text-xs text-gray-400">Ahorradas/semana</div>
             </div>
-            <div className="glass-card p-4 rounded-xl text-center">
+            <div className="glass-card p-4 rounded-xl text-center animate-scale-in hover:animate-pulse-glow transition-all" style={{ animationDelay: '0.2s' }}>
               <div className="text-3xl font-bold text-[#00C2FF] mb-1">40%</div>
               <div className="text-xs text-gray-400">Más conversiones</div>
             </div>
-            <div className="glass-card p-4 rounded-xl text-center">
+            <div className="glass-card p-4 rounded-xl text-center animate-scale-in hover:animate-pulse-glow transition-all" style={{ animationDelay: '0.3s' }}>
               <div className="text-3xl font-bold text-purple-400 mb-1">24/7</div>
               <div className="text-xs text-gray-400">Disponibilidad</div>
             </div>
