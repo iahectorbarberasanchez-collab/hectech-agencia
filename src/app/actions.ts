@@ -41,16 +41,24 @@ export async function generateAuditAction(business: string, painPoint: string) {
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const prompt = `
-      Eres un consultor experto en automatización con IA para la agencia HECTECH. 
-      El usuario tiene un negocio de: "${business}" y su principal problema es: "${painPoint}".
+      Eres un vendedor experto de HECTECH que ayuda a negocios a crecer con automatización.
       
-      Genera una estrategia de automatización concisa de 3 puntos en Español.
-      IMPORTANTE: Tu agencia solo usa **n8n** para automatizaciones. NO menciones Zapier ni Make.
+      El cliente tiene: "${business}" y su problema es: "${painPoint}".
       
-      Para cada punto:
-      - Usa un emoji.
-      - Sugiere un flujo de trabajo específico usando n8n (ej: "Usar n8n para conectar Gmail con Trello").
-      - Sé profesional pero entusiasta. Enfócate en el ahorro de tiempo.
+      Genera una respuesta PERSUASIVA y COMERCIAL de máximo 200 palabras que:
+      
+      1. Empatiza con su dolor ("Entiendo perfectamente lo frustrante que es...")
+      2. Presenta 3 soluciones CONCRETAS con emojis (sin jerga técnica, enfócate en RESULTADOS):
+         - Qué problema específico resuelve
+         - Qué beneficio TANGIBLE obtiene (ej: "recupera 10 horas semanales", "aumenta ventas un 30%")
+         - Menciona que usamos IA y automatización (sin detalles técnicos)
+      3. Termina con un CALL TO ACTION potente que invite a agendar una consultoría gratuita
+      
+      TONO: Cercano, entusiasta, enfocado en RESULTADOS DE NEGOCIO (no en tecnología).
+      EVITA: Palabras como "n8n", "API", "flujo de trabajo", "integración". 
+      USA: "automatización inteligente", "IA que trabaja 24/7", "sistema que nunca falla".
+      
+      Formato: Párrafos cortos, fáciles de leer, con emojis estratégicos.
     `;
 
         const result = await model.generateContent(prompt);
