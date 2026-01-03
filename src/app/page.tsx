@@ -20,7 +20,10 @@ import {
   Globe,
   Sparkles,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  BarChart3,
+  PenTool,
+  Search
 } from 'lucide-react';
 import { ContactForm } from './ContactForm';
 import { generateAuditAction } from './actions';
@@ -571,7 +574,7 @@ const Services = () => {
                 Desarrollamos asistentes virtuales con lenguaje natural que entienden el contexto de tu negocio. No son simples árboles de decisión; son agentes que venden por ti.
               </p>
               <div className="bg-white/5 border border-white/10 rounded-xl p-4 inline-block">
-                <p className="text-xs text-[#00FF94] font-bold uppercase tracking-wider mb-1">Ejemplo Real:</p>
+                <p className="text-xs text-[#00FF94] font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
                 <p className="text-sm text-gray-300">Agente inmobiliario que califica leads, responde dudas sobre la zona y reserva visitas en tu Calendar 24/7 sin intervención humana.</p>
               </div>
             </div>
@@ -585,37 +588,75 @@ const Services = () => {
               </div>
               <h3 className="text-2xl font-bold mb-2 text-white">Automatización</h3>
               <p className="text-gray-400 text-sm mb-4">
-                Conectamos tus herramientas (n8n, Make, Zapier) para eliminar tareas repetitivas y silos de información.
+                Conectamos tus herramientas (n8n, Make) para eliminar tareas repetitivas y silos de información.
               </p>
               <div className="mt-auto bg-white/5 border border-white/10 rounded-xl p-3">
-                <p className="text-[10px] text-[#00C2FF] font-bold uppercase tracking-wider mb-1">Ejemplo Real:</p>
-                <p className="text-xs text-gray-300">Sincronización de pedidos de Shopify con tu CRM y software de contabilidad, notificando al equipo por Slack al instante.</p>
+                <p className="text-[10px] text-[#00C2FF] font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
+                <p className="text-xs text-gray-300">Sincronización de pedidos con tu CRM y software contable, notificando al equipo por Slack al instante.</p>
               </div>
             </div>
           </div>
 
-          <div className="glass-card rounded-3xl p-8 flex flex-col justify-between group border-[#00FF94]/20 hover:border-[#00FF94]/50 transition-colors">
+          <div className="glass-card rounded-3xl p-8 flex flex-col justify-between group border-white/5 hover:border-[#00FF94]/30 transition-colors">
             <div className="relative z-10">
               <div className="w-12 h-12 bg-white/5 rounded-lg flex items-center justify-center mb-6 text-[#00FF94] group-hover:scale-110 transition-transform">
                 <Database size={24} />
               </div>
               <h3 className="text-2xl font-bold mb-2 text-white">Sistemas CRM</h3>
-              <p className="text-gray-400 text-sm mb-4">Centralizamos tus datos para que cada interacción con el cliente sea personalizada y oportuna.</p>
+              <p className="text-gray-400 text-sm mb-4">Centralizamos tus datos para que cada interacción sea personalizada.</p>
             </div>
             <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-              <p className="text-[10px] text-[#00FF94] font-bold uppercase tracking-wider mb-1">Ejemplo Real:</p>
-              <p className="text-xs text-gray-300">Segmentación automática de clientes para enviar campañas de WhatsApp personalizadas según su historial de compra.</p>
+              <p className="text-[10px] text-[#00FF94] font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
+              <p className="text-xs text-gray-300">Segmentación de clientes para campañas de WhatsApp según historial de compra.</p>
             </div>
           </div>
 
-          <div className="md:col-span-2 glass-card rounded-3xl p-8 flex items-center justify-between">
-            <div>
-              <h3 className="text-2xl font-bold mb-2 text-white">Consultoría de Implementación</h3>
-              <p className="text-gray-400 text-sm">No te vendemos software y nos vamos. Te enseñamos a usarlo.</p>
+          <div className="glass-card rounded-3xl p-8 flex flex-col justify-between group border-white/5 hover:border-purple-500/30 transition-colors">
+            <div className="relative z-10">
+              <div className="w-12 h-12 bg-white/5 rounded-lg flex items-center justify-center mb-6 text-purple-400 group-hover:scale-110 transition-transform">
+                <BarChart3 size={24} />
+              </div>
+              <h3 className="text-2xl font-bold mb-2 text-white">Dashboards de Datos</h3>
+              <p className="text-gray-400 text-sm mb-4">Visualiza el rendimiento de tu negocio y el ROI de tus automatizaciones en tiempo real.</p>
             </div>
-            <div className="hidden md:block">
-              <a href="#contacto" className="border border-white/20 px-6 py-3 rounded-full hover:bg-white hover:text-black transition-all text-white">
-                Contactar
+            <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+              <p className="text-[10px] text-purple-400 font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
+              <p className="text-xs text-gray-300">Panel interactivo que muestra leads diarios, tasa de conversión y tiempo humano ahorrado al mes.</p>
+            </div>
+          </div>
+
+          <div className="glass-card rounded-3xl p-8 flex flex-col justify-between group border-white/5 hover:border-orange-400/30 transition-colors">
+            <div className="relative z-10">
+              <div className="w-12 h-12 bg-white/5 rounded-lg flex items-center justify-center mb-6 text-orange-400 group-hover:scale-110 transition-transform">
+                <PenTool size={24} />
+              </div>
+              <h3 className="text-2xl font-bold mb-2 text-white">Contenido con IA</h3>
+              <p className="text-gray-400 text-sm mb-4">Sistemas de generación de contenido multicanal manteniendo tu tono de marca.</p>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+              <p className="text-[10px] text-orange-400 font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
+              <p className="text-xs text-gray-300">Creación automática de posts para redes sociales a partir de un simple título o idea de producto.</p>
+            </div>
+          </div>
+
+          <div className="md:col-span-3 glass-card rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-8 group">
+            <div className="flex-1">
+              <div className="w-12 h-12 bg-[#FFE600] rounded-lg flex items-center justify-center mb-6 text-black group-hover:rotate-12 transition-transform">
+                <Search size={24} />
+              </div>
+              <h3 className="text-3xl font-bold mb-2 text-white">Auditoría de Procesos IA</h3>
+              <p className="text-gray-400 max-w-2xl mb-4">
+                Analizamos tu operativa actual para identificar cuellos de botella y detectar dónde la IA tendrá el mayor impacto financiero inmediato.
+              </p>
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4 inline-block">
+                <p className="text-xs text-[#FFE600] font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
+                <p className="text-sm text-gray-300">Mapeo de flujos de trabajo actuales y proyección de ahorro en costes operativos tras la implementación de agentes IA.</p>
+              </div>
+            </div>
+            <div className="shrink-0">
+              <a href="#contacto" className="inline-flex items-center gap-2 bg-primary text-black px-8 py-4 rounded-full font-bold hover:scale-105 transition-all">
+                Optimizar mi negocio
+                <ArrowRight size={20} />
               </a>
             </div>
           </div>
