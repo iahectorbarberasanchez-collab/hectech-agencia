@@ -726,7 +726,7 @@ const AboutUs = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
                 <div className="absolute bottom-0 left-0 p-8">
                   <p className="text-[#00FF94] font-bold text-sm tracking-widest uppercase mb-1">Fundador</p>
-                  <h3 className="text-3xl font-bold text-white">Héctor Sánchez</h3>
+                  <h3 className="text-3xl font-bold text-white">Hector Barbera Sanchez</h3>
                 </div>
               </div>
             </div>
@@ -738,7 +738,7 @@ const AboutUs = () => {
                 Impulsando el futuro del <span className="text-gradient">negocio local</span>
               </h2>
               <p className="text-gray-400 text-lg leading-relaxed">
-                En <strong>HecTechAi</strong>, no solo implementamos tecnología; devolvemos el tiempo a quienes hacen que el mundo se mueva. Nacimos con la visión de democratizar la Inteligencia Artificial, llevándola de las grandes tecnológicas directamente al día a día de tu empresa.
+                En <strong>HecTechAi</strong>, no solo implementamos tecnología; devolvemos el tiempo a quienes hacen que el mundo se mueva. Creé este proyecto porque vi cómo muchos dueños de negocios pasaban el fin de semana respondiendo emails en lugar de descansar. Mi misión es que la IA haga el trabajo aburrido por ti.
               </p>
             </div>
 
@@ -761,7 +761,7 @@ const AboutUs = () => {
 
             <div className="p-6 bg-white/5 rounded-2xl border-l-4 border-[#00FF94]">
               <p className="text-gray-300 italic italic leading-relaxed">
-                "Nuestra meta es que dejes de ser un esclavo de tus tareas repetitivas y vuelvas a ser el estratega de tu propio éxito."
+                "Mi misión es que la IA haga el trabajo aburrido para que tú te dediques a lo que realmente importa: hacer crecer tu empresa y disfrutar de tu tiempo."
               </p>
             </div>
           </div>
@@ -978,7 +978,8 @@ const Footer = () => {
           <div className="flex gap-8 text-sm text-gray-400">
             <a href="#servicios" className="hover:text-white transition-colors">Servicios</a>
             <a href="#sobre-nosotros" className="hover:text-white transition-colors">Sobre nosotros</a>
-            <a href="#" className="hover:text-white transition-colors">Politica de Privacidad</a>
+            <a href="/privacidad" className="hover:text-white transition-colors">Privacidad</a>
+            <a href="/legal" className="hover:text-white transition-colors">Aviso Legal</a>
           </div>
 
           <div className="flex gap-4 text-white">
@@ -1028,8 +1029,8 @@ export default function Home() {
       <section id="contacto" className="w-full py-24 px-6 md:px-24 bg-[#0A0A0A]">
         <div className="max-w-4xl mx-auto glass-card p-12 rounded-3xl border border-white/10">
           <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">Contáctanos</h2>
-            <p className="text-gray-400">Déjanos tus datos y te contactaremos en menos de 24 horas.</p>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">¿Listo para automatizar tu negocio?</h2>
+            <p className="text-gray-400">Hablemos de tu proyecto. Te contactaremos en menos de 24 horas.</p>
           </div>
           <ContactForm />
         </div>
