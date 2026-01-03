@@ -25,7 +25,9 @@ import {
   PenTool,
   Search,
   Instagram,
-  Mail
+  Mail,
+  Plus,
+  Minus
 } from 'lucide-react';
 import { ContactForm } from './ContactForm';
 import { generateAuditAction } from './actions';
@@ -704,6 +706,177 @@ const Process = () => {
   );
 };
 
+const ROICalculator = () => {
+  const [employees, setEmployees] = useState(1);
+  const [hourlyRate, setHourlyRate] = useState(20);
+  const [hoursPerWeek, setHoursPerWeek] = useState(10);
+
+  const monthlyLoss = Math.round(employees * hourlyRate * hoursPerWeek * 4.33);
+  const annualLoss = monthlyLoss * 12;
+  const potentialSavings = Math.round(monthlyLoss * 0.7);
+
+  return (
+    <section id="roi-calculator" className="py-24 relative overflow-hidden bg-[#0A0A0A]">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[1px] bg-gradient-to-r from-transparent via-[#00FF94]/20 to-transparent"></div>
+
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div>
+            <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white">Calcula el coste de <span className="text-gradient">no automatizar</span></h2>
+            <p className="text-gray-400 text-lg mb-12">
+              Muchas empresas no son conscientes del capital que pierden cada mes en tareas que una IA podría hacer por una fracción del coste. Ajusta los valores y descubre tu potencial de ahorro.
+            </p>
+
+            <div className="space-y-10">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center text-white">
+                  <label className="font-medium">Nº de empleados gestionando tareas manuales</label>
+                  <span className="text-[#00FF94] font-bold text-xl">{employees}</span>
+                </div>
+                <input
+                  type="range" min="1" max="20" step="1"
+                  value={employees}
+                  onChange={(e) => setEmployees(parseInt(e.target.value))}
+                  className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#00FF94]"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center text-white">
+                  <label className="font-medium">Coste hora promedio (Sueldo + Impuestos)</label>
+                  <span className="text-[#00FF94] font-bold text-xl">{hourlyRate}€/h</span>
+                </div>
+                <input
+                  type="range" min="10" max="100" step="5"
+                  value={hourlyRate}
+                  onChange={(e) => setHourlyRate(parseInt(e.target.value))}
+                  className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#00FF94]"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center text-white">
+                  <label className="font-medium">Horas perdidas / semana por empleado</label>
+                  <span className="text-[#00FF94] font-bold text-xl">{hoursPerWeek}h</span>
+                </div>
+                <input
+                  type="range" min="2" max="40" step="2"
+                  value={hoursPerWeek}
+                  onChange={(e) => setHoursPerWeek(parseInt(e.target.value))}
+                  className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#00FF94]"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 bg-[#00FF94]/10 blur-[100px] rounded-full"></div>
+            <div className="relative glass-card p-10 rounded-3xl border border-white/10 shadow-2xl">
+              <div className="space-y-8">
+                <div>
+                  <p className="text-gray-400 text-sm uppercase tracking-widest font-bold mb-1">Pérdida mensual estimada</p>
+                  <div className="text-5xl md:text-7xl font-black text-white leading-none">
+                    {monthlyLoss.toLocaleString()}€
+                  </div>
+                </div>
+
+                <div className="h-[1px] bg-white/10 w-full"></div>
+
+                <div className="grid grid-cols-2 gap-8">
+                  <div>
+                    <p className="text-gray-500 text-xs uppercase font-bold mb-1">Fuga anual de capital</p>
+                    <p className="text-2xl font-bold text-gray-300">{annualLoss.toLocaleString()}€</p>
+                  </div>
+                  <div>
+                    <p className="text-[#00FF94] text-xs uppercase font-bold mb-1">Ahorro potencial IA</p>
+                    <p className="text-2xl font-bold text-[#00FF94]">{potentialSavings.toLocaleString()}€/mes</p>
+                  </div>
+                </div>
+
+                <div className="bg-[#00FF94]/10 p-6 rounded-2xl border border-[#00FF94]/20">
+                  <p className="text-sm text-[#00FF94] leading-relaxed">
+                    <strong>💡 Impacto Directo:</strong> Estás perdiendo aproximadamente el <strong>30% de tu productividad</strong> en tareas que HecTechAi puede automatizar hoy mismo.
+                  </p>
+                </div>
+
+                <a href="#contacto" className="block w-full text-center bg-[#00FF94] text-black font-bold py-4 rounded-xl hover:scale-[1.02] transition-transform">
+                  Detener esta fuga de capital ahora
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const FAQ = () => {
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  const faqs = [
+    {
+      q: "¿Qué es exactamente la automatización con IA?",
+      a: "Es el uso de modelos de lenguaje inteligentes (como GPT-4) e integraciones de software para realizar tareas repetitivas de forma autónoma. Desde responder clientes por WhatsApp hasta gestionar facturas y agendar citas sin intervención humana."
+    },
+    {
+      q: "¿Es compatible con las herramientas que ya utilizo?",
+      a: "Sí. Nos integramos con WhatsApp, Gmail, Google Calendar, Shopify, Instagram, CRM y más de 1.000 aplicaciones a través de plataformas líderes como n8n y Make."
+    },
+    {
+      q: "¿Cuánto tiempo se tarda en ver resultados?",
+      a: "Los resultados suelen ser inmediatos tras la implementación. El ahorro de tiempo se nota desde el primer día y el retorno de la inversión (ROI) suele completarse en menos de 3 meses."
+    },
+    {
+      q: "¿Mi negocio es demasiado pequeño para la IA?",
+      a: "Al contrario, la IA es el gran igualador. Permite que negocios locales y autónomos operen con la eficiencia de una gran corporación sin necesidad de contratar más personal."
+    },
+    {
+      q: "¿Cómo garantizáis la seguridad de mis datos?",
+      a: "La privacidad es nuestra prioridad. Usamos conexiones seguras y cifradas. Nunca utilizamos los datos de tu negocio para entrenar modelos de IA públicos externos."
+    },
+    {
+      q: "¿Qué pasa si la IA se equivoca?",
+      a: "Nuestras implementaciones incluyen filtros de seguridad y sistemas de supervisión. Además, siempre configuramos opciones para que un humano pueda intervenir fácilmente si la IA detecta una consulta compleja."
+    }
+  ];
+
+  return (
+    <section id="faq" className="py-24 bg-[#050505]">
+      <div className="max-w-3xl mx-auto px-6">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">Preguntas Frecuentes</h2>
+          <p className="text-gray-400">Todo lo que necesitas saber para dar el paso hacia la automatización.</p>
+        </div>
+
+        <div className="space-y-4">
+          {faqs.map((faq, index) => (
+            <div key={index} className="glass-card rounded-2xl overflow-hidden border border-white/5">
+              <button
+                onClick={() => setOpenIndex(openIndex === index ? null : index)}
+                className="w-full p-6 text-left flex justify-between items-center hover:bg-white/5 transition-colors"
+              >
+                <span className="text-lg font-bold text-white pr-8">{faq.q}</span>
+                {openIndex === index ? (
+                  <Minus size={20} className="text-[#00FF94] shrink-0" />
+                ) : (
+                  <Plus size={20} className="text-[#00FF94] shrink-0" />
+                )}
+              </button>
+
+              <div className={`transition-all duration-300 ease-in-out ${openIndex === index ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
+                <div className="p-6 pt-0 text-gray-400 leading-relaxed border-t border-white/5">
+                  {faq.a}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const Footer = () => {
   return (
     <footer className="bg-[#020202] pt-24 pb-12 border-t border-white/5">
@@ -781,6 +954,8 @@ export default function Home() {
       <SmartAudit />
       <Services />
       <Process />
+      <ROICalculator />
+      <FAQ />
 
       {/* Contact Section reused from previous implementation but styled to match new theme */}
       <section id="contacto" className="w-full py-24 px-6 md:px-24 bg-[#0A0A0A]">
