@@ -1,7 +1,8 @@
 'use server'
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { createClient } from '@supabase/supabase-js'; // Assuming createClient is from here
+import { createClient } from '@supabase/supabase-js';
+import nodemailer from 'nodemailer';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -24,6 +25,53 @@ export async function submitLead(formData: FormData) {
     if (error) {
         console.error('Supabase error:', error);
         return { success: false, error: 'Hubo un error al guardar tus datos. Inténtalo de nuevo.' };
+    }
+
+    // --- Enviar Email ---
+    try {
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: 'hectechia@gmail.com',
+            subject: `🚀 Nuevo Lead: ${name}`,
+            text: `
+                Has recibido un nuevo mensaje desde la web:
+                
+                Nombre: ${name}
+                Email: ${email}
+                Teléfono: ${phone || 'No proporcionado'}
+                Mensaje: ${message || 'Sin mensaje'}
+                
+                ¡Contacta con él lo antes posible!
+            `,
+            html: `
+                <div style="font-family: sans-serif; padding: 20px; color: #333;">
+                    <h2 style="color: #00FF94;">🚀 Nuevo Lead Recibido</h2>
+                    <p>Has recibido un nuevo mensaje desde la web <strong>HecTechAi</strong>:</p>
+                    <hr style="border: 0; border-top: 1px solid #eee;" />
+                    <p><strong>Nombre:</strong> ${name}</p>
+                    <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+                    <p><strong>Teléfono:</strong> ${phone || 'No proporcionado'}</p>
+                    <p><strong>Mensaje:</strong></p>
+                    <blockquote style="background: #f9f9f9; padding: 10px; border-left: 4px solid #00FF94;">
+                        ${message || 'Sin mensaje'}
+                    </blockquote>
+                </div>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log('Email enviado con éxito');
+    } catch (emailError) {
+        console.error('Error enviando email:', emailError);
+        // No bloqueamos el éxito porque los datos ya están en Supabase
     }
 
     return { success: '¡Mensaje enviado! Te contactaremos pronto.' };

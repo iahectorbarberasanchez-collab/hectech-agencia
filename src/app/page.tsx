@@ -54,6 +54,7 @@ const Navbar = () => {
             width={56}
             height={56}
             className="object-contain"
+            style={{ mixBlendMode: 'screen' }}
           />
           <div className="hidden md:flex items-center gap-2 font-display font-bold text-3xl tracking-tighter text-white">
             <span>Hec<span className="text-[#00FF94]">TechAi</span></span>
@@ -640,13 +641,13 @@ const Footer = () => {
           <div className="flex items-center gap-2 font-bold text-2xl tracking-tighter text-white">
             <Image
               src="/logo.png"
-              alt="HECTECH Logo"
+              alt="HecTechAi Logo"
               width={32}
               height={32}
-              className="object-contain grayscale hover:grayscale-0 transition-all opacity-80 hover:opacity-100"
+              className="object-contain transition-all opacity-80 hover:opacity-100"
+              style={{ mixBlendMode: 'screen' }}
             />
             <div className="hidden md:flex items-center gap-2 font-display">
-              <Cpu size={24} className="text-[#00FF94]" />
               <span>Hec<span className="text-[#00FF94]">TechAi</span></span>
             </div>
           </div>
