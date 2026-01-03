@@ -27,7 +27,10 @@ import {
   Instagram,
   Mail,
   Plus,
-  Minus
+  Minus,
+  Users,
+  Rocket,
+  ShieldCheck
 } from 'lucide-react';
 import { ContactForm } from './ContactForm';
 import { generateAuditAction } from './actions';
@@ -49,6 +52,7 @@ const Navbar = () => {
     { name: 'Demos', href: '#demos' },
     { name: 'Auditoría IA ✨', href: '#auditoria-ia' },
     { name: 'Servicios', href: '#servicios' },
+    { name: 'Sobre mí', href: '#sobre-nosotros' },
   ];
 
   return (
@@ -706,6 +710,67 @@ const Process = () => {
   );
 };
 
+const AboutUs = () => {
+  return (
+    <section id="sobre-nosotros" className="py-24 bg-[#050505] overflow-hidden">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="relative">
+            <div className="absolute -top-20 -left-20 w-64 h-64 bg-[#00FF94]/10 rounded-full blur-[100px]"></div>
+            <div className="relative glass-card p-1 rounded-3xl overflow-hidden border border-white/10 group">
+              <div className="aspect-[4/5] relative bg-[#111] rounded-[22px] overflow-hidden">
+                {/* User can replace this with their actual photo */}
+                <div className="absolute inset-0 flex items-center justify-center text-[#00FF94]/20">
+                  <Users size={120} />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                <div className="absolute bottom-0 left-0 p-8">
+                  <p className="text-[#00FF94] font-bold text-sm tracking-widest uppercase mb-1">Fundador</p>
+                  <h3 className="text-3xl font-bold text-white">Héctor Sánchez</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white tracking-tight">
+                Impulsando el futuro del <span className="text-gradient">negocio local</span>
+              </h2>
+              <p className="text-gray-400 text-lg leading-relaxed">
+                En <strong>HecTechAi</strong>, no solo implementamos tecnología; devolvemos el tiempo a quienes hacen que el mundo se mueva. Nacimos con la visión de democratizar la Inteligencia Artificial, llevándola de las grandes tecnológicas directamente al día a día de tu empresa.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="glass-card p-6 rounded-2xl border border-white/5 hover:border-[#00FF94]/30 transition-colors">
+                <div className="w-10 h-10 bg-[#00FF94]/10 rounded-lg flex items-center justify-center text-[#00FF94] mb-4">
+                  <Rocket size={20} />
+                </div>
+                <h4 className="text-white font-bold mb-2">Misión</h4>
+                <p className="text-sm text-gray-500">Transformar la operativa manual en sistemas autónomos de alto rendimiento.</p>
+              </div>
+              <div className="glass-card p-6 rounded-2xl border border-white/5 hover:border-[#00FF94]/30 transition-colors">
+                <div className="w-10 h-10 bg-[#00FF94]/10 rounded-lg flex items-center justify-center text-[#00FF94] mb-4">
+                  <ShieldCheck size={20} />
+                </div>
+                <h4 className="text-white font-bold mb-2">Compromiso</h4>
+                <p className="text-sm text-gray-500">Soluciones éticas, seguras y diseñadas para durar a largo plazo.</p>
+              </div>
+            </div>
+
+            <div className="p-6 bg-white/5 rounded-2xl border-l-4 border-[#00FF94]">
+              <p className="text-gray-300 italic italic leading-relaxed">
+                "Nuestra meta es que dejes de ser un esclavo de tus tareas repetitivas y vuelvas a ser el estratega de tu propio éxito."
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const ROICalculator = () => {
   const [employees, setEmployees] = useState(1);
   const [hourlyRate, setHourlyRate] = useState(20);
@@ -912,6 +977,7 @@ const Footer = () => {
 
           <div className="flex gap-8 text-sm text-gray-400">
             <a href="#servicios" className="hover:text-white transition-colors">Servicios</a>
+            <a href="#sobre-nosotros" className="hover:text-white transition-colors">Sobre nosotros</a>
             <a href="#" className="hover:text-white transition-colors">Politica de Privacidad</a>
           </div>
 
@@ -954,6 +1020,7 @@ export default function Home() {
       <SmartAudit />
       <Services />
       <Process />
+      <AboutUs />
       <ROICalculator />
       <FAQ />
 
