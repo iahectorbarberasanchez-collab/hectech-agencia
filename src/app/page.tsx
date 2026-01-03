@@ -24,7 +24,8 @@ import {
   BarChart3,
   PenTool,
   Search,
-  Instagram
+  Instagram,
+  Mail
 } from 'lucide-react';
 import { ContactForm } from './ContactForm';
 import { generateAuditAction } from './actions';
@@ -752,13 +753,11 @@ const Footer = () => {
               <Instagram size={18} />
             </a>
             <a
-              href="https://wa.me/34623789580"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#25D366] hover:text-white transition-all cursor-pointer"
-              title="WhatsApp"
+              href="mailto:hectechia@gmail.com"
+              className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#00FF94] hover:text-black transition-all cursor-pointer"
+              title="Email"
             >
-              <MessageSquare size={18} />
+              <Mail size={18} />
             </a>
           </div>
         </div>
