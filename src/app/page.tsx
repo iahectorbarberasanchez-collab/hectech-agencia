@@ -47,16 +47,16 @@ const Navbar = () => {
   return (
     <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-[#050505]/90 backdrop-blur-md border-b border-white/5 py-4' : 'bg-transparent py-6'}`}>
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-        <div className="flex items-center gap-2 cursor-pointer">
+        <div className="flex items-center gap-3 cursor-pointer">
           <Image
             src="/logo.png"
-            alt="HECTECH Logo"
-            width={40}
-            height={40}
+            alt="HecTechAi Logo"
+            width={56}
+            height={56}
             className="object-contain"
           />
-          <div className="hidden md:flex items-center gap-2 font-bold text-2xl tracking-tighter text-white">
-            <span>HEC<span className="text-[#00FF94]">TECH</span></span>
+          <div className="hidden md:flex items-center gap-2 font-display font-bold text-3xl tracking-tighter text-white">
+            <span>Hec<span className="text-[#00FF94]">TechAi</span></span>
           </div>
         </div>
 
@@ -279,7 +279,7 @@ const VideoDemo = () => {
                   width="100%"
                   height="100%"
                   src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1"
-                  title="Demo HECTECH"
+                  title="Demo HecTechAi"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                   className="w-full h-full"
@@ -424,7 +424,7 @@ const DemoShowcase = () => {
       { from: 'user', text: '¡Sí, por favor!' },
     ],
     health: [
-      { from: 'bot', text: 'Clínica Dental Hectech. ¿En qué podemos ayudarte hoy?' },
+      { from: 'bot', text: 'Clínica Dental HecTechAi. ¿En qué podemos ayudarte hoy?' },
       { from: 'user', text: 'Necesito una limpieza dental.' },
       { from: 'bot', text: 'Entendido. El Dr. Martínez tiene un hueco mañana a las 16:30. ¿Te va bien?' },
       { from: 'user', text: 'Mejor el viernes por la mañana.' },
@@ -481,7 +481,7 @@ const DemoShowcase = () => {
                     </div>
                   </div>
                   <div>
-                    <div className="font-bold text-sm text-white">Asistente HECTECH</div>
+                    <div className="font-bold text-sm text-white font-display">Asistente HecTechAi</div>
                     <div className="flex items-center gap-1">
                       <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                       <span className="text-xs text-green-500">En línea</span>
@@ -645,9 +645,9 @@ const Footer = () => {
               height={32}
               className="object-contain grayscale hover:grayscale-0 transition-all opacity-80 hover:opacity-100"
             />
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2 font-display">
               <Cpu size={24} className="text-[#00FF94]" />
-              <span>HEC<span className="text-[#00FF94]">TECH</span></span>
+              <span>Hec<span className="text-[#00FF94]">TechAi</span></span>
             </div>
           </div>
 
@@ -667,7 +667,7 @@ const Footer = () => {
         </div>
 
         <div className="text-center text-gray-600 text-xs mt-12">
-          © {new Date().getFullYear()} HECTECH Automation Agency. Todos los derechos reservados.
+          © {new Date().getFullYear()} HecTechAi Automation Agency. Todos los derechos reservados.
         </div>
       </div>
     </footer>

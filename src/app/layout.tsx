@@ -8,7 +8,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "HECTECH | Automatización con IA para Negocios Locales",
+  title: "HecTechAi | Automatización con IA para Negocios Locales",
   description: "Ahorra +15 horas semanales y aumenta tus ventas un 40% con chatbots inteligentes y automatización IA. Auditoría gratuita. Atención 24/7 para tu negocio.",
   keywords: [
     "automatización con IA",
@@ -22,9 +22,9 @@ export const metadata: Metadata = {
     "inteligencia artificial negocios",
     "consultoría IA"
   ],
-  authors: [{ name: "HECTECH" }],
-  creator: "HECTECH Automation Agency",
-  publisher: "HECTECH",
+  authors: [{ name: "HecTechAi" }],
+  creator: "HecTechAi Automation Agency",
+  publisher: "HecTechAi",
   robots: {
     index: true,
     follow: true,
@@ -40,13 +40,13 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'es_ES',
     url: 'https://hectech-agencia.vercel.app',
-    title: 'HECTECH | Automatización con IA para Negocios',
+    title: 'HecTechAi | Automatización con IA para Negocios',
     description: 'Ahorra +15 horas semanales con chatbots inteligentes y automatización IA. Auditoría gratuita.',
-    siteName: 'HECTECH',
+    siteName: 'HecTechAi',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'HECTECH | Automatización con IA',
+    title: 'HecTechAi | Automatización con IA',
     description: 'Ahorra +15 horas semanales con IA. Auditoría gratuita.',
   },
   verification: {

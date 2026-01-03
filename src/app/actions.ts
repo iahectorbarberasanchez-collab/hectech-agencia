@@ -41,7 +41,7 @@ export async function generateAuditAction(business: string, painPoint: string) {
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const prompt = `
-      Eres un vendedor experto de HECTECH que ayuda a negocios a crecer con automatización.
+      Eres un vendedor experto de HecTechAi que ayuda a negocios a crecer con automatización.
       
       El cliente tiene: "${business}" y su problema es: "${painPoint}".
       
