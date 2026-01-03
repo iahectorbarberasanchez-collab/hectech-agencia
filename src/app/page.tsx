@@ -197,17 +197,32 @@ const Benefits = () => {
     {
       icon: <Clock size={32} className="text-[#00FF94]" />,
       title: "Atención 24/7",
-      desc: "Tu negocio nunca duerme. Responde a clientes potenciales al instante, incluso a las 3 AM.",
+      desc: "Tu negocio nunca duerme. Responde a leads al instante, incluso fuera de horario, capturando cada oportunidad.",
     },
     {
       icon: <Target size={32} className="text-[#00C2FF]" />,
-      title: "Cero Errores",
-      desc: "Olvídate de citas duplicadas o datos perdidos. Automatiza facturas y agendamientos con precisión de máquina.",
+      title: "Operaciones Cero Errores",
+      desc: "Elimina el error humano. Automatiza desde el agendamiento hasta la facturación con precisión milimétrica.",
     },
     {
       icon: <TrendingUp size={32} className="text-purple-400" />,
+      title: "Escalabilidad Exponencial",
+      desc: "Crece sin límites. Maneja 10x más clientes sin necesidad de aumentar tu plantilla o infraestructura.",
+    },
+    {
+      icon: <Zap size={32} className="text-[#FFE600]" />,
+      title: "Fidelización Inteligente",
+      desc: "Sistemas que aprenden de tus clientes para ofrecer seguimiento post-venta que garantiza la recurrencia.",
+    },
+    {
+      icon: <Globe size={32} className="text-blue-400" />,
+      title: "Datos en Tiempo Real",
+      desc: "Toma decisiones basadas en evidencias con dashboards que muestran el rendimiento de tu embudo de ventas.",
+    },
+    {
+      icon: <CheckCircle2 size={32} className="text-green-400" />,
       title: "Reducción de Costes",
-      desc: "Haz más con los mismos recursos. Un bot puede manejar el trabajo de 3 agentes de soporte simultáneamente.",
+      desc: "Reduce hasta un 70% los costes operativos delegando tareas repetitivas a sistemas inteligentes.",
     },
   ];
 
@@ -552,31 +567,45 @@ const Services = () => {
                 <Bot size={24} />
               </div>
               <h3 className="text-3xl font-bold mb-2 text-white">Chatbots Inteligentes</h3>
-              <p className="text-gray-400 max-w-md">
-                Desarrollamos asistentes virtuales que no parecen robots. Entienden contexto, agendan citas y cierran ventas.
+              <p className="text-gray-400 max-w-2xl mb-4">
+                Desarrollamos asistentes virtuales con lenguaje natural que entienden el contexto de tu negocio. No son simples árboles de decisión; son agentes que venden por ti.
               </p>
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4 inline-block">
+                <p className="text-xs text-[#00FF94] font-bold uppercase tracking-wider mb-1">Ejemplo Real:</p>
+                <p className="text-sm text-gray-300">Agente inmobiliario que califica leads, responde dudas sobre la zona y reserva visitas en tu Calendar 24/7 sin intervención humana.</p>
+              </div>
             </div>
           </div>
 
           <div className="glass-card rounded-3xl p-8 relative overflow-hidden group">
             <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-[#00C2FF] rounded-full blur-[60px] opacity-20"></div>
-            <div className="relative z-10">
+            <div className="relative z-10 h-full flex flex-col">
               <div className="w-12 h-12 bg-[#00C2FF] rounded-lg flex items-center justify-center mb-6 text-white">
                 <Zap size={24} />
               </div>
               <h3 className="text-2xl font-bold mb-2 text-white">Automatización</h3>
-              <p className="text-gray-400 text-sm">
-                Conectamos tus apps con n8n. Si recibes un email, se crea una tarea y se envía una factura.
+              <p className="text-gray-400 text-sm mb-4">
+                Conectamos tus herramientas (n8n, Make, Zapier) para eliminar tareas repetitivas y silos de información.
               </p>
+              <div className="mt-auto bg-white/5 border border-white/10 rounded-xl p-3">
+                <p className="text-[10px] text-[#00C2FF] font-bold uppercase tracking-wider mb-1">Ejemplo Real:</p>
+                <p className="text-xs text-gray-300">Sincronización de pedidos de Shopify con tu CRM y software de contabilidad, notificando al equipo por Slack al instante.</p>
+              </div>
             </div>
           </div>
 
-          <div className="glass-card rounded-3xl p-8 flex flex-col justify-center items-center text-center group border-[#00FF94]/20 hover:border-[#00FF94]/50 transition-colors">
-            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4 text-[#00FF94] group-hover:scale-110 transition-transform">
-              <Database size={32} />
+          <div className="glass-card rounded-3xl p-8 flex flex-col justify-between group border-[#00FF94]/20 hover:border-[#00FF94]/50 transition-colors">
+            <div className="relative z-10">
+              <div className="w-12 h-12 bg-white/5 rounded-lg flex items-center justify-center mb-6 text-[#00FF94] group-hover:scale-110 transition-transform">
+                <Database size={24} />
+              </div>
+              <h3 className="text-2xl font-bold mb-2 text-white">Sistemas CRM</h3>
+              <p className="text-gray-400 text-sm mb-4">Centralizamos tus datos para que cada interacción con el cliente sea personalizada y oportuna.</p>
             </div>
-            <h3 className="text-xl font-bold mb-1 text-white">CRM</h3>
-            <p className="text-gray-400 text-sm">Centraliza tus datos de clientes.</p>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+              <p className="text-[10px] text-[#00FF94] font-bold uppercase tracking-wider mb-1">Ejemplo Real:</p>
+              <p className="text-xs text-gray-300">Segmentación automática de clientes para enviar campañas de WhatsApp personalizadas según su historial de compra.</p>
+            </div>
           </div>
 
           <div className="md:col-span-2 glass-card rounded-3xl p-8 flex items-center justify-between">
