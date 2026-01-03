@@ -1016,13 +1016,13 @@ export default function Home() {
       <Navbar />
       <Hero />
       <Benefits />
+      <ROICalculator />
       <VideoDemo />
       <DemoShowcase />
       <SmartAudit />
       <Services />
       <Process />
       <AboutUs />
-      <ROICalculator />
       <FAQ />
 
       {/* Contact Section reused from previous implementation but styled to match new theme */}
