@@ -30,8 +30,8 @@ export function ContactForm() {
             <input name="phone" type="text" placeholder="Teléfono" className="bg-white/5 border border-white/10 p-4 rounded-xl focus:outline-none focus:border-primary transition-colors h-14 md:col-span-2 text-white placeholder-slate-500" />
             <textarea name="message" placeholder="¿Cómo podemos ayudarte?" required className="bg-white/5 border border-white/10 p-4 rounded-xl focus:outline-none focus:border-primary transition-colors h-32 md:col-span-2 resize-none text-white placeholder-slate-500"></textarea>
 
-            <button disabled={status === 'submitting'} className="md:col-span-2 py-4 bg-primary text-secondary font-bold rounded-xl text-lg glow-on-hover mt-4 disabled:opacity-50 disabled:cursor-not-allowed">
-                {status === 'submitting' ? 'Enviando...' : 'Enviar mensaje'}
+            <button disabled={status === 'submitting'} className="md:col-span-2 py-4 bg-primary text-black font-bold rounded-xl text-lg glow-on-hover mt-4 disabled:opacity-50 disabled:cursor-not-allowed">
+                {status === 'submitting' ? 'Enviando...' : 'Enviar formulario'}
             </button>
 
             {message && (
