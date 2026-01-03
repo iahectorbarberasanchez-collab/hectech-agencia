@@ -23,7 +23,8 @@ import {
   AlertCircle,
   BarChart3,
   PenTool,
-  Search
+  Search,
+  Instagram
 } from 'lucide-react';
 import { ContactForm } from './ContactForm';
 import { generateAuditAction } from './actions';
@@ -741,12 +742,24 @@ const Footer = () => {
           </div>
 
           <div className="flex gap-4 text-white">
-            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#00FF94] hover:text-black transition-all cursor-pointer">
-              <Globe size={18} />
-            </div>
-            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#00FF94] hover:text-black transition-all cursor-pointer">
+            <a
+              href="https://instagram.com/hectechai"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#00FF94] hover:text-black transition-all cursor-pointer"
+              title="Instagram"
+            >
+              <Instagram size={18} />
+            </a>
+            <a
+              href="https://wa.me/34623789580"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#25D366] hover:text-white transition-all cursor-pointer"
+              title="WhatsApp"
+            >
               <MessageSquare size={18} />
-            </div>
+            </a>
           </div>
         </div>
 
