@@ -324,16 +324,17 @@ const VideoDemo = () => {
 const SmartAudit = () => {
   const [business, setBusiness] = useState('');
   const [painPoint, setPainPoint] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState('');
 
   const generateAudit = async () => {
-    if (!business || !painPoint) return;
+    if (!business || !painPoint || !email) return;
     setLoading(true);
     setResult('');
 
     try {
-      const response = await generateAuditAction(business, painPoint);
+      const response = await generateAuditAction(business, painPoint, email);
       if (response.success && response.data) {
         setResult(response.data);
       } else {
@@ -382,6 +383,17 @@ const SmartAudit = () => {
                 className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-colors"
                 value={painPoint}
                 onChange={(e) => setPainPoint(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium text-gray-300">Tu mejor email (para enviarte el plan completo)</label>
+              <input
+                type="email"
+                placeholder="tu@email.com"
+                required
+                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-colors"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
           </div>
