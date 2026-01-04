@@ -27,6 +27,7 @@ export async function submitLead(formData: FormData) {
         return { success: false, error: 'Hubo un error al guardar tus datos. Inténtalo de nuevo.' };
     }
 
+
     // --- Enviar Email ---
     try {
         const transporter = nodemailer.createTransport({
@@ -77,21 +78,38 @@ export async function submitLead(formData: FormData) {
     return { success: '¡Mensaje enviado! Te contactaremos pronto.' };
 }
 
-export async function generateAuditAction(business: string, painPoint: string) {
+export async function generateAuditAction(business: string, painPoint: string, email?: string) {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
         return { success: false, error: 'Clave de API no configurada en el servidor.' };
     }
 
+
+    // --- Guardar en Supabase ---
+    if (email) {
+        try {
+            await supabase
+                .from('leads')
+                .insert([{
+                    name: `Auditoría: ${business}`,
+                    email,
+                    message: `Punto de dolor: ${painPoint}`,
+                    phone: 'Lead de Auditoría IA'
+                }]);
+        } catch (supaError) {
+            console.error('Error guardando auditoría en supabase:', supaError);
+        }
+    }
+
     try {
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
         const prompt = `
       Eres un vendedor experto de HecTechAi que ayuda a negocios a crecer con automatización.
       
-      El cliente tiene: "${business}" y su problema es: "${painPoint}".
+      El cliente tiene un negocio de: "${business}" y su problema principal es: "${painPoint}".
       
       Genera una respuesta PERSUASIVA y COMERCIAL de máximo 200 palabras que:
       

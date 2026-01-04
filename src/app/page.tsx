@@ -327,8 +327,6 @@ const SmartAudit = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState('');
 
-  // ... (inside SmartAudit component)
-
   const generateAudit = async () => {
     if (!business || !painPoint) return;
     setLoading(true);
