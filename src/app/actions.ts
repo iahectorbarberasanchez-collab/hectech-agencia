@@ -27,30 +27,28 @@ export async function submitLead(formData: FormData) {
         return { success: false, error: 'Hubo un error al guardar tus datos. Inténtalo de nuevo.' };
     }
 
-    // --- Enviar a n8n ---
+    // --- Enviar a n8n (No bloqueante para mayor velocidad) ---
     const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
 
     if (n8nWebhookUrl) {
-        try {
-            await fetch(n8nWebhookUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    lead_source: 'web_contact_form',
-                    name,
-                    email,
-                    phone: phone || 'No proporcionado',
-                    message: message || 'Sin mensaje',
-                    timestamp: new Date().toISOString(),
-                    url_origen: process.env.NEXT_PUBLIC_SITE_URL || 'hectechai.com'
-                }),
-            });
-            console.log('✅ Lead enviado a n8n');
-        } catch (n8nError) {
-            console.error('💥 Error enviando a n8n:', n8nError);
-        }
+        console.log('Intentando enviar lead a n8n...');
+        fetch(n8nWebhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                lead_source: 'web_contact_form',
+                name,
+                email,
+                phone: phone || 'No proporcionado',
+                message: message || 'Sin mensaje',
+                timestamp: new Date().toISOString(),
+                url_origen: process.env.NEXT_PUBLIC_SITE_URL || 'hectechai.com'
+            }),
+        })
+            .then(() => console.log('✅ Lead enviado a n8n correctamente'))
+            .catch(n8nError => console.error('💥 Error enviando a n8n:', n8nError));
     }
 
 
