@@ -217,18 +217,19 @@ export async function generateVisualAuditAction(url: string) {
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
         const prompt = `
-            Actúa como un Diseñador UX/UI Senior de HecTechAi. 
+            Actúa como un Diseñador UX/UI Senior y Estratega Digital de HecTechAi. 
             Analiza esta captura de pantalla de la web: ${url}
             
-            Proporciona un análisis PERSUASIVO enfocado en vender servicios de rediseño e IA:
+            1. ANÁLISIS PERSUASIVO: Proporciona 3 párrafos cortos con emojis sobre Diseño Visual, Conversión y UX.
             
-            1. DISEÑO VISUAL: ¿Se ve moderno o anticuado? ¿Los colores favorecen la conversión?
-            2. CONVERSIÓN (CTAs): ¿Hay botones claros? ¿Están bien ubicados?
-            3. EXPERIENCIA DE USUARIO: ¿Es fácil de navegar a simple vista?
-            4. RECOMENDACIÓN IA: ¿Dónde podríamos insertar un agente inteligente para mejorar la web?
+            2. MOCKUP PROMPT: Crea un prompt detallado para un generador de imágenes (DALL-E) que represente un rediseño moderno, futurista y profesional de esta web específica. Debe incluir elementos de IA, interfaces de cristal (glassmorphism), colores corporativos optimizados y una estética de alta gama.
             
-            Formato: 3 párrafos cortos con emojis impactantes.
-            Tono: CRÍTICO PERO CONSTRUCTIVO. Queremos que el cliente sienta que su web actual le está haciendo perder dinero.
+            Formato de respuesta:
+            [ANALISIS]
+            (Texto del análisis)
+            
+            [PROMPT]
+            (Texto del prompt para la imagen)
         `;
 
         const result = await model.generateContent([
@@ -241,11 +242,14 @@ export async function generateVisualAuditAction(url: string) {
             }
         ]);
 
-        const auditResponse = await result.response;
+        const fullResponse = await result.response.text();
+        const analysis = fullResponse.split('[PROMPT]')[0].replace('[ANALISIS]', '').trim();
+        const mockupPrompt = fullResponse.split('[PROMPT]')[1]?.trim() || '';
 
         return {
             success: true,
-            data: auditResponse.text(),
+            data: analysis,
+            mockupPrompt: mockupPrompt,
             screenshot: imageUrl
         };
 

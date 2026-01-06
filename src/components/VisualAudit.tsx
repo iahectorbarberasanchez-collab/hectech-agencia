@@ -7,7 +7,7 @@ import { generateVisualAuditAction } from '../app/actions';
 export function VisualAudit() {
     const [url, setUrl] = useState('');
     const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState<{ data: string; screenshot: string } | null>(null);
+    const [result, setResult] = useState<{ data: string; screenshot: string; mockupPrompt?: string } | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const handleAudit = async () => {
@@ -19,7 +19,11 @@ export function VisualAudit() {
         try {
             const response = await generateVisualAuditAction(url);
             if (response.success && response.data) {
-                setResult({ data: response.data, screenshot: response.screenshot || '' });
+                setResult({
+                    data: response.data,
+                    screenshot: response.screenshot || '',
+                    mockupPrompt: (response as any).mockupPrompt
+                });
             } else {
                 setError(response.error || "⚠️ No pudimos analizar esta web. Revisa que la URL sea correcta.");
             }
@@ -96,10 +100,19 @@ export function VisualAudit() {
                             {result.data}
                         </div>
 
-                        <div className="flex justify-end">
-                            <a href="#contacto" className="text-[#00FF94] font-bold flex items-center gap-2 group hover:gap-3 transition-all">
-                                Quiero arreglar mi diseño
-                                <ArrowRight size={18} />
+                        {result.mockupPrompt && (
+                            <div className="p-4 bg-[#00FF94]/5 border border-[#00FF94]/20 rounded-xl flex items-center gap-3">
+                                <Sparkles size={20} className="text-[#00FF94] shrink-0" />
+                                <p className="text-sm text-gray-300">
+                                    <span className="text-[#00FF94] font-bold">Espejo IA Activado:</span> Hemos diseñado un concepto visual exclusivo para tu rediseño. Solicita tu propuesta PDF para verlo.
+                                </p>
+                            </div>
+                        )}
+
+                        <div className="flex justify-end pt-4">
+                            <a href="#contacto" className="bg-[#00FF94] text-black px-6 py-3 rounded-xl font-bold flex items-center gap-2 group hover:scale-105 transition-all">
+                                Ver mi Web del Futuro
+                                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                             </a>
                         </div>
                     </div>
