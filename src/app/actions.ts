@@ -181,3 +181,76 @@ export async function generateAuditAction(business: string, painPoint: string, e
         return { success: false, error: `Error detalle: ${(error as Error).message}` };
     }
 }
+
+export async function generateVisualAuditAction(url: string) {
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+        return { success: false, error: 'Clave de API no configurada en el servidor.' };
+    }
+
+    // Validar URL básica
+    if (!url.startsWith('http')) {
+        url = 'https://' + url;
+    }
+
+    try {
+        // 1. Obtener Screenshot vía API de proximidad (usamos un servicio de preview gratuito por ahora)
+        // Nota: Para producción real se recomienda una API como ScreenshotOne
+        const screenshotUrl = `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&embed=screenshot.url`;
+
+        const response = await fetch(screenshotUrl);
+        const data = await response.json();
+        const imageUrl = data.data.screenshot.url;
+
+        if (!imageUrl) {
+            throw new Error("No se pudo capturar la imagen del sitio.");
+        }
+
+        // Descargar la imagen para enviarla a Gemini
+        const imageResponse = await fetch(imageUrl);
+        const imageBuffer = await imageResponse.arrayBuffer();
+        const base64Image = Buffer.from(imageBuffer).toString('base64');
+
+        // 2. Analizar con Gemini Vision
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+        const prompt = `
+            Actúa como un Diseñador UX/UI Senior de HecTechAi. 
+            Analiza esta captura de pantalla de la web: ${url}
+            
+            Proporciona un análisis PERSUASIVO enfocado en vender servicios de rediseño e IA:
+            
+            1. DISEÑO VISUAL: ¿Se ve moderno o anticuado? ¿Los colores favorecen la conversión?
+            2. CONVERSIÓN (CTAs): ¿Hay botones claros? ¿Están bien ubicados?
+            3. EXPERIENCIA DE USUARIO: ¿Es fácil de navegar a simple vista?
+            4. RECOMENDACIÓN IA: ¿Dónde podríamos insertar un agente inteligente para mejorar la web?
+            
+            Formato: 3 párrafos cortos con emojis impactantes.
+            Tono: CRÍTICO PERO CONSTRUCTIVO. Queremos que el cliente sienta que su web actual le está haciendo perder dinero.
+        `;
+
+        const result = await model.generateContent([
+            prompt,
+            {
+                inlineData: {
+                    data: base64Image,
+                    mimeType: "image/png"
+                }
+            }
+        ]);
+
+        const auditResponse = await result.response;
+
+        return {
+            success: true,
+            data: auditResponse.text(),
+            screenshot: imageUrl
+        };
+
+    } catch (error) {
+        console.error("Visual Audit Error:", error);
+        return { success: false, error: `No pudimos analizar visualmente tu web: ${(error as Error).message}` };
+    }
+}

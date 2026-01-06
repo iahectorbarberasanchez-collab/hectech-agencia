@@ -30,10 +30,12 @@ import {
   Minus,
   Users,
   Rocket,
-  ShieldCheck
+  ShieldCheck,
+  Camera
 } from 'lucide-react';
 import { ContactForm } from './ContactForm';
 import { generateAuditAction } from './actions';
+import { VisualAudit } from '../components/VisualAudit';
 
 // --- COMPONENTS ---
 
@@ -322,6 +324,7 @@ const VideoDemo = () => {
 
 
 const SmartAudit = () => {
+  const [activeTab, setActiveTab] = useState<'strategic' | 'visual'>('strategic');
   const [business, setBusiness] = useState('');
   const [painPoint, setPainPoint] = useState('');
   const [email, setEmail] = useState('');
@@ -353,81 +356,91 @@ const SmartAudit = () => {
 
       <div className="max-w-4xl mx-auto px-6 relative z-10">
         <div className="text-center mb-10">
-
           <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">
-            Genera tu Estrategia de <br />
-            <span className="text-gradient">Automatización en Segundos</span>
+            Nuestra IA audita tu <br />
+            <span className="text-gradient">Negocio en Tiempo Real</span>
           </h2>
           <p className="text-gray-400">
-            Cuéntanos sobre tu negocio y nuestra IA diseñará un plan de acción gratuito para ti.
+            Selecciona el tipo de análisis que necesitas para tu negocio.
           </p>
         </div>
 
-        <div className="glass-card p-8 md:p-10 rounded-3xl border border-white/10 shadow-2xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">¿Qué tipo de negocio tienes?</label>
-              <input
-                type="text"
-                placeholder="Ej. Clínica Dental, Inmobiliaria..."
-                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-colors"
-                value={business}
-                onChange={(e) => setBusiness(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">¿Cuál es tu mayor dolor de cabeza?</label>
-              <input
-                type="text"
-                placeholder="Ej. No respondo WhatsApps a tiempo..."
-                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-colors"
-                value={painPoint}
-                onChange={(e) => setPainPoint(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium text-gray-300">Tu mejor email (para enviarte el plan completo)</label>
-              <input
-                type="email"
-                placeholder="tu@email.com"
-                required
-                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-colors"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-          </div>
-
+        <div className="flex justify-center gap-4 mb-8">
           <button
-            onClick={generateAudit}
-            disabled={loading}
-            className="w-full bg-[#00FF94] text-black font-bold text-lg py-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all glow-effect flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => setActiveTab('strategic')}
+            className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'strategic' ? 'bg-[#00FF94] text-black shadow-[0_0_20px_rgba(0,255,148,0.3)]' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
           >
-            {loading ? (
-              <>
-                <Loader2 size={24} className="animate-spin" />
-                Analizando con IA...
-              </>
-            ) : (
-              <>
-                <Sparkles size={24} />
-                Generar Estrategia con IA
-              </>
-            )}
+            <Sparkles size={18} />
+            Plan Estratégico
           </button>
+          <button
+            onClick={() => setActiveTab('visual')}
+            className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'visual' ? 'bg-[#00FF94] text-black shadow-[0_0_20px_rgba(0,255,148,0.3)]' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
+          >
+            <Camera size={18} />
+            Análisis Visual
+          </button>
+        </div>
 
-          {result && (
-            <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <div className="bg-white/5 border border-[#00FF94]/30 rounded-2xl p-6 md:p-8 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#00FF94] to-[#00C2FF]"></div>
-                <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-[#00FF94]">
-                  <Bot size={24} />
-                  Tu Plan Personalizado:
-                </h3>
-                <div className="prose prose-invert max-w-none text-gray-300 whitespace-pre-wrap leading-relaxed">
-                  {result}
+        <div className="glass-card p-8 md:p-10 rounded-3xl border border-white/10 shadow-2xl min-h-[400px]">
+          {activeTab === 'strategic' ? (
+            <div className="animate-in fade-in duration-500">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300">¿Qué tipo de negocio tienes?</label>
+                  <input
+                    type="text"
+                    placeholder="Ej. Clínica Dental, Inmobiliaria..."
+                    className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-colors"
+                    value={business}
+                    onChange={(e) => setBusiness(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300">¿Cuál es tu mayor dolor de cabeza?</label>
+                  <input
+                    type="text"
+                    placeholder="Ej. No respondo WhatsApps a tiempo..."
+                    className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-colors"
+                    value={painPoint}
+                    onChange={(e) => setPainPoint(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-gray-300">Tu mejor email (para enviarte el plan completo)</label>
+                  <input
+                    type="email"
+                    placeholder="tu@email.com"
+                    required
+                    className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-colors"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
               </div>
+
+              <button
+                onClick={generateAudit}
+                disabled={loading || !business || !painPoint || !email}
+                className="w-full bg-[#00FF94] text-black font-bold py-4 rounded-xl text-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed glow-effect mb-8 flex items-center justify-center gap-2"
+              >
+                {loading ? <><Loader2 className="animate-spin" size={20} /> Generando Plan...</> : <><Sparkles size={20} /> Generar mi Plan IA Gratis</>}
+              </button>
+
+              {result && (
+                <div className="p-6 bg-white/5 border border-[#00FF94]/20 rounded-2xl animate-in slide-in-from-bottom-4 duration-500">
+                  <h4 className="text-[#00FF94] font-bold mb-3 flex items-center gap-2 uppercase tracking-wider text-sm">
+                    <Sparkles size={16} /> Tu Estrategia Personalizada
+                  </h4>
+                  <p className="text-gray-300 leading-relaxed italic whitespace-pre-line">
+                    {result}
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="animate-in fade-in duration-500">
+              <VisualAudit />
             </div>
           )}
         </div>
