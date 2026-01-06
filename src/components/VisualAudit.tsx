@@ -17,12 +17,12 @@ export function VisualAudit() {
         setResult(null);
 
         try {
-            const response = await generateVisualAuditAction(url);
+            const response = await generateVisualAuditAction(url) as any;
             if (response.success && response.data) {
                 setResult({
                     data: response.data,
                     screenshot: response.screenshot || '',
-                    mockupPrompt: (response as any).mockupPrompt
+                    mockupPrompt: response.mockupPrompt
                 });
             } else {
                 setError(response.error || "⚠️ No pudimos analizar esta web. Revisa que la URL sea correcta.");
