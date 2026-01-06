@@ -1003,6 +1003,7 @@ const Footer = () => {
             <a href="#sobre-nosotros" className="hover:text-white transition-colors">Sobre nosotros</a>
             <a href="/privacidad" className="hover:text-white transition-colors">Privacidad</a>
             <a href="/legal" className="hover:text-white transition-colors">Aviso Legal</a>
+            <a href="/dashboard" className="text-[#00FF94] font-bold hover:brightness-125 transition-all">Acceso Clientes</a>
           </div>
 
           <div className="flex gap-4 text-white">

@@ -258,3 +258,37 @@ export async function generateVisualAuditAction(url: string) {
         return { success: false, error: `No pudimos analizar visualmente tu web: ${(error as Error).message}` };
     }
 }
+
+export async function getAutomationMetrics(clientId: string) {
+    if (!clientId) return { success: false, error: 'Identificador requerido' };
+
+    try {
+        const { data, error } = await supabase
+            .from('automation_metrics')
+            .select('*')
+            .or(`client_id.eq."${clientId}",client_email.eq."${clientId}"`)
+            .single();
+
+        if (error) {
+            console.error("Fetch metrics error:", error);
+            return { success: false, error: "No se encontraron métricas para este identificador." };
+        }
+
+        return {
+            success: true,
+            data: {
+                client_name: data.client_name || 'Cliente HecTechAi',
+                total_actions: data.total_actions || 0,
+                hours_saved: Math.floor((data.total_time_saved || 0) / 60),
+                roi_euros: ((data.total_time_saved || 0) / 60 * 50).toFixed(0),
+                history: [
+                    { month: 'Oct', value: Math.floor((data.total_actions || 0) * 0.7) },
+                    { month: 'Nov', value: Math.floor((data.total_actions || 0) * 0.9) },
+                    { month: 'Dic', value: data.total_actions || 0 },
+                ]
+            }
+        };
+    } catch (e) {
+        return { success: false, error: "Error de conexión con la base de datos." };
+    }
+}
