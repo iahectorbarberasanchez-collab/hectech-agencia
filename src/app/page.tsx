@@ -110,9 +110,15 @@ const Navbar = () => {
               {link.name}
             </a>
           ))}
-          <a href="/login" className="text-gray-400 hover:text-white text-sm font-medium transition-colors border-r border-white/10 pr-6 mr-2">
+          <motion.a
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            href="/login"
+            className="flex items-center gap-2 text-gray-400 hover:text-white text-sm font-medium transition-colors border border-white/10 px-4 py-2 rounded-lg bg-white/5 hover:border-[#00FF94]/30"
+          >
+            <Users size={16} />
             Acceso Clientes
-          </a>
+          </motion.a>
           <a href="#contacto" className="bg-[#00FF94] text-black px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-[#00cc76] transition-all glow-effect">
             Agendar Consultoría
           </a>
@@ -135,7 +141,12 @@ const Navbar = () => {
               {link.name}
             </a>
           ))}
-          <a href="/login" onClick={() => setIsOpen(false)} className="text-[#00FF94] font-bold text-lg py-2 border-b border-white/5">
+          <a
+            href="/login"
+            onClick={() => setIsOpen(false)}
+            className="flex items-center justify-center gap-2 text-[#00FF94] font-bold text-lg py-4 border border-[#00FF94]/20 rounded-xl bg-[#00FF94]/5"
+          >
+            <Users size={20} />
             Acceso Clientes
           </a>
           <a href="#contacto" onClick={() => setIsOpen(false)} className="bg-[#00FF94] text-center text-black w-full py-4 rounded-xl font-bold mt-2 shadow-[0_0_20px_rgba(0,255,148,0.2)]">
