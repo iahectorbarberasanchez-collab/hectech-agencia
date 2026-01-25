@@ -230,11 +230,19 @@ export async function generateVisualAuditAction(url: string) {
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
         const prompt = `
-            Actúa como un Diseñador UX/UI Senior de HecTechAi. 
+            Actúa como el Director de Conversión (CRO) de HecTechAi. Tu obsesión no es que la web sea bonita, sino que VENDA.
             Analiza esta web (o su estructura base): ${url}
             
-            1. ANÁLISIS: Proporciona 3 párrafos cortos sobre cómo la automatización e IA mejoraría el diseño y la conversión.
-            2. MOCKUP: Crea un prompt para un rediseño futurista y profesional.
+            1. ANÁLISIS DE FRICCIÓN (Bullet points):
+               - Identifica 3 puntos exactos donde el cliente está perdiendo dinero/leads (ej: formularios lentos, falta de llamada a la acción clara).
+               - Sé directo y enfocado al negocio.
+            
+            2. SOLUCIÓN HECTECH (La Venta):
+               - Por cada punto, explica cómo nuestra automatización (Chatbots, Agendas) lo resuelve.
+               - Enfoque: "Recuperar Tiempo" y "Captura Inmediata".
+            
+            3. PROMPT DE MOCKUP:
+               - Genera un prompt para un rediseño: "Clean, High-Trust, Minimalist, High-Conversion". No uses "Futuristic".
             
             Formato: 
             [ANALISIS]

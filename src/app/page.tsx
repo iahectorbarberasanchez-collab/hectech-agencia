@@ -33,9 +33,39 @@ import {
   ShieldCheck,
   Camera
 } from 'lucide-react';
+import { motion, useInView, useAnimation } from 'framer-motion';
 import { ContactForm } from './ContactForm';
 import { generateAuditAction } from './actions';
 import { VisualAudit } from '../components/VisualAudit';
+
+// --- ANIMATION HELPER ---
+const Reveal = ({ children, width = "fit-content" }: { children: React.ReactNode, width?: "fit-content" | "100%" }) => {
+  const ref = React.useRef(null);
+  const isInView = useInView(ref, { once: true });
+  const mainControls = useAnimation();
+
+  useEffect(() => {
+    if (isInView) {
+      mainControls.start("visible");
+    }
+  }, [isInView, mainControls]);
+
+  return (
+    <div ref={ref} style={{ position: "relative", width, overflow: "visible" }}>
+      <motion.div
+        variants={{
+          hidden: { opacity: 0, y: 75 },
+          visible: { opacity: 1, y: 0 },
+        }}
+        initial="hidden"
+        animate={mainControls}
+        transition={{ duration: 0.5, delay: 0.25 }}
+      >
+        {children}
+      </motion.div>
+    </div>
+  );
+};
 
 // --- COMPONENTS ---
 
@@ -110,17 +140,43 @@ const Hero = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-24 pb-12 overflow-hidden">
       <div className="absolute inset-0 circuit-bg z-0 pointer-events-none opacity-40"></div>
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#00FF94] rounded-full blur-[150px] opacity-10 pointer-events-none"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00C2FF] rounded-full blur-[150px] opacity-10 pointer-events-none"></div>
+
+      {/* Luces de ambiente */}
+      <motion.div
+        animate={{
+          scale: [1, 1.2, 1],
+          opacity: [0.1, 0.15, 0.1]
+        }}
+        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+        className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#00FF94] rounded-full blur-[150px] pointer-events-none"
+      ></motion.div>
+      <motion.div
+        animate={{
+          scale: [1.2, 1, 1.2],
+          opacity: [0.1, 0.15, 0.1]
+        }}
+        transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+        className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00C2FF] rounded-full blur-[150px] pointer-events-none"
+      ></motion.div>
 
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
-        <div className="text-left space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#00FF94]/30 bg-[#00FF94]/5 text-[#00FF94] text-xs font-bold tracking-wide uppercase">
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="text-left space-y-6"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#00FF94]/30 bg-[#00FF94]/5 text-[#00FF94] text-xs font-bold tracking-wide uppercase"
+          >
             <span className="w-2 h-2 rounded-full bg-[#00FF94] animate-pulse"></span>
             El futuro de tu negocio
-          </div>
+          </motion.div>
 
-          <h1 className="text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tight text-white">
+          <h1 className="text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tight text-white font-display">
             Tu negocio, funcionando en <br className="hidden lg:block" />
             <span className="text-gradient">piloto automático</span>.
           </h1>
@@ -130,76 +186,128 @@ const Hero = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <a href="#contacto" className="bg-[#00FF94] text-black px-8 py-4 rounded-lg font-bold text-lg hover:scale-105 transition-transform duration-200 glow-effect flex items-center justify-center gap-2">
+            <motion.a
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              href="#contacto"
+              className="bg-[#00FF94] text-black px-8 py-4 rounded-xl font-bold text-lg transition-all glow-effect flex items-center justify-center gap-2"
+            >
               Agendar Consultoría Gratis
               <ArrowRight size={20} />
-            </a>
-            <a href="#demos" className="px-8 py-4 rounded-lg font-bold text-white border border-white/20 hover:border-white hover:bg-white/5 transition-all flex items-center justify-center gap-2 group">
+            </motion.a>
+            <motion.a
+              whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
+              href="#demos"
+              className="px-8 py-4 rounded-xl font-bold text-white border border-white/20 transition-all flex items-center justify-center gap-2 group"
+            >
               <Play size={18} className="group-hover:text-[#00FF94] transition-colors" />
               Ver Demos en vivo
-            </a>
+            </motion.a>
           </div>
 
           {/* Métricas de Impacto */}
           <div className="grid grid-cols-3 gap-4 pt-6">
-            <div className="glass-card p-4 rounded-xl text-center animate-scale-in hover:animate-pulse-glow transition-all" style={{ animationDelay: '0.1s' }}>
-              <div className="text-3xl font-bold text-[#00FF94] mb-1">+15h</div>
-              <div className="text-xs text-gray-400">Ahorradas/semana</div>
-            </div>
-            <div className="glass-card p-4 rounded-xl text-center animate-scale-in hover:animate-pulse-glow transition-all" style={{ animationDelay: '0.2s' }}>
-              <div className="text-3xl font-bold text-[#00C2FF] mb-1">40%</div>
-              <div className="text-xs text-gray-400">Más conversiones</div>
-            </div>
-            <div className="glass-card p-4 rounded-xl text-center animate-scale-in hover:animate-pulse-glow transition-all" style={{ animationDelay: '0.3s' }}>
-              <div className="text-3xl font-bold text-purple-400 mb-1">24/7</div>
-              <div className="text-xs text-gray-400">Disponibilidad</div>
-            </div>
+            {[
+              { val: "+15h", label: "Ahorradas/sem", color: "#00FF94" },
+              { val: "40%", label: "Más ventas", color: "#00C2FF" },
+              { val: "24/7", label: "Disponibilidad", color: "#8B5CF6" }
+            ].map((metric, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 + (i * 0.1) }}
+                className="glass-card p-4 rounded-xl text-center hover:border-primary/50 transition-colors"
+              >
+                <div className="text-2xl font-bold mb-1" style={{ color: metric.color }}>{metric.val}</div>
+                <div className="text-[10px] text-gray-500 uppercase tracking-wider">{metric.label}</div>
+              </motion.div>
+            ))}
           </div>
-        </div>
+        </motion.div>
 
-        <div className="relative h-[400px] lg:h-[600px] flex items-center justify-center animate-float">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8, rotateY: 20 }}
+          animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+          className="relative h-[400px] lg:h-[600px] flex items-center justify-center"
+        >
           <div className="relative w-full h-full max-w-md">
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-black border border-[#00FF94] rounded-2xl z-20 flex items-center justify-center shadow-[0_0_50px_-10px_rgba(0,255,148,0.4)]">
-              <Bot size={48} className="text-[#00FF94]" />
-            </div>
+            {/* Elemento Central: Cerebro/Bot */}
+            <motion.div
+              animate={{ y: [0, -20, 0] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-black border border-[#00FF94]/50 rounded-3xl z-20 flex items-center justify-center shadow-[0_0_80px_-10px_rgba(0,255,148,0.4)] premium-border"
+            >
+              <Bot size={64} className="text-[#00FF94] glow-text" />
+            </motion.div>
 
-            <div className="absolute top-10 left-0 p-4 glass-card rounded-xl z-10 animate-bounce" style={{ animationDuration: '3s' }}>
+            {/* Floating Cards con Motion */}
+            <motion.div
+              animate={{ y: [-10, 10, -10], x: [0, 5, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute top-10 left-0 p-4 glass-card rounded-xl z-30 border-l-2 border-l-[#00FF94]"
+            >
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-500/20 rounded-lg text-[#00FF94]"><MessageSquare size={16} /></div>
+                <div className="p-2 bg-[#00FF94]/20 rounded-lg text-[#00FF94]"><MessageSquare size={16} /></div>
                 <div>
-                  <div className="text-xs text-gray-400">Ventas 24/7</div>
-                  <div className="text-sm font-bold text-white">Respuesta Automática</div>
+                  <div className="text-[10px] text-gray-500">IA AGENT</div>
+                  <div className="text-sm font-bold text-white leading-tight text-nowrap">Ventas 24/7 activas</div>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="absolute bottom-20 right-0 p-4 glass-card rounded-xl z-10 animate-bounce" style={{ animationDuration: '4s' }}>
+            <motion.div
+              animate={{ y: [10, -10, 10], x: [0, -5, 0] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute bottom-20 right-0 p-4 glass-card rounded-xl z-30 border-l-2 border-l-blue-400"
+            >
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400"><Calendar size={16} /></div>
                 <div>
-                  <div className="text-xs text-gray-400">Agendamiento</div>
-                  <div className="text-sm font-bold text-white">Cita Confirmada</div>
+                  <div className="text-[10px] text-gray-500">SCHEDULER</div>
+                  <div className="text-sm font-bold text-white leading-tight text-nowrap">Cita agendada ✅</div>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="absolute bottom-10 left-10 p-4 glass-card rounded-xl z-10 animate-bounce" style={{ animationDuration: '5s' }}>
+            <motion.div
+              animate={{ y: [-5, 5, -5] }}
+              transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute bottom-10 left-10 p-4 glass-card rounded-xl z-30 border-l-2 border-l-purple-400"
+            >
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-purple-500/20 rounded-lg text-purple-400"><Database size={16} /></div>
                 <div>
-                  <div className="text-xs text-gray-400">CRM</div>
-                  <div className="text-sm font-bold text-white">Datos Sincronizados</div>
+                  <div className="text-[10px] text-gray-500">DATABASE</div>
+                  <div className="text-sm font-bold text-white leading-tight text-nowrap">Sincronización total</div>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <svg className="absolute inset-0 w-full h-full z-0 pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-              <path d="M50 50 L20 20" stroke="rgba(255, 255, 255, 0.1)" strokeWidth="0.5" strokeDasharray="2,2" />
-              <path d="M50 50 L80 80" stroke="rgba(255, 255, 255, 0.1)" strokeWidth="0.5" strokeDasharray="2,2" />
-              <path d="M50 50 L30 80" stroke="rgba(255, 255, 255, 0.1)" strokeWidth="0.5" strokeDasharray="2,2" />
+            {/* Líneas de conexión animadas */}
+            <svg className="absolute inset-0 w-full h-full z-0 pointer-events-none" viewBox="0 0 100 100">
+              <motion.path
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 0.2 }}
+                transition={{ duration: 2, delay: 1 }}
+                d="M50 50 L20 20" stroke="#00FF94" strokeWidth="0.5" strokeDasharray="2,2"
+              />
+              <motion.path
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 0.2 }}
+                transition={{ duration: 2, delay: 1.2 }}
+                d="M50 50 L80 80" stroke="#00C2FF" strokeWidth="0.5" strokeDasharray="2,2"
+              />
+              <motion.path
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 0.2 }}
+                transition={{ duration: 2, delay: 1.4 }}
+                d="M50 50 L30 80" stroke="#8B5CF6" strokeWidth="0.5" strokeDasharray="2,2"
+              />
             </svg>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -240,22 +348,26 @@ const Benefits = () => {
   ];
 
   return (
-    <section id="beneficios" className="py-24 bg-[#0A0A0A] relative">
+    <section id="beneficios" className="py-24 bg-[#0A0A0A] relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">¿Por qué tu negocio necesita <span className="text-gradient">IA hoy</span>?</h2>
-          <p className="text-gray-400 max-w-2xl mx-auto">La tecnología ya no es solo para grandes empresas. Nivelamos el campo de juego para ti.</p>
-        </div>
+        <Reveal width="100%">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">¿Por qué tu negocio necesita <span className="text-gradient">IA hoy</span>?</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">La tecnología ya no es solo para grandes empresas. Nivelamos el campo de juego para ti.</p>
+          </div>
+        </Reveal>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {benefits.map((item, index) => (
-            <div key={index} className="glass-card p-8 rounded-2xl group hover:-translate-y-2 transition-transform duration-300">
-              <div className="w-16 h-16 bg-white/5 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                {item.icon}
+            <Reveal key={index} width="100%">
+              <div className="glass-card p-8 rounded-2xl group hover:-translate-y-2 transition-transform duration-300 h-full">
+                <div className="w-16 h-16 bg-white/5 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  {item.icon}
+                </div>
+                <h3 className="text-2xl font-bold mb-3 text-white">{item.title}</h3>
+                <p className="text-gray-400 leading-relaxed">{item.desc}</p>
               </div>
-              <h3 className="text-2xl font-bold mb-3 text-white">{item.title}</h3>
-              <p className="text-gray-400 leading-relaxed">{item.desc}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -271,31 +383,38 @@ const VideoDemo = () => {
       <div className="absolute inset-0 circuit-bg opacity-10 pointer-events-none"></div>
 
       <div className="max-w-6xl mx-auto px-6 relative z-10">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">
-            Mira cómo <span className="text-gradient">transformamos negocios</span>
-          </h2>
-          <p className="text-gray-400 max-w-2xl mx-auto">
-            Un vistazo rápido a cómo la IA puede automatizar tu negocio en minutos, no meses.
-          </p>
-        </div>
+        <Reveal width="100%">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">
+              Mira cómo <span className="text-gradient">transformamos negocios</span>
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              Un vistazo rápido a cómo la IA puede automatizar tu negocio en minutos, no meses.
+            </p>
+          </div>
+        </Reveal>
 
-        <div className="relative group cursor-pointer" onClick={() => setShowVideo(true)}>
-          <div className="aspect-video rounded-3xl overflow-hidden border border-white/10 relative">
-            <div className="absolute inset-0 bg-gradient-to-tr from-[#00FF94]/20 to-[#00C2FF]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-24 h-24 rounded-full bg-[#00FF94] flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-[0_0_50px_rgba(0,255,148,0.5)]">
-                <Play size={40} className="text-black ml-1" fill="black" />
+        <Reveal width="100%">
+          <div className="relative group cursor-pointer" onClick={() => setShowVideo(true)}>
+            <div className="aspect-video rounded-3xl overflow-hidden border border-white/10 relative">
+              <div className="absolute inset-0 bg-gradient-to-tr from-[#00FF94]/20 to-[#00C2FF]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <motion.div
+                  whileHover={{ scale: 1.1 }}
+                  className="w-24 h-24 rounded-full bg-[#00FF94] flex items-center justify-center shadow-[0_0_50px_rgba(0,255,148,0.5)]"
+                >
+                  <Play size={40} className="text-black ml-1" fill="black" />
+                </motion.div>
               </div>
-            </div>
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-white text-2xl font-bold mb-2">Ver Demo en Acción</div>
-                <div className="text-gray-300 text-sm">2 minutos que cambiarán tu negocio</div>
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center transition-opacity group-hover:opacity-0">
+                <div className="text-center">
+                  <div className="text-white text-2xl font-bold mb-2">Ver Demo en Acción</div>
+                  <div className="text-gray-300 text-sm">2 minutos que cambiarán tu negocio</div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </Reveal>
 
         {showVideo && (
           <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-6" onClick={() => setShowVideo(false)}>
@@ -355,95 +474,101 @@ const SmartAudit = () => {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#00FF94] rounded-full blur-[120px] opacity-5 pointer-events-none"></div>
 
       <div className="max-w-4xl mx-auto px-6 relative z-10">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">
-            Nuestra IA audita tu <br />
-            <span className="text-gradient">Negocio en Tiempo Real</span>
-          </h2>
-          <p className="text-gray-400">
-            Selecciona el tipo de análisis que necesitas para tu negocio.
-          </p>
-        </div>
+        <Reveal width="100%">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white font-display">
+              Nuestra IA audita tu <br />
+              <span className="text-gradient hover:glow-text transition-all duration-500">Negocio en Tiempo Real</span>
+            </h2>
+            <p className="text-gray-400">
+              Selecciona el tipo de análisis que necesitas para tu negocio.
+            </p>
+          </div>
+        </Reveal>
 
-        <div className="flex justify-center gap-4 mb-8">
-          <button
-            onClick={() => setActiveTab('strategic')}
-            className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'strategic' ? 'bg-[#00FF94] text-black shadow-[0_0_20px_rgba(0,255,148,0.3)]' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
-          >
-            <Sparkles size={18} />
-            Plan Estratégico
-          </button>
-          <button
-            onClick={() => setActiveTab('visual')}
-            className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'visual' ? 'bg-[#00FF94] text-black shadow-[0_0_20px_rgba(0,255,148,0.3)]' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
-          >
-            <Camera size={18} />
-            Análisis Visual
-          </button>
-        </div>
+        <Reveal width="100%">
+          <div className="flex justify-center gap-4 mb-8">
+            <button
+              onClick={() => setActiveTab('strategic')}
+              className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'strategic' ? 'bg-[#00FF94] text-black shadow-[0_0_20px_rgba(0,255,148,0.3)]' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
+            >
+              <Sparkles size={18} />
+              Plan Estratégico
+            </button>
+            <button
+              onClick={() => setActiveTab('visual')}
+              className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'visual' ? 'bg-[#00FF94] text-black shadow-[0_0_20px_rgba(0,255,148,0.3)]' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
+            >
+              <Camera size={18} />
+              Análisis Visual
+            </button>
+          </div>
+        </Reveal>
 
-        <div className="glass-card p-8 md:p-10 rounded-3xl border border-white/10 shadow-2xl min-h-[400px]">
-          {activeTab === 'strategic' ? (
-            <div className="animate-in fade-in duration-500">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">¿Qué tipo de negocio tienes?</label>
-                  <input
-                    type="text"
-                    placeholder="Ej. Clínica Dental, Inmobiliaria..."
-                    className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-colors"
-                    value={business}
-                    onChange={(e) => setBusiness(e.target.value)}
-                  />
+        <Reveal width="100%">
+          <div className="glass-card p-8 md:p-10 rounded-3xl border border-white/10 shadow-2xl min-h-[400px] premium-border">
+            {activeTab === 'strategic' ? (
+              <div className="animate-in fade-in duration-500">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">¿Qué tipo de negocio tienes?</label>
+                    <input
+                      type="text"
+                      placeholder="Ej. Clínica Dental, Inmobiliaria..."
+                      className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-colors"
+                      value={business}
+                      onChange={(e) => setBusiness(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">¿Cuál es tu mayor dolor de cabeza?</label>
+                    <input
+                      type="text"
+                      placeholder="Ej. No respondo WhatsApps a tiempo..."
+                      className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-colors"
+                      value={painPoint}
+                      onChange={(e) => setPainPoint(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-sm font-medium text-gray-300">Tu mejor email (para enviarte el plan completo)</label>
+                    <input
+                      type="email"
+                      placeholder="tu@email.com"
+                      required
+                      className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-colors"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">¿Cuál es tu mayor dolor de cabeza?</label>
-                  <input
-                    type="text"
-                    placeholder="Ej. No respondo WhatsApps a tiempo..."
-                    className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-colors"
-                    value={painPoint}
-                    onChange={(e) => setPainPoint(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium text-gray-300">Tu mejor email (para enviarte el plan completo)</label>
-                  <input
-                    type="email"
-                    placeholder="tu@email.com"
-                    required
-                    className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-colors"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
+
+                <button
+                  onClick={generateAudit}
+                  disabled={loading || !business || !painPoint || !email}
+                  className="w-full bg-[#00FF94] text-black font-bold py-4 rounded-xl text-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed glow-effect mb-8 flex items-center justify-center gap-2"
+                >
+                  {loading ? <><Loader2 className="animate-spin" size={20} /> Generando Plan...</> : <><Sparkles size={20} /> Generar mi Plan IA Gratis</>}
+                </button>
+
+                {result && (
+                  <div className="p-6 bg-white/5 border border-[#00FF94]/20 rounded-2xl animate-in slide-in-from-bottom-4 duration-500">
+                    <h4 className="text-[#00FF94] font-bold mb-3 flex items-center gap-2 uppercase tracking-wider text-sm">
+                      <Sparkles size={16} /> Tu Estrategia Personalizada
+                    </h4>
+                    <p className="text-gray-300 leading-relaxed italic whitespace-pre-line">
+                      {result}
+                    </p>
+                  </div>
+                )}
               </div>
-
-              <button
-                onClick={generateAudit}
-                disabled={loading || !business || !painPoint || !email}
-                className="w-full bg-[#00FF94] text-black font-bold py-4 rounded-xl text-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed glow-effect mb-8 flex items-center justify-center gap-2"
-              >
-                {loading ? <><Loader2 className="animate-spin" size={20} /> Generando Plan...</> : <><Sparkles size={20} /> Generar mi Plan IA Gratis</>}
-              </button>
-
-              {result && (
-                <div className="p-6 bg-white/5 border border-[#00FF94]/20 rounded-2xl animate-in slide-in-from-bottom-4 duration-500">
-                  <h4 className="text-[#00FF94] font-bold mb-3 flex items-center gap-2 uppercase tracking-wider text-sm">
-                    <Sparkles size={16} /> Tu Estrategia Personalizada
-                  </h4>
-                  <p className="text-gray-300 leading-relaxed italic whitespace-pre-line">
-                    {result}
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="animate-in fade-in duration-500">
-              <VisualAudit />
-            </div>
-          )}
-        </div>
+            ) : (
+              <div className="animate-in fade-in duration-500">
+                <VisualAudit />
+              </div>
+            )}
+          </div>
+        </Reveal>
       </div>
     </section>
   );
@@ -508,76 +633,82 @@ const DemoShowcase = () => {
         <div className="flex flex-col lg:flex-row gap-16 items-center">
 
           <div className="flex-1 w-full">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              Mira lo que la IA puede <br />
-              <span className="text-gradient">hacer por tu sector</span>
-            </h2>
-            <p className="text-gray-400 mb-8 text-lg">
-              Selecciona tu industria y observa cómo un agente de IA maneja una conversación real.
-            </p>
+            <Reveal width="100%">
+              <h2 className="text-3xl md:text-4xl font-bold mb-6 font-display">
+                Mira lo que la IA puede <br />
+                <span className="text-gradient hover:glow-text transition-all duration-500">hacer por tu sector</span>
+              </h2>
+              <p className="text-gray-400 mb-8 text-lg">
+                Selecciona tu industria y observa cómo un agente de IA maneja una conversación real.
+              </p>
+            </Reveal>
 
-            <div className="flex flex-wrap gap-3">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`px-5 py-3 rounded-full text-sm font-medium transition-all ${activeTab === tab.id
-                    ? 'bg-[#00FF94] text-black shadow-[0_0_20px_rgba(0,255,148,0.4)]'
-                    : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/5'
-                    }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+            <Reveal width="100%">
+              <div className="flex flex-wrap gap-3">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`px-5 py-3 rounded-full text-sm font-medium transition-all ${activeTab === tab.id
+                      ? 'bg-[#00FF94] text-black shadow-[0_0_20px_rgba(0,255,148,0.4)]'
+                      : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/5'
+                      }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </Reveal>
           </div>
 
           <div className="flex-1 w-full">
-            <div className="glass-card rounded-2xl border border-white/10 overflow-hidden shadow-2xl relative">
-              <div className="bg-[#111] p-4 flex items-center justify-between border-b border-white/5">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#00FF94] to-blue-500 p-0.5">
-                    <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
-                      <Bot size={20} className="text-[#00FF94]" />
+            <Reveal width="100%">
+              <div className="glass-card rounded-2xl border border-white/10 overflow-hidden shadow-2xl relative premium-border">
+                <div className="bg-[#111] p-4 flex items-center justify-between border-b border-white/5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#00FF94] to-blue-500 p-0.5">
+                      <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
+                        <Bot size={20} className="text-[#00FF94]" />
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="font-bold text-sm text-white font-display">Asistente HecTechAi</div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-xs text-green-500">En línea</span>
+                    <div>
+                      <div className="font-bold text-sm text-white font-display">Asistente HecTechAi</div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-xs text-green-500">En línea</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="bg-black/40 h-[400px] p-6 overflow-y-auto custom-scrollbar flex flex-col gap-4">
-                {chatData[activeTab].map((msg, idx) => (
-                  <div key={idx} className={`flex ${msg.from === 'user' ? 'justify-end' : 'justify-start'} animate-float`} style={{ animationDuration: '0.5s', animationFillMode: 'both', animationDelay: `${idx * 0.5}s`, animationName: 'slideIn' }}>
-                    <div className={`max-w-[80%] p-4 rounded-2xl text-sm leading-relaxed ${msg.from === 'user'
-                      ? 'bg-[#00C2FF]/20 text-white rounded-tr-sm border border-[#00C2FF]/20'
-                      : 'bg-[#222] text-gray-200 rounded-tl-sm border border-white/5'
-                      }`}>
-                      {msg.text}
+                <div className="bg-black/40 h-[400px] p-6 overflow-y-auto custom-scrollbar flex flex-col gap-4">
+                  {chatData[activeTab].map((msg, idx) => (
+                    <div key={idx} className={`flex ${msg.from === 'user' ? 'justify-end' : 'justify-start'} animate-float`} style={{ animationDuration: '0.5s', animationFillMode: 'both', animationDelay: `${idx * 0.5}s`, animationName: 'slideIn' }}>
+                      <div className={`max-w-[80%] p-4 rounded-2xl text-sm leading-relaxed ${msg.from === 'user'
+                        ? 'bg-[#00C2FF]/20 text-white rounded-tr-sm border border-[#00C2FF]/20'
+                        : 'bg-[#222] text-gray-200 rounded-tl-sm border border-white/5'
+                        }`}>
+                        {msg.text}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              <div className="p-4 bg-[#111] border-t border-white/5 flex gap-3">
-                <div className="flex-1 bg-white/5 rounded-full h-10 px-4 flex items-center text-gray-500 text-sm">
-                  Escribe un mensaje...
-                </div>
-                <div className="w-10 h-10 bg-[#00FF94] rounded-full flex items-center justify-center text-black">
-                  <ArrowRight size={18} />
+                <div className="p-4 bg-[#111] border-t border-white/5 flex gap-3">
+                  <div className="flex-1 bg-white/5 rounded-full h-10 px-4 flex items-center text-gray-500 text-sm">
+                    Escribe un mensaje...
+                  </div>
+                  <div className="w-10 h-10 bg-[#00FF94] rounded-full flex items-center justify-center text-black">
+                    <ArrowRight size={18} />
+                  </div>
                 </div>
               </div>
-            </div>
+            </Reveal>
           </div>
 
         </div>
       </div>
-    </section >
+    </section>
   );
 };
 
@@ -585,10 +716,12 @@ const Services = () => {
   return (
     <section id="servicios" className="py-24 bg-[#050505]">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">Nuestros Servicios</h2>
-          <p className="text-gray-400">Soluciones técnicas simplificadas para dueños de negocios.</p>
-        </div>
+        <Reveal width="100%">
+          <div className="mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white font-display text-nowrap">Nuestros Servicios</h2>
+            <p className="text-gray-400">Soluciones técnicas simplificadas para dueños de negocios.</p>
+          </div>
+        </Reveal>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px]">
 
@@ -670,28 +803,34 @@ const Services = () => {
             </div>
           </div>
 
-          <div className="md:col-span-3 glass-card rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-8 group">
-            <div className="flex-1">
-              <div className="w-12 h-12 bg-[#FFE600] rounded-lg flex items-center justify-center mb-6 text-black group-hover:rotate-12 transition-transform">
-                <Search size={24} />
+          <Reveal width="100%">
+            <div className="md:col-span-3 glass-card rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-8 group">
+              <div className="flex-1">
+                <div className="w-12 h-12 bg-[#FFE600] rounded-lg flex items-center justify-center mb-6 text-black group-hover:rotate-12 transition-transform">
+                  <Search size={24} />
+                </div>
+                <h3 className="text-3xl font-bold mb-2 text-white font-display text-nowrap">Auditoría de Procesos IA</h3>
+                <p className="text-gray-400 max-w-2xl mb-4">
+                  Analizamos tu operativa actual para identificar cuellos de botella y detectar dónde la IA tendrá el mayor impacto financiero inmediato.
+                </p>
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4 inline-block">
+                  <p className="text-xs text-[#FFE600] font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
+                  <p className="text-sm text-gray-300">Mapeo de flujos de trabajo actuales y proyección de ahorro en costes operativos tras la implementación de agentes IA.</p>
+                </div>
               </div>
-              <h3 className="text-3xl font-bold mb-2 text-white">Auditoría de Procesos IA</h3>
-              <p className="text-gray-400 max-w-2xl mb-4">
-                Analizamos tu operativa actual para identificar cuellos de botella y detectar dónde la IA tendrá el mayor impacto financiero inmediato.
-              </p>
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 inline-block">
-                <p className="text-xs text-[#FFE600] font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
-                <p className="text-sm text-gray-300">Mapeo de flujos de trabajo actuales y proyección de ahorro en costes operativos tras la implementación de agentes IA.</p>
+              <div className="shrink-0">
+                <motion.a
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  href="#contacto"
+                  className="inline-flex items-center gap-2 bg-[#00FF94] text-black px-8 py-4 rounded-full font-bold hover:scale-105 transition-all text-nowrap"
+                >
+                  Optimizar mi negocio
+                  <ArrowRight size={20} />
+                </motion.a>
               </div>
             </div>
-            <div className="shrink-0">
-              <a href="#contacto" className="inline-flex items-center gap-2 bg-primary text-black px-8 py-4 rounded-full font-bold hover:scale-105 transition-all">
-                Optimizar mi negocio
-                <ArrowRight size={20} />
-              </a>
-            </div>
-          </div>
-
+          </Reveal>
         </div>
       </div>
     </section>
@@ -708,24 +847,28 @@ const Process = () => {
   return (
     <section id="proceso" className="py-24 relative bg-[#0A0A0A]">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">Tu transformación digital en <span className="text-[#00FF94]">3 pasos</span></h2>
-        </div>
+        <Reveal width="100%">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">Tu transformación digital en <span className="text-[#00FF94]">3 pasos</span></h2>
+          </div>
+        </Reveal>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
           <div className="hidden md:block absolute top-12 left-[16%] right-[16%] h-0.5 bg-gradient-to-r from-transparent via-[#00FF94]/30 to-transparent z-0"></div>
 
           {steps.map((step, index) => (
-            <div key={index} className="relative z-10 flex flex-col items-center text-center">
-              <div className="w-24 h-24 bg-[#0A0A0A] border border-[#00FF94] rounded-full flex items-center justify-center text-[#00FF94] text-xl font-bold mb-6 shadow-[0_0_20px_rgba(0,255,148,0.2)]">
-                {step.icon}
+            <Reveal key={index} width="100%">
+              <div className="relative z-10 flex flex-col items-center text-center">
+                <div className="w-24 h-24 bg-[#0A0A0A] border border-[#00FF94] rounded-full flex items-center justify-center text-[#00FF94] text-xl font-bold mb-6 shadow-[0_0_20px_rgba(0,255,148,0.2)]">
+                  {step.icon}
+                </div>
+                <div className="text-8xl font-black text-white/[0.05] absolute top-12 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none">
+                  {index + 1}
+                </div>
+                <h3 className="text-2xl font-bold mb-3 text-white">{step.title}</h3>
+                <p className="text-gray-400 max-w-xs">{step.desc}</p>
               </div>
-              <div className="text-8xl font-black text-white/[0.05] absolute top-12 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none pointer-events-none">
-                {index + 1}
-              </div>
-              <h3 className="text-2xl font-bold mb-3 text-white">{step.title}</h3>
-              <p className="text-gray-400 max-w-xs">{step.desc}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -738,55 +881,65 @@ const AboutUs = () => {
     <section id="sobre-nosotros" className="py-24 bg-[#050505] overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div className="relative">
-            <div className="absolute -top-20 -left-20 w-64 h-64 bg-[#00FF94]/10 rounded-full blur-[100px]"></div>
-            <div className="relative glass-card p-1 rounded-3xl overflow-hidden border border-white/10 group">
-              <div className="aspect-[4/5] relative bg-[#111] rounded-[22px] overflow-hidden">
-                {/* User can replace this with their actual photo */}
-                <div className="absolute inset-0 flex items-center justify-center text-[#00FF94]/20">
-                  <Users size={120} />
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-                <div className="absolute bottom-0 left-0 p-8">
-                  <p className="text-[#00FF94] font-bold text-sm tracking-widest uppercase mb-1">Fundador</p>
-                  <h3 className="text-3xl font-bold text-white">Hector Barbera Sanchez</h3>
+          <Reveal width="100%">
+            <div className="relative">
+              <div className="absolute -top-20 -left-20 w-64 h-64 bg-[#00FF94]/10 rounded-full blur-[100px]"></div>
+              <div className="relative glass-card p-1 rounded-3xl overflow-hidden border border-white/10 group premium-border">
+                <div className="aspect-[4/5] relative bg-[#111] rounded-[22px] overflow-hidden">
+                  <div className="absolute inset-0 flex items-center justify-center text-[#00FF94]/20">
+                    <Users size={120} />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                  <div className="absolute bottom-0 left-0 p-8">
+                    <p className="text-[#00FF94] font-bold text-sm tracking-widest uppercase mb-1">Fundador</p>
+                    <h3 className="text-3xl font-bold text-white font-display">Hector Barbera Sanchez</h3>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </Reveal>
 
           <div className="space-y-8">
-            <div>
-              <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white tracking-tight">
-                Impulsando el futuro del <span className="text-gradient">negocio local</span>
-              </h2>
-              <p className="text-gray-400 text-lg leading-relaxed">
-                En <strong>HecTechAi</strong>, no solo implementamos tecnología; devolvemos el tiempo a quienes hacen que el mundo se mueva. Creé este proyecto porque vi cómo muchos dueños de negocios pasaban el fin de semana respondiendo emails en lugar de descansar. Mi misión es que la IA haga el trabajo aburrido por ti.
-              </p>
-            </div>
+            <Reveal width="100%">
+              <div>
+                <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white tracking-tight font-display">
+                  Impulsando el futuro del <br />
+                  <span className="text-gradient">negocio local</span>
+                </h2>
+                <p className="text-gray-400 text-lg leading-relaxed">
+                  En <strong>HecTechAi</strong>, no solo implementamos tecnología; devolvemos el tiempo a quienes hacen que el mundo se mueva. Creé este proyecto porque vi cómo muchos dueños de negocios pasaban el fin de semana respondiendo emails en lugar de descansar. Mi misión es que la IA haga el trabajo aburrido por ti.
+                </p>
+              </div>
+            </Reveal>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="glass-card p-6 rounded-2xl border border-white/5 hover:border-[#00FF94]/30 transition-colors">
-                <div className="w-10 h-10 bg-[#00FF94]/10 rounded-lg flex items-center justify-center text-[#00FF94] mb-4">
-                  <Rocket size={20} />
+              <Reveal width="100%">
+                <div className="glass-card p-6 rounded-2xl border border-white/5 hover:border-[#00FF94]/30 transition-colors h-full">
+                  <div className="w-10 h-10 bg-[#00FF94]/10 rounded-lg flex items-center justify-center text-[#00FF94] mb-4">
+                    <Rocket size={20} />
+                  </div>
+                  <h4 className="text-white font-bold mb-2">Misión</h4>
+                  <p className="text-sm text-gray-500">Transformar la operativa manual en sistemas autónomos de alto rendimiento.</p>
                 </div>
-                <h4 className="text-white font-bold mb-2">Misión</h4>
-                <p className="text-sm text-gray-500">Transformar la operativa manual en sistemas autónomos de alto rendimiento.</p>
-              </div>
-              <div className="glass-card p-6 rounded-2xl border border-white/5 hover:border-[#00FF94]/30 transition-colors">
-                <div className="w-10 h-10 bg-[#00FF94]/10 rounded-lg flex items-center justify-center text-[#00FF94] mb-4">
-                  <ShieldCheck size={20} />
+              </Reveal>
+              <Reveal width="100%">
+                <div className="glass-card p-6 rounded-2xl border border-white/5 hover:border-[#00FF94]/30 transition-colors h-full">
+                  <div className="w-10 h-10 bg-[#00FF94]/10 rounded-lg flex items-center justify-center text-[#00FF94] mb-4">
+                    <ShieldCheck size={20} />
+                  </div>
+                  <h4 className="text-white font-bold mb-2">Compromiso</h4>
+                  <p className="text-sm text-gray-500">Soluciones éticas, seguras y diseñadas para durar a largo plazo.</p>
                 </div>
-                <h4 className="text-white font-bold mb-2">Compromiso</h4>
-                <p className="text-sm text-gray-500">Soluciones éticas, seguras y diseñadas para durar a largo plazo.</p>
-              </div>
+              </Reveal>
             </div>
 
-            <div className="p-6 bg-white/5 rounded-2xl border-l-4 border-[#00FF94]">
-              <p className="text-gray-300 italic italic leading-relaxed">
-                "Mi misión es que la IA haga el trabajo aburrido para que tú te dediques a lo que realmente importa: hacer crecer tu empresa y disfrutar de tu tiempo."
-              </p>
-            </div>
+            <Reveal width="100%">
+              <div className="p-6 bg-white/5 rounded-2xl border-l-4 border-[#00FF94]">
+                <p className="text-gray-300 italic leading-relaxed">
+                  "Mi misión es que la IA haga el trabajo aburrido para que tú te dediques a lo que realmente importa: hacer crecer tu empresa y disfrutar de tu tiempo."
+                </p>
+              </div>
+            </Reveal>
           </div>
         </div>
       </div>
@@ -857,42 +1010,44 @@ const ROICalculator = () => {
             </div>
           </div>
 
-          <div className="relative">
-            <div className="absolute inset-0 bg-[#00FF94]/10 blur-[100px] rounded-full"></div>
-            <div className="relative glass-card p-10 rounded-3xl border border-white/10 shadow-2xl">
-              <div className="space-y-8">
-                <div>
-                  <p className="text-gray-400 text-sm uppercase tracking-widest font-bold mb-1">Pérdida mensual estimada</p>
-                  <div className="text-5xl md:text-7xl font-black text-white leading-none">
-                    {monthlyLoss.toLocaleString()}€
-                  </div>
-                </div>
-
-                <div className="h-[1px] bg-white/10 w-full"></div>
-
-                <div className="grid grid-cols-2 gap-8">
+          <Reveal width="100%">
+            <div className="relative">
+              <div className="absolute inset-0 bg-[#00FF94]/10 blur-[100px] rounded-full"></div>
+              <div className="relative glass-card p-10 rounded-3xl border border-white/10 shadow-2xl premium-border">
+                <div className="space-y-8">
                   <div>
-                    <p className="text-gray-500 text-xs uppercase font-bold mb-1">Fuga anual de capital</p>
-                    <p className="text-2xl font-bold text-gray-300">{annualLoss.toLocaleString()}€</p>
+                    <p className="text-gray-400 text-sm uppercase tracking-widest font-bold mb-1">Pérdida mensual estimada</p>
+                    <div className="text-5xl md:text-7xl font-black text-white leading-none">
+                      {monthlyLoss.toLocaleString()}€
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[#00FF94] text-xs uppercase font-bold mb-1">Ahorro potencial IA</p>
-                    <p className="text-2xl font-bold text-[#00FF94]">{potentialSavings.toLocaleString()}€/mes</p>
+
+                  <div className="h-[1px] bg-white/10 w-full"></div>
+
+                  <div className="grid grid-cols-2 gap-8">
+                    <div>
+                      <p className="text-gray-500 text-xs uppercase font-bold mb-1">Fuga anual de capital</p>
+                      <p className="text-2xl font-bold text-gray-300">{annualLoss.toLocaleString()}€</p>
+                    </div>
+                    <div>
+                      <p className="text-[#00FF94] text-xs uppercase font-bold mb-1">Ahorro potencial IA</p>
+                      <p className="text-2xl font-bold text-[#00FF94]">{potentialSavings.toLocaleString()}€/mes</p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="bg-[#00FF94]/10 p-6 rounded-2xl border border-[#00FF94]/20">
-                  <p className="text-sm text-[#00FF94] leading-relaxed">
-                    <strong>💡 Impacto Directo:</strong> Estás perdiendo aproximadamente el <strong>30% de tu productividad</strong> en tareas que HecTechAi puede automatizar hoy mismo.
-                  </p>
-                </div>
+                  <div className="bg-[#00FF94]/10 p-6 rounded-2xl border border-[#00FF94]/20">
+                    <p className="text-sm text-[#00FF94] leading-relaxed">
+                      <strong>💡 Impacto Directo:</strong> Estás perdiendo aproximadamente el <strong>30% de tu productividad</strong> en tareas que HecTechAi puede automatizar hoy mismo.
+                    </p>
+                  </div>
 
-                <a href="#contacto" className="block w-full text-center bg-[#00FF94] text-black font-bold py-4 rounded-xl hover:scale-[1.02] transition-transform">
-                  Detener esta fuga de capital ahora
-                </a>
+                  <a href="#contacto" className="block w-full text-center bg-[#00FF94] text-black font-bold py-4 rounded-xl hover:scale-[1.02] transition-transform">
+                    Detener esta fuga de capital ahora
+                  </a>
+                </div>
               </div>
             </div>
-          </div>
+          </Reveal>
         </div>
       </div>
     </section>
@@ -932,32 +1087,45 @@ const FAQ = () => {
   return (
     <section id="faq" className="py-24 bg-[#050505]">
       <div className="max-w-3xl mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">Preguntas Frecuentes</h2>
-          <p className="text-gray-400">Todo lo que necesitas saber para dar el paso hacia la automatización.</p>
-        </div>
+        <Reveal width="100%">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white font-display">Preguntas Frecuentes</h2>
+            <p className="text-gray-400">Todo lo que necesitas saber para dar el paso hacia la automatización.</p>
+          </div>
+        </Reveal>
 
         <div className="space-y-4">
           {faqs.map((faq, index) => (
-            <div key={index} className="glass-card rounded-2xl overflow-hidden border border-white/5">
-              <button
-                onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                className="w-full p-6 text-left flex justify-between items-center hover:bg-white/5 transition-colors"
-              >
-                <span className="text-lg font-bold text-white pr-8">{faq.q}</span>
-                {openIndex === index ? (
-                  <Minus size={20} className="text-[#00FF94] shrink-0" />
-                ) : (
-                  <Plus size={20} className="text-[#00FF94] shrink-0" />
-                )}
-              </button>
-
-              <div className={`transition-all duration-300 ease-in-out ${openIndex === index ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
-                <div className="p-6 pt-0 text-gray-400 leading-relaxed border-t border-white/5">
-                  {faq.a}
-                </div>
+            <Reveal key={index} width="100%">
+              <div className="glass-card rounded-2xl overflow-hidden border border-white/5">
+                <button
+                  onClick={() => setOpenIndex(openIndex === index ? null : index)}
+                  className="w-full p-6 text-left flex justify-between items-center hover:bg-white/5 transition-colors"
+                >
+                  <span className="text-lg font-bold text-white">{faq.q}</span>
+                  <div className={`transition-transform duration-300 ${openIndex === index ? 'rotate-180' : ''}`}>
+                    {openIndex === index ? (
+                      <Minus size={20} className="text-[#00FF94]" />
+                    ) : (
+                      <Plus size={20} className="text-gray-500" />
+                    )}
+                  </div>
+                </button>
+                <motion.div
+                  initial={false}
+                  animate={{
+                    height: openIndex === index ? 'auto' : 0,
+                    opacity: openIndex === index ? 1 : 0
+                  }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-6 pt-0 text-gray-400 leading-relaxed border-t border-white/5">
+                    {faq.a}
+                  </div>
+                </motion.div>
               </div>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>
