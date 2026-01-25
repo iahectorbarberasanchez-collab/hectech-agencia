@@ -99,7 +99,7 @@ const Navbar = () => {
             className="object-contain"
             style={{ mixBlendMode: 'screen' }}
           />
-          <div className="hidden md:flex items-center gap-2 font-display font-bold text-3xl tracking-tighter text-white">
+          <div className="flex items-center gap-2 font-display font-bold text-xl md:text-3xl tracking-tighter text-white">
             <span>Hec<span className="text-[#00FF94]">TechAi</span></span>
           </div>
         </div>
@@ -121,16 +121,21 @@ const Navbar = () => {
       </div>
 
       {isOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-[#050505] border-b border-white/10 p-6 flex flex-col gap-4 shadow-2xl">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="md:hidden absolute top-full left-0 w-full bg-[#050505] border-b border-white/10 p-6 flex flex-col gap-4 shadow-2xl z-50"
+        >
           {navLinks.map((link) => (
-            <a key={link.name} href={link.href} onClick={() => setIsOpen(false)} className="text-gray-300 hover:text-[#00FF94] font-medium text-lg">
+            <a key={link.name} href={link.href} onClick={() => setIsOpen(false)} className="text-gray-300 hover:text-[#00FF94] font-medium text-lg py-2 border-b border-white/5 last:border-0">
               {link.name}
             </a>
           ))}
-          <a href="#contacto" onClick={() => setIsOpen(false)} className="bg-[#00FF94] text-center text-black w-full py-3 rounded-lg font-bold mt-2">
+          <a href="#contacto" onClick={() => setIsOpen(false)} className="bg-[#00FF94] text-center text-black w-full py-4 rounded-xl font-bold mt-2 shadow-[0_0_20px_rgba(0,255,148,0.2)]">
             Agendar Consultoría
           </a>
-        </div>
+        </motion.div>
       )}
     </nav>
   );
@@ -176,8 +181,8 @@ const Hero = () => {
             El futuro de tu negocio
           </motion.div>
 
-          <h1 className="text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tight text-white font-display">
-            Tu negocio, funcionando en <br className="hidden lg:block" />
+          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tight text-white font-display">
+            Tu negocio, funcionando en <br className="hidden sm:block" />
             <span className="text-gradient">piloto automático</span>.
           </h1>
 
@@ -227,19 +232,20 @@ const Hero = () => {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, scale: 0.8, rotateY: 20 }}
-          animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, ease: "easeOut" }}
-          className="relative h-[400px] lg:h-[600px] flex items-center justify-center"
+          className="relative h-[300px] sm:h-[400px] lg:h-[600px] flex items-center justify-center order-first lg:order-last mt-8 lg:mt-0"
         >
           <div className="relative w-full h-full max-w-md">
             {/* Elemento Central: Cerebro/Bot */}
             <motion.div
-              animate={{ y: [0, -20, 0] }}
+              animate={{ y: [0, -15, 0] }}
               transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-black border border-[#00FF94]/50 rounded-3xl z-20 flex items-center justify-center shadow-[0_0_80px_-10px_rgba(0,255,148,0.4)] premium-border"
+              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-28 h-28 sm:w-40 sm:h-40 bg-black border border-[#00FF94]/50 rounded-3xl z-20 flex items-center justify-center shadow-[0_0_80px_-10px_rgba(0,255,148,0.4)] premium-border"
             >
-              <Bot size={64} className="text-[#00FF94] glow-text" />
+              <Bot size={48} className="text-[#00FF94] glow-text sm:hidden" />
+              <Bot size={64} className="text-[#00FF94] glow-text hidden sm:block" />
             </motion.div>
 
             {/* Floating Cards con Motion */}
@@ -352,8 +358,8 @@ const Benefits = () => {
       <div className="max-w-7xl mx-auto px-6">
         <Reveal width="100%">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">¿Por qué tu negocio necesita <span className="text-gradient">IA hoy</span>?</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">La tecnología ya no es solo para grandes empresas. Nivelamos el campo de juego para ti.</p>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white font-display">¿Por qué tu negocio necesita <span className="text-gradient">IA hoy</span>?</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto text-sm md:text-base">La tecnología ya no es solo para grandes empresas. Nivelamos el campo de juego para ti.</p>
           </div>
         </Reveal>
 
@@ -487,17 +493,17 @@ const SmartAudit = () => {
         </Reveal>
 
         <Reveal width="100%">
-          <div className="flex justify-center gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
             <button
               onClick={() => setActiveTab('strategic')}
-              className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'strategic' ? 'bg-[#00FF94] text-black shadow-[0_0_20px_rgba(0,255,148,0.3)]' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
+              className={`px-6 py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'strategic' ? 'bg-[#00FF94] text-black shadow-[0_0_20px_rgba(0,255,148,0.3)]' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
             >
               <Sparkles size={18} />
               Plan Estratégico
             </button>
             <button
               onClick={() => setActiveTab('visual')}
-              className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'visual' ? 'bg-[#00FF94] text-black shadow-[0_0_20px_rgba(0,255,148,0.3)]' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
+              className={`px-6 py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'visual' ? 'bg-[#00FF94] text-black shadow-[0_0_20px_rgba(0,255,148,0.3)]' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
             >
               <Camera size={18} />
               Análisis Visual
@@ -718,12 +724,12 @@ const Services = () => {
       <div className="max-w-7xl mx-auto px-6">
         <Reveal width="100%">
           <div className="mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white font-display text-nowrap">Nuestros Servicios</h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white font-display">Nuestros Servicios</h2>
             <p className="text-gray-400">Soluciones técnicas simplificadas para dueños de negocios.</p>
           </div>
         </Reveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
           <div className="md:col-span-2 glass-card rounded-3xl p-8 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:opacity-40 transition-opacity">
@@ -809,13 +815,13 @@ const Services = () => {
                 <div className="w-12 h-12 bg-[#FFE600] rounded-lg flex items-center justify-center mb-6 text-black group-hover:rotate-12 transition-transform">
                   <Search size={24} />
                 </div>
-                <h3 className="text-3xl font-bold mb-2 text-white font-display text-nowrap">Auditoría de Procesos IA</h3>
-                <p className="text-gray-400 max-w-2xl mb-4">
+                <h3 className="text-2xl md:text-3xl font-bold mb-2 text-white font-display">Auditoría de Procesos IA</h3>
+                <p className="text-gray-400 max-w-2xl mb-4 text-sm md:text-base">
                   Analizamos tu operativa actual para identificar cuellos de botella y detectar dónde la IA tendrá el mayor impacto financiero inmediato.
                 </p>
                 <div className="bg-white/5 border border-white/10 rounded-xl p-4 inline-block">
                   <p className="text-xs text-[#FFE600] font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
-                  <p className="text-sm text-gray-300">Mapeo de flujos de trabajo actuales y proyección de ahorro en costes operativos tras la implementación de agentes IA.</p>
+                  <p className="text-xs md:text-sm text-gray-300">Mapeo de flujos de trabajo actuales y proyección de ahorro en costes operativos tras la implementación de agentes IA.</p>
                 </div>
               </div>
               <div className="shrink-0">
@@ -957,7 +963,7 @@ const ROICalculator = () => {
   const potentialSavings = Math.round(monthlyLoss * 0.7);
 
   return (
-    <section id="roi-calculator" className="py-24 relative overflow-hidden bg-[#0A0A0A]">
+    <section id="roi-calculator" className="py-16 md:py-24 relative overflow-hidden bg-[#0A0A0A]">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[1px] bg-gradient-to-r from-transparent via-[#00FF94]/20 to-transparent"></div>
 
       <div className="max-w-7xl mx-auto px-6">
@@ -1024,14 +1030,14 @@ const ROICalculator = () => {
 
                   <div className="h-[1px] bg-white/10 w-full"></div>
 
-                  <div className="grid grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
                     <div>
                       <p className="text-gray-500 text-xs uppercase font-bold mb-1">Fuga anual de capital</p>
-                      <p className="text-2xl font-bold text-gray-300">{annualLoss.toLocaleString()}€</p>
+                      <p className="text-xl md:text-2xl font-bold text-gray-300">{annualLoss.toLocaleString()}€</p>
                     </div>
                     <div>
                       <p className="text-[#00FF94] text-xs uppercase font-bold mb-1">Ahorro potencial IA</p>
-                      <p className="text-2xl font-bold text-[#00FF94]">{potentialSavings.toLocaleString()}€/mes</p>
+                      <p className="text-xl md:text-2xl font-bold text-[#00FF94]">{potentialSavings.toLocaleString()}€/mes</p>
                     </div>
                   </div>
 
