@@ -598,13 +598,14 @@ const SmartAudit = () => {
 };
 
 const DemoShowcase = () => {
-  const [activeTab, setActiveTab] = useState<'realestate' | 'ecommerce' | 'health' | 'resto'>('realestate');
+  const [activeTab, setActiveTab] = useState<'realestate' | 'health' | 'resto' | 'hotels' | 'vacation'>('realestate');
 
   const tabs = [
     { id: 'realestate', label: 'Inmobiliaria' },
-    { id: 'ecommerce', label: 'E-commerce' },
-    { id: 'health', label: 'Clínicas/Salud' },
+    { id: 'health', label: 'Clínicas' },
     { id: 'resto', label: 'Restaurantes' },
+    { id: 'hotels', label: 'Hoteles' },
+    { id: 'vacation', label: 'Pisos Turísticos' },
   ] as const;
 
   const chatData = {
@@ -617,14 +618,6 @@ const DemoShowcase = () => {
       { from: 'user', text: 'Prefiero visita presencial el viernes.' },
       { from: 'bot', text: 'Excelente elección. Tengo libre a las 10:30 o a las 17:00. ¿Cuál te viene mejor?' },
       { from: 'bot', text: 'Una vez confirmes, te enviaré la ubicación exacta por WhatsApp automáticamente. 📍' },
-    ],
-    ecommerce: [
-      { from: 'bot', text: '👋 ¡Hola! Soy el asistente de compras de tu tienda favorita. Veo que te interesan las Zapatillas Pro-Run.' },
-      { from: 'user', text: 'Sí, pero dudo con la talla. Suelo usar 42 o 43.' },
-      { from: 'bot', text: 'Te entiendo. Según nuestra guía de tallas basada en IA, para este modelo la 42 suele quedar un poco estrecha. Te recomiendo la 43.' },
-      { from: 'bot', text: 'Por cierto, ¡tengo una sorpresa! Como es tu primera consulta, si compras en los próximos 15 minutos, puedo aplicarte un 15% de descuento extra. 🎁' },
-      { from: 'user', text: '¡Genial! ¿Cómo lo aplico?' },
-      { from: 'bot', text: 'Ya lo he activado para tu sesión. Solo añade al carrito y verás el precio final reducido antes de pagar. ¿Puedo ayudarte con algo más?' },
     ],
     health: [
       { from: 'bot', text: '🏥 Clínica HecTechAi. ¿Necesitas agendar una cita o tienes alguna duda sobre nuestros tratamientos?' },
@@ -645,6 +638,24 @@ const DemoShowcase = () => {
       { from: 'user', text: 'Sí, perfecto.' },
       { from: 'bot', text: '¡Genial! Reserva confirmada para 6 personas a las 21:30. ✅' },
       { from: 'bot', text: 'Como sugerencia del chef, hoy tenemos pulpo a la brasa fuera de carta. ¡Os guardo una ración si queréis probarlo! ¿O prefieres ver la carta completa ahora?' },
+    ],
+    hotels: [
+      { from: 'bot', text: '🏨 Bienvenido al Hotel HecTech Luxury. ¿Deseas consultar disponibilidad de habitaciones o necesitas asistencia con una reserva?' },
+      { from: 'user', text: 'Busco habitación doble para el próximo fin de semana.' },
+      { from: 'bot', text: 'Para las fechas del 2, 3 y 4 de mayo me quedan 2 Junior Suite con vistas al mar y una Habitación Premium. ¿Te gustaría ver fotos reales?' },
+      { from: 'user', text: 'Sí, por favor.' },
+      { from: 'bot', text: 'Aquí las tienes: [Enlace]. Además, si completas tu reserva por este chat, incluimos el desayuno buffet de cortesía. ☕ ¿Te reservo una?' },
+      { from: 'user', text: '¡Sí, la Premium!' },
+      { from: 'bot', text: 'Excelente elección. Ya he bloqueado la habitación. Te envío el enlace de pago seguro para confirmar en 2 minutos. 💳' },
+    ],
+    vacation: [
+      { from: 'bot', text: '🏙️ ¡Hola! Soy el asistente de HecTech Vacation Rentals. ¿Buscas un piso para tus próximas vacaciones?' },
+      { from: 'user', text: 'Sí, del 10 al 15 de julio en el centro.' },
+      { from: 'bot', text: 'Para esas fechas tengo el "Loft Sol" (a 2 min de la plaza) y el "Ático Gran Vía". Ambos con check-in autónomo. ¿Cuál prefieres?' },
+      { from: 'user', text: 'El Ático Gran Vía.' },
+      { from: 'bot', text: 'Es espectacular, tiene terraza privada. El precio total es de 750€. ¿Quieres que te envíe el enlace de reserva directa por WhatsApp? 📱' },
+      { from: 'user', text: 'Perfecto, envíamelo.' },
+      { from: 'bot', text: 'Enviado. Tienes 30 minutos para completar la reserva antes de que el calendario se libere de nuevo. ¡Disfruta de tu estancia! 🔑' },
     ],
   };
 
@@ -822,7 +833,7 @@ const Services = () => {
             </div>
             <div className="bg-white/5 border border-white/10 rounded-xl p-3">
               <p className="text-[10px] text-orange-400 font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
-              <p className="text-xs text-gray-300">Creación automática de posts para redes sociales a partir de un simple título o idea de producto.</p>
+              <p className="text-xs text-gray-300">Generación automática de descripciones para inmuebles o anuncios de apartamentos vacacionales a partir de una simple lista de características.</p>
             </div>
           </div>
 
