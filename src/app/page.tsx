@@ -115,7 +115,7 @@ const Navbar = () => {
           <motion.a
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            href="/login"
+            href="/dashboard"
             className="flex items-center gap-2 text-gray-400 hover:text-white text-sm font-medium transition-colors border border-white/10 px-4 py-2 rounded-lg bg-white/5 hover:border-[#00FF94]/30"
           >
             <Users size={16} />
@@ -144,7 +144,7 @@ const Navbar = () => {
             </a>
           ))}
           <a
-            href="/login"
+            href="/dashboard"
             onClick={() => setIsOpen(false)}
             className="flex items-center justify-center gap-2 text-[#00FF94] font-bold text-lg py-4 border border-[#00FF94]/20 rounded-xl bg-[#00FF94]/5"
           >
