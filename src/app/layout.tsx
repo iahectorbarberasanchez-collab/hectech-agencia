@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'es_ES',
-    url: 'https://hectech-agencia.vercel.app',
+    url: 'https://hectechai.com',
     title: 'HecTechAi | Automatización con IA para Negocios',
     description: 'Ahorra +15 horas semanales con chatbots inteligentes y automatización IA. Auditoría gratuita.',
     siteName: 'HecTechAi',
@@ -51,6 +51,16 @@ export const metadata: Metadata = {
   },
   verification: {
     google: 'google-site-verification-code',
+  },
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/logo.png', sizes: '32x32', type: 'image/png' },
+      { url: '/logo.png', sizes: '192x192', type: 'image/png' },
+      { url: '/logo.png', sizes: '512x512', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/logo.png',
   },
 };
 

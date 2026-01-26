@@ -37,6 +37,7 @@ import { motion, useInView, useAnimation } from 'framer-motion';
 import { ContactForm } from './ContactForm';
 import { generateAuditAction } from './actions';
 import { VisualAudit } from '../components/VisualAudit';
+import Pricing from '../components/Pricing';
 
 // --- ANIMATION HELPER ---
 const Reveal = ({ children, width = "fit-content" }: { children: React.ReactNode, width?: "fit-content" | "100%" }) => {
@@ -83,6 +84,7 @@ const Navbar = () => {
     { name: 'Beneficios', href: '#beneficios' },
     { name: 'Demos', href: '#demos' },
     { name: 'Auditoría IA ✨', href: '#auditoria-ia' },
+    { name: 'Precios', href: '#pricing' },
     { name: 'Servicios', href: '#servicios' },
     { name: 'Sobre mí', href: '#sobre-nosotros' },
   ];
@@ -1247,6 +1249,7 @@ export default function Home() {
       <DemoShowcase />
       <SmartAudit />
       <Services />
+      <Pricing />
       <Process />
       <AboutUs />
       <FAQ />
