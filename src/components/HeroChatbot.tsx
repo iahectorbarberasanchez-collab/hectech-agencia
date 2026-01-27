@@ -119,7 +119,7 @@ export const HeroChatbot = () => {
     };
 
     return (
-        <div className="w-full max-w-md mx-auto">
+        <div className="w-full max-w-md mx-auto px-4 sm:px-0">
             <div className="glass-card rounded-3xl border border-white/10 overflow-hidden shadow-2xl premium-border bg-black/40 backdrop-blur-xl">
                 {/* Header */}
                 <div className="bg-white/5 p-4 flex items-center gap-3 border-b border-white/10">
@@ -140,7 +140,7 @@ export const HeroChatbot = () => {
                 {/* Chat Area */}
                 <div
                     ref={scrollRef}
-                    className="h-[450px] overflow-y-auto p-6 flex flex-col gap-4 custom-scrollbar"
+                    className="h-[400px] sm:h-[450px] overflow-y-auto p-4 sm:p-6 flex flex-col gap-3 sm:gap-4 custom-scrollbar"
                 >
                     <AnimatePresence>
                         {messages.map((msg) => (
@@ -150,19 +150,19 @@ export const HeroChatbot = () => {
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
                             >
-                                <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed ${msg.type === 'user'
+                                <div className={`max-w-[85%] p-3 sm:p-4 rounded-2xl text-xs sm:text-sm leading-relaxed ${msg.type === 'user'
                                     ? 'bg-[#00C2FF]/20 text-white rounded-tr-sm border border-[#00C2FF]/20'
                                     : 'bg-white/5 text-gray-200 rounded-tl-sm border border-white/10'
                                     }`}>
                                     {msg.text}
 
                                     {msg.options && msg.type === 'bot' && (
-                                        <div className="mt-4 flex flex-wrap gap-2">
+                                        <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
                                             {msg.options.map((opt, i) => (
                                                 <button
                                                     key={i}
                                                     onClick={() => handleOptionClick(opt)}
-                                                    className="px-3 py-2 bg-[#00FF94]/10 hover:bg-[#00FF94]/20 border border-[#00FF94]/30 rounded-lg text-xs font-bold text-[#00FF94] transition-all"
+                                                    className="px-3 py-2 bg-[#00FF94]/10 hover:bg-[#00FF94]/20 border border-[#00FF94]/30 rounded-lg text-[10px] sm:text-xs font-bold text-[#00FF94] transition-all"
                                                 >
                                                     {opt}
                                                 </button>
