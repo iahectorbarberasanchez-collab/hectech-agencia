@@ -284,6 +284,24 @@ export async function generateVisualAuditAction(url: string) {
 export async function getAutomationMetrics(clientId: string) {
     if (!clientId) return { success: false, error: 'Identificador requerido' };
 
+    // ID de DEMO para previsualización inmediata
+    if (clientId.toUpperCase() === 'DEMO123') {
+        return {
+            success: true,
+            data: {
+                client_name: 'Héctor (Demo)',
+                total_actions: 2840,
+                hours_saved: 124,
+                roi_euros: "6200",
+                history: [
+                    { month: 'Nov', value: 1850 },
+                    { month: 'Dic', value: 2140 },
+                    { month: 'Ene', value: 2840 },
+                ]
+            }
+        };
+    }
+
     // INMUNIZACIÓN: Si no hay datos o falla el servidor, mostramos métricas simuladas realistas
     const DUMMY_METRICS = {
         success: true,
