@@ -13,10 +13,11 @@ import {
     AlertCircle,
     Moon,
     Zap,
-    UserCheck
+    UserCheck,
+    Users
 } from 'lucide-react';
 import Link from 'next/link';
-import { getAutomationMetrics } from '../actions';
+import { getAutomationMetrics, requestDashboardAccess } from '../actions';
 
 // Componente para las tarjetas de estadísticas
 interface StatCardProps {
@@ -64,6 +65,10 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<MetricsData | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [isRequestingAccess, setIsRequestingAccess] = useState(false);
+    const [requestEmail, setRequestEmail] = useState('');
+    const [requestLoading, setRequestLoading] = useState(false);
+    const [requestSuccess, setRequestSuccess] = useState<string | null>(null);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -88,6 +93,29 @@ export default function DashboardPage() {
         }
     };
 
+    const handleRequestAccess = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!requestEmail) return;
+
+        setRequestLoading(true);
+        setError(null);
+        setRequestSuccess(null);
+
+        try {
+            const response = await requestDashboardAccess(requestEmail);
+            if (response.success) {
+                setRequestSuccess(response.message || 'Contraseña enviada con éxito.');
+                // Limpiar después de unos segundos o dejar que el usuario vuelva al login
+            } else {
+                setError(response.error || 'No se pudo procesar la solicitud.');
+            }
+        } catch (err) {
+            setError('Error al conectar con el servidor.');
+        } finally {
+            setRequestLoading(false);
+        }
+    };
+
     if (!isAuthenticated || !data) {
         return (
             <main className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
@@ -102,58 +130,138 @@ export default function DashboardPage() {
                     <div className="glass-card p-8 rounded-3xl bg-white/5 border border-white/10 shadow-2xl relative overflow-hidden group">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#00FF94] to-[#00C2FF]"></div>
 
-                        <form onSubmit={handleLogin} className="space-y-6">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                                    <Lock size={14} className="text-[#00FF94]" />
-                                    ID de Cliente o Email
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="Introduce tu identificador..."
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-all"
-                                    value={clientId}
-                                    onChange={(e) => setClientId(e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                                    <Lock size={14} className="text-[#00FF94]" />
-                                    Contraseña
-                                </label>
-                                <input
-                                    type="password"
-                                    placeholder="Introduce tu contraseña..."
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-all"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                />
-                            </div>
-
-                            {error && (
-                                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2 text-red-400 text-sm">
-                                    <AlertCircle size={16} />
-                                    {error}
+                        {!isRequestingAccess ? (
+                            <form onSubmit={handleLogin} className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                                        <Lock size={14} className="text-[#00FF94]" />
+                                        ID de Cliente o Email
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="Introduce tu identificador..."
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-all"
+                                        value={clientId}
+                                        onChange={(e) => setClientId(e.target.value)}
+                                        required
+                                    />
                                 </div>
-                            )}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                                        <Lock size={14} className="text-[#00FF94]" />
+                                        Contraseña
+                                    </label>
+                                    <input
+                                        type="password"
+                                        placeholder="Introduce tu contraseña..."
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-all"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
+                                    />
+                                </div>
 
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full bg-[#00FF94] text-black font-bold py-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 glow-effect disabled:opacity-50"
-                            >
-                                {loading ? <Loader2 className="animate-spin" /> : 'Ver mi Impacto'}
-                            </button>
-                        </form>
+                                {error && (
+                                    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2 text-red-400 text-sm">
+                                        <AlertCircle size={16} />
+                                        {error}
+                                    </div>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="w-full bg-[#00FF94] text-black font-bold py-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 glow-effect disabled:opacity-50"
+                                >
+                                    {loading ? <Loader2 className="animate-spin" /> : 'Ver mi Impacto'}
+                                </button>
+
+                                <div className="text-center pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsRequestingAccess(true);
+                                            setError(null);
+                                        }}
+                                        className="text-sm text-gray-500 hover:text-[#00FF94] transition-colors"
+                                    >
+                                        ¿No tienes contraseña? Solicítala aquí
+                                    </button>
+                                </div>
+                            </form>
+                        ) : (
+                            <div className="space-y-6">
+                                {requestSuccess ? (
+                                    <div className="space-y-6 text-center">
+                                        <div className="w-16 h-16 bg-[#00FF94]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <ShieldCheck size={32} className="text-[#00FF94]" />
+                                        </div>
+                                        <p className="text-white font-medium">{requestSuccess}</p>
+                                        <button
+                                            onClick={() => {
+                                                setIsRequestingAccess(false);
+                                                setRequestSuccess(null);
+                                            }}
+                                            className="text-[#00FF94] font-bold"
+                                        >
+                                            Volver al inicio de sesión
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <form onSubmit={handleRequestAccess} className="space-y-6">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                                                <Users size={14} className="text-[#00FF94]" />
+                                                Email de Cliente
+                                            </label>
+                                            <input
+                                                type="email"
+                                                placeholder="tu@email.com"
+                                                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-all"
+                                                value={requestEmail}
+                                                onChange={(e) => setRequestEmail(e.target.value)}
+                                                required
+                                            />
+                                        </div>
+
+                                        {error && (
+                                            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-2 text-red-400 text-sm">
+                                                <AlertCircle size={16} />
+                                                {error}
+                                            </div>
+                                        )}
+
+                                        <button
+                                            type="submit"
+                                            disabled={requestLoading}
+                                            className="w-full bg-[#00FF94] text-black font-bold py-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 glow-effect disabled:opacity-50"
+                                        >
+                                            {requestLoading ? <Loader2 className="animate-spin" /> : 'Enviar mi contraseña'}
+                                        </button>
+
+                                        <div className="text-center pt-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsRequestingAccess(false);
+                                                    setError(null);
+                                                }}
+                                                className="text-sm text-gray-500 hover:text-white transition-colors"
+                                            >
+                                                Volver al login
+                                            </button>
+                                        </div>
+                                    </form>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <Link href="/" className="flex items-center justify-center gap-2 text-gray-500 hover:text-[#00FF94] transition-colors mt-8 text-sm">
                         <ArrowLeft size={16} /> Volver a la web
                     </Link>
                 </div>
-            </main>
+            </main >
         );
     }
 

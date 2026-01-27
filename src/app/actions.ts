@@ -413,3 +413,92 @@ export async function getAutomationMetrics(clientId: string, password?: string) 
         return DUMMY_METRICS;
     }
 }
+
+export async function requestDashboardAccess(email: string) {
+    if (!email) return { success: false, error: 'Email requerido.' };
+
+    try {
+        // 1. Verificar si el email existe en automation_metrics
+        const { data: client, error: fetchError } = await supabase
+            .from('automation_metrics')
+            .select('client_name')
+            .eq('client_email', email)
+            .single();
+
+        if (fetchError || !client) {
+            return {
+                success: false,
+                error: 'Este email no está registrado como cliente activo. Contacta con soporte@hectechai.com si crees que es un error.'
+            };
+        }
+
+        // 2. Generar contraseña aleatoria (8 caracteres)
+        const newPassword = Math.random().toString(36).slice(-8).toUpperCase();
+
+        // 3. Guardar en Supabase
+        const { error: updateError } = await supabase
+            .from('automation_metrics')
+            .update({ password: newPassword })
+            .eq('client_email', email);
+
+        if (updateError) {
+            console.error('Error updating password:', updateError);
+            throw new Error('No se pudo generar la contraseña.');
+        }
+
+        // 4. Enviar Email
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+        });
+
+        const mailOptions = {
+            from: `"HecTechAi Security" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: '🔐 Tus credenciales de acceso - HecTechAi',
+            html: `
+                <div style="font-family: sans-serif; padding: 40px; color: #333; background-color: #f9f9f9;">
+                    <div style="max-width: 600px; margin: 0 auto; background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+                        <div style="background: #00FF94; padding: 30px; text-align: center;">
+                            <h1 style="color: #000; margin: 0; font-size: 24px;">HecTechAi Dashboard</h1>
+                        </div>
+                        <div style="padding: 40px;">
+                            <h2 style="color: #111;">Hola, ${client.client_name}</h2>
+                            <p style="font-size: 16px; line-height: 1.6; color: #666;">
+                                Has solicitado acceso a tu panel de control de impacto de IA. Aquí tienes tus credenciales seguras para entrar ahora mismo:
+                            </p>
+                            
+                            <div style="background: #f4f4f4; padding: 25px; border-radius: 12px; margin: 30px 0; border: 1px dashed #ddd;">
+                                <p style="margin: 0 0 10px 0;"><strong>Email:</strong> ${email}</p>
+                                <p style="margin: 0;"><strong>Contraseña temporal:</strong> <span style="font-family: monospace; font-size: 20px; color: #00FF94; background: #000; padding: 2px 8px; border-radius: 4px;">${newPassword}</span></p>
+                            </div>
+                            
+                            <div style="text-align: center; margin-top: 40px;">
+                                <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'https://hectechai.com'}/dashboard" 
+                                   style="background: #00FF94; color: #000; padding: 16px 32px; border-radius: 12px; font-weight: bold; text-decoration: none; display: inline-block;">
+                                    Acceder a mi Dashboard
+                                </a>
+                            </div>
+                            
+                            <hr style="border: 0; border-top: 1px solid #eee; margin: 40px 0;" />
+                            <p style="font-size: 12px; color: #999; text-align: center;">
+                                Si no has solicitado este acceso, por favor ignora este email o contacta con nosotros por seguridad.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        return { success: true, message: '¡Enviado! Revisa tu bandeja de entrada (y la carpeta de spam).' };
+
+    } catch (error) {
+        console.error('Request access error:', error);
+        return { success: false, error: 'Hubo un error al procesar tu solicitud. Inténtalo más tarde.' };
+    }
+}
+
