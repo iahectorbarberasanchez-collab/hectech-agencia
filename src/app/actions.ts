@@ -19,15 +19,17 @@ export async function submitLead(formData: FormData) {
         return { success: false, error: 'Nombre y email son obligatorios.' };
     }
 
+    // --- Supabase Insert Removido por preferencia de usuario (Notion Integration via n8n) ---
+    // Si necesitas guardar en BD SQL en el futuro, descomenta esto:
+    /*
     const { error } = await supabase
         .from('leads')
         .insert([{ name, email, phone, message }]);
 
     if (error) {
-        // INMUNIZACIÓN: Si falla la base de datos, no bloqueamos al usuario.
-        // El lead seguirá llegando por Email y n8n.
-        console.error('Supabase error (SILENCIADO):', error);
+        console.error('Supabase error:', error);
     }
+    */
 
     // --- Enviar a n8n (No bloqueante para mayor velocidad) ---
     const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
@@ -136,7 +138,8 @@ export async function generateAuditAction(business: string, painPoint: string, e
         }
     }
 
-    // --- Guardar en Supabase ---
+    // --- Guardar en Supabase Removido (Notion Integration via n8n) ---
+    /*
     if (email) {
         try {
             await supabase
@@ -151,6 +154,7 @@ export async function generateAuditAction(business: string, painPoint: string, e
             console.error('Error guardando auditoría en supabase:', supaError);
         }
     }
+    */
 
     // INMUNIZACIÓN: Auditoría de respaldo de alta calidad
     const AUDIT_FALLBACK = `
@@ -394,6 +398,7 @@ export async function getAutomationMetrics(clientId: string, password?: string) 
             data: {
                 client_name: data.client_name || 'Cliente HecTechAi',
                 status: data.status || 'ONBOARDING',
+                project_drive_url: data.drive_folder_url || null, // URL de la carpeta de Drive
                 total_actions: data.total_actions || 0,
                 hours_saved: Math.floor((data.total_time_saved || 0) / 60),
                 roi_euros: ((data.total_time_saved || 0) / 60 * 50).toFixed(0),

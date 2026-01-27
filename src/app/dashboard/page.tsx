@@ -51,6 +51,7 @@ const StatCard = ({ title, value, icon: Icon, unit, color }: StatCardProps) => (
 interface MetricsData {
     client_name: string;
     status: string; // Added status field
+    project_drive_url?: string; // Optional Google Drive Link
     total_actions: number;
     hours_saved: number;
     roi_euros: string;
@@ -314,9 +315,21 @@ export default function DashboardPage() {
                             <div className="absolute inset-0 bg-yellow-500/20 rounded-full animate-ping opacity-20"></div>
                         </div>
                         <h2 className="text-3xl font-bold text-white mb-4 text-center">Estamos construyendo tu ecosistema</h2>
-                        <p className="text-gray-400 text-center max-w-lg mb-10 text-lg">
+                        <p className="text-gray-400 text-center max-w-lg mb-8 text-lg">
                             Nuestro equipo está configurando tus agentes de IA. Tienes acceso a tu carpeta de proyecto en Google Drive para ver el progreso en tiempo real.
                         </p>
+
+                        {data.project_drive_url && (
+                            <Link
+                                href={data.project_drive_url}
+                                target="_blank"
+                                className="mb-10 px-6 py-3 bg-[#00FF94]/10 border border-[#00FF94]/50 rounded-xl text-[#00FF94] font-bold hover:bg-[#00FF94]/20 transition-all flex items-center gap-2 group"
+                            >
+                                <Users size={20} />
+                                Acceder a mi Carpeta de Proyecto
+                                <ArrowLeft size={16} className="rotate-180 group-hover:translate-x-1 transition-transform" />
+                            </Link>
+                        )}
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
                             <div className="glass-card p-6 rounded-2xl bg-white/5 border border-white/10 opacity-50">
