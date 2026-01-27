@@ -113,7 +113,7 @@ const Navbar = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             href="/dashboard"
-            className="flex items-center gap-2 text-gray-400 hover:text-white text-sm font-medium transition-colors border border-white/10 px-4 py-2 rounded-lg bg-white/5 hover:border-[#00FF94]/30"
+            className="flex items-center gap-2 bg-[#00FF94] text-black px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-[#00cc76] transition-all glow-effect"
           >
             <Users size={16} />
             Acceso Clientes
@@ -143,7 +143,7 @@ const Navbar = () => {
           <a
             href="/dashboard"
             onClick={() => setIsOpen(false)}
-            className="flex items-center justify-center gap-2 text-[#00FF94] font-bold text-lg py-4 border border-[#00FF94]/20 rounded-xl bg-[#00FF94]/5"
+            className="flex items-center justify-center gap-2 bg-[#00FF94] text-black w-full py-4 rounded-xl font-bold shadow-[0_0_20px_rgba(0,255,148,0.2)]"
           >
             <Users size={20} />
             Acceso Clientes
