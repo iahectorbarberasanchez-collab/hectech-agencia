@@ -38,6 +38,8 @@ import { ContactForm } from './ContactForm';
 import { generateAuditAction } from './actions';
 import { VisualAudit } from '../components/VisualAudit';
 import Pricing from '../components/Pricing';
+import { HeroChatbot } from '../components/HeroChatbot';
+import { Testimonials } from '../components/Testimonials';
 
 // --- ANIMATION HELPER ---
 const Reveal = ({ children, width = "fit-content" }: { children: React.ReactNode, width?: "fit-content" | "100%" }) => {
@@ -254,84 +256,9 @@ const Hero = () => {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, ease: "easeOut" }}
-          className="relative h-[300px] sm:h-[400px] lg:h-[600px] flex items-center justify-center order-first lg:order-last mt-8 lg:mt-0"
+          className="relative flex items-center justify-center order-first lg:order-last mt-8 lg:mt-0"
         >
-          <div className="relative w-full h-full max-w-md">
-            {/* Elemento Central: Cerebro/Bot */}
-            <motion.div
-              animate={{ y: [0, -15, 0] }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-28 h-28 sm:w-40 sm:h-40 bg-black border border-[#00FF94]/50 rounded-3xl z-20 flex items-center justify-center shadow-[0_0_80px_-10px_rgba(0,255,148,0.4)] premium-border"
-            >
-              <Bot size={48} className="text-[#00FF94] glow-text sm:hidden" />
-              <Bot size={64} className="text-[#00FF94] glow-text hidden sm:block" />
-            </motion.div>
-
-            {/* Floating Cards con Motion */}
-            <motion.div
-              animate={{ y: [-10, 10, -10], x: [0, 5, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute top-10 left-0 p-4 glass-card rounded-xl z-30 border-l-2 border-l-[#00FF94]"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-[#00FF94]/20 rounded-lg text-[#00FF94]"><MessageSquare size={16} /></div>
-                <div>
-                  <div className="text-[10px] text-gray-500">IA AGENT</div>
-                  <div className="text-sm font-bold text-white leading-tight text-nowrap">Ventas 24/7 activas</div>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              animate={{ y: [10, -10, 10], x: [0, -5, 0] }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute bottom-20 right-0 p-4 glass-card rounded-xl z-30 border-l-2 border-l-blue-400"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400"><Calendar size={16} /></div>
-                <div>
-                  <div className="text-[10px] text-gray-500">SCHEDULER</div>
-                  <div className="text-sm font-bold text-white leading-tight text-nowrap">Cita agendada ✅</div>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              animate={{ y: [-5, 5, -5] }}
-              transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute bottom-10 left-10 p-4 glass-card rounded-xl z-30 border-l-2 border-l-purple-400"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-500/20 rounded-lg text-purple-400"><Database size={16} /></div>
-                <div>
-                  <div className="text-[10px] text-gray-500">DATABASE</div>
-                  <div className="text-sm font-bold text-white leading-tight text-nowrap">Sincronización total</div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Líneas de conexión animadas */}
-            <svg className="absolute inset-0 w-full h-full z-0 pointer-events-none" viewBox="0 0 100 100">
-              <motion.path
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 0.2 }}
-                transition={{ duration: 2, delay: 1 }}
-                d="M50 50 L20 20" stroke="#00FF94" strokeWidth="0.5" strokeDasharray="2,2"
-              />
-              <motion.path
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 0.2 }}
-                transition={{ duration: 2, delay: 1.2 }}
-                d="M50 50 L80 80" stroke="#00C2FF" strokeWidth="0.5" strokeDasharray="2,2"
-              />
-              <motion.path
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 0.2 }}
-                transition={{ duration: 2, delay: 1.4 }}
-                d="M50 50 L30 80" stroke="#8B5CF6" strokeWidth="0.5" strokeDasharray="2,2"
-              />
-            </svg>
-          </div>
+          <HeroChatbot />
         </motion.div>
       </div>
     </section>
@@ -777,6 +704,9 @@ const Services = () => {
                 <p className="text-xs text-[#00FF94] font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
                 <p className="text-sm text-gray-300">Agente inmobiliario que califica leads, responde dudas sobre la zona y reserva visitas en tu Calendar 24/7 sin intervención humana.</p>
               </div>
+              <a href="#contacto" className="mt-6 inline-flex items-center gap-2 text-[#00FF94] font-bold text-sm hover:gap-3 transition-all">
+                Configurar mi Agente <ArrowRight size={16} />
+              </a>
             </div>
           </div>
 
@@ -794,6 +724,9 @@ const Services = () => {
                 <p className="text-[10px] text-[#00C2FF] font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
                 <p className="text-xs text-gray-300">Sincronización de pedidos con tu CRM y software contable, notificando al equipo por Slack al instante.</p>
               </div>
+              <a href="#contacto" className="mt-4 inline-flex items-center gap-2 text-[#00C2FF] font-bold text-xs hover:gap-3 transition-all">
+                Conectar mis apps <ArrowRight size={14} />
+              </a>
             </div>
           </div>
 
@@ -809,6 +742,9 @@ const Services = () => {
               <p className="text-[10px] text-[#00FF94] font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
               <p className="text-xs text-gray-300">Segmentación de clientes para campañas de WhatsApp según historial de compra.</p>
             </div>
+            <a href="#contacto" className="mt-4 inline-flex items-center gap-2 text-[#00FF94] font-bold text-xs hover:gap-3 transition-all">
+              Organizar mis datos <ArrowRight size={14} />
+            </a>
           </div>
 
           <div className="glass-card rounded-3xl p-8 flex flex-col justify-between group border-white/5 hover:border-purple-500/30 transition-colors">
@@ -823,6 +759,9 @@ const Services = () => {
               <p className="text-[10px] text-purple-400 font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
               <p className="text-xs text-gray-300">Panel interactivo que muestra leads diarios, tasa de conversión y tiempo humano ahorrado al mes.</p>
             </div>
+            <a href="#contacto" className="mt-4 inline-flex items-center gap-2 text-purple-400 font-bold text-xs hover:gap-3 transition-all">
+              Ver mis métricas <ArrowRight size={14} />
+            </a>
           </div>
 
           <div className="glass-card rounded-3xl p-8 flex flex-col justify-between group border-white/5 hover:border-orange-400/30 transition-colors">
@@ -837,6 +776,9 @@ const Services = () => {
               <p className="text-[10px] text-orange-400 font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
               <p className="text-xs text-gray-300">Generación automática de descripciones para inmuebles o anuncios de apartamentos vacacionales a partir de una simple lista de características.</p>
             </div>
+            <a href="#contacto" className="mt-4 inline-flex items-center gap-2 text-orange-400 font-bold text-xs hover:gap-3 transition-all">
+              Generar contenido <ArrowRight size={14} />
+            </a>
           </div>
 
           <Reveal width="100%">
@@ -1250,6 +1192,7 @@ export default function Home() {
       <SmartAudit />
       <Services />
       <Pricing />
+      <Testimonials />
       <Process />
       <AboutUs />
       <FAQ />
