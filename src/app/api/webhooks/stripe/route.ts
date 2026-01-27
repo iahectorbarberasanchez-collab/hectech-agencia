@@ -1,13 +1,13 @@
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { supabase } from '@/lib/supabase';
+import type Stripe from 'stripe';
 
 export async function POST(req: Request) {
     const body = await req.text();
     const signature = (await headers()).get('Stripe-Signature') as string;
 
-    let event;
+    let event: Stripe.Event;
 
     try {
         event = stripe.webhooks.constructEvent(
@@ -15,16 +15,16 @@ export async function POST(req: Request) {
             signature,
             process.env.STRIPE_WEBHOOK_SECRET!
         );
-    } catch (err: any) {
-        return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
+    } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        return NextResponse.json({ error: `Webhook Error: ${errorMessage}` }, { status: 400 });
     }
 
-    const session = event.data.object as any;
+    const session = event.data.object as Stripe.Checkout.Session;
 
     if (event.type === 'checkout.session.completed') {
-        // Aquí es donde actualizamos nuestra base de datos o enviamos una señal a n8n
         const customerEmail = session.customer_details?.email;
-        const amountTotal = session.amount_total / 100;
+        const amountTotal = (session.amount_total || 0) / 100;
 
         console.log(`Payment completed for ${customerEmail}: ${amountTotal}€`);
 

@@ -684,7 +684,7 @@ const DemoShowcase = () => {
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
+                    onClick={() => setActiveTab(tab.id as 'realestate' | 'health' | 'resto' | 'hotels' | 'vacation')}
                     className={`px-5 py-3 rounded-full text-sm font-medium transition-all ${activeTab === tab.id
                       ? 'bg-[#00FF94] text-black shadow-[0_0_20px_rgba(0,255,148,0.4)]'
                       : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/5'
@@ -972,7 +972,7 @@ const AboutUs = () => {
             <Reveal width="100%">
               <div className="p-6 bg-white/5 rounded-2xl border-l-4 border-[#00FF94]">
                 <p className="text-gray-300 italic leading-relaxed">
-                  "Mi misión es que la IA haga el trabajo aburrido para que tú te dediques a lo que realmente importa: hacer crecer tu empresa y disfrutar de tu tiempo."
+                  &quot;Mi misión es que la IA haga el trabajo aburrido para que tú te dediques a lo que realmente importa: hacer crecer tu empresa y disfrutar de tu tiempo.&quot;
                 </p>
               </div>
             </Reveal>

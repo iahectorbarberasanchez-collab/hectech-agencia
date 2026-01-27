@@ -16,7 +16,16 @@ import Link from 'next/link';
 import { getAutomationMetrics } from '../actions';
 
 // Componente para las tarjetas de estadísticas
-const StatCard = ({ title, value, icon: Icon, unit, color }: any) => (
+interface StatCardProps {
+    title: string;
+    value: string | number;
+    icon: React.ElementType;
+    unit: string;
+    color: string;
+}
+
+// Componente para las tarjetas de estadísticas
+const StatCard = ({ title, value, icon: Icon, unit, color }: StatCardProps) => (
     <div className="glass-card p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-[#00FF94]/40 transition-all duration-300 group">
         <div className="flex justify-between items-start mb-4">
             <div className="p-3 rounded-xl bg-white/5" style={{ color: color }}>
@@ -34,11 +43,19 @@ const StatCard = ({ title, value, icon: Icon, unit, color }: any) => (
     </div>
 );
 
+interface MetricsData {
+    client_name: string;
+    total_actions: number;
+    hours_saved: number;
+    roi_euros: string;
+    history: Array<{ month: string; value: number }>;
+}
+
 export default function DashboardPage() {
     const [clientId, setClientId] = useState('');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<MetricsData | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -51,19 +68,20 @@ export default function DashboardPage() {
         try {
             const response = await getAutomationMetrics(clientId);
             if (response.success && response.data) {
-                setData(response.data);
+                setData(response.data as MetricsData);
                 setIsAuthenticated(true);
             } else {
                 setError(response.error || 'No se pudo acceder al dashboard.');
             }
-        } catch (err) {
+        } catch (err: unknown) {
+            console.error('Login error:', err);
             setError('Error de conexión. Inténtalo de nuevo.');
         } finally {
             setLoading(false);
         }
     };
 
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !data) {
         return (
             <main className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
                 <div className="w-full max-w-md animate-in fade-in zoom-in duration-500">
@@ -171,11 +189,11 @@ export default function DashboardPage() {
                             Crecimiento de Eficiencia
                         </h3>
                         <div className="flex-1 flex items-end justify-between gap-4 pt-10">
-                            {data.history.map((item: any, i: number) => (
+                            {data.history.map((item: { month: string; value: number }, i: number) => (
                                 <div key={i} className="flex-1 flex flex-col items-center gap-4">
                                     <div
                                         className="w-full bg-gradient-to-t from-[#00FF94]/20 to-[#00FF94] rounded-t-lg transition-all duration-1000"
-                                        style={{ height: `${(item.value / 500) * 100}%` }}
+                                        style={{ height: `${(item.value / 1250) * 100}%` }}
                                     ></div>
                                     <span className="text-sm font-medium text-gray-500">{item.month}</span>
                                 </div>

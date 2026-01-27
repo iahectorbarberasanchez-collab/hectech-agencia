@@ -17,17 +17,17 @@ export function VisualAudit() {
         setResult(null);
 
         try {
-            const response = await generateVisualAuditAction(url) as any;
-            if (response.success && response.data) {
+            const response = await generateVisualAuditAction(url);
+            if (response.success && 'data' in response) {
                 setResult({
                     data: response.data,
                     screenshot: response.screenshot || '',
                     mockupPrompt: response.mockupPrompt
                 });
-            } else {
+            } else if (!response.success && 'error' in response) {
                 setError(response.error || "⚠️ No pudimos analizar esta web. Revisa que la URL sea correcta.");
             }
-        } catch (e) {
+        } catch {
             setError("⚠️ Error de conexión. Inténtalo de nuevo.");
         } finally {
             setLoading(false);

@@ -1,4 +1,4 @@
-import React from 'react';
+import Link from 'next/link';
 
 const LegalLayout = ({ children, title }: { children: React.ReactNode, title: string }) => (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00FF94] selection:text-black pt-32 pb-24">
@@ -8,9 +8,9 @@ const LegalLayout = ({ children, title }: { children: React.ReactNode, title: st
                 {children}
             </div>
             <div className="mt-12">
-                <a href="/" className="text-[#00FF94] hover:underline flex items-center gap-2">
+                <Link href="/" className="text-[#00FF94] hover:underline flex items-center gap-2">
                     ← Volver al inicio
-                </a>
+                </Link>
             </div>
         </div>
     </div>
