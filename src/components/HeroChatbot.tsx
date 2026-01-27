@@ -21,24 +21,61 @@ export const HeroChatbot = () => {
         {
             id: 1,
             type: 'bot',
-            text: '¡Hola! Soy Hector-AI. 👋 ¿Sabías que el 70% de los negocios locales pierden ventas por no responder a tiempo?',
-            options: ['¿En serio?', 'Cuéntame más'],
+            text: '¡Hola! Soy Hector-AI, tu Concierge de Automatización. 👋',
         },
         {
             id: 2,
             type: 'bot',
-            text: 'Sí, si un cliente no recibe respuesta en 5 minutos, la probabilidad de conversión cae un 80%.',
+            text: 'Déjame hacerte una pregunta: ¿Cuántas horas a la semana pierdes respondiendo mensajes repetitivos, agendando citas o persiguiendo leads?',
+            options: ['Muchas...', 'Demasiadas', 'No llevo la cuenta'],
         },
         {
             id: 3,
             type: 'bot',
-            text: 'En HecTechAi creamos agentes que venden y agendan por ti 24/7. ¿Qué es lo que más te quita tiempo hoy?',
-            options: ['Responder WhatsApps', 'Agendar citas', 'Seguimiento de leads'],
+            text: 'Lo entiendo perfectamente. La mayoría de negocios pierden entre 15-20 horas semanales en tareas que una IA podría hacer automáticamente.',
         },
         {
             id: 4,
             type: 'bot',
-            text: 'Entiendo perfectamente. Esa es nuestra especialidad: devolverte tu tiempo mientras tu negocio crece en automático. 🚀',
+            text: 'Aquí está el problema: Si un cliente potencial te escribe a las 11 de la noche o un domingo, ¿quién le responde?',
+            options: ['Nadie, hasta el lunes', 'Yo... desde mi móvil', 'Perdemos ese lead'],
+        },
+        {
+            id: 5,
+            type: 'bot',
+            text: 'Exacto. Y ahí es donde pierdes dinero. Los estudios muestran que si no respondes en los primeros 5 minutos, la probabilidad de conversión cae un 80%.',
+        },
+        {
+            id: 6,
+            type: 'bot',
+            text: 'Ahora imagina esto: Un agente de IA que trabaja 24/7, responde al instante, califica leads, agenda citas en tu calendario y hace seguimiento automático.',
+            options: ['Suena bien, ¿cómo funciona?', 'Necesito esto ya', '¿Es complicado de configurar?'],
+        },
+        {
+            id: 7,
+            type: 'bot',
+            text: 'Es más simple de lo que piensas. Analizamos tu negocio, identificamos qué tareas te quitan más tiempo, y diseñamos agentes IA específicos para tu sector.',
+        },
+        {
+            id: 8,
+            type: 'bot',
+            text: 'Por ejemplo: Si tienes una inmobiliaria, el agente responde preguntas sobre propiedades, envía fotos, agenda visitas y sincroniza todo con tu CRM. Sin que muevas un dedo.',
+        },
+        {
+            id: 9,
+            type: 'bot',
+            text: 'Lo mejor: La mayoría de nuestros clientes recuperan la inversión en menos de 2 meses gracias al tiempo ahorrado y los leads que ya no se pierden.',
+            options: ['¿Cuánto cuesta?', 'Quiero una demo', '¿Funciona para mi sector?'],
+        },
+        {
+            id: 10,
+            type: 'bot',
+            text: 'Cada negocio es diferente, por eso ofrecemos una auditoría gratuita donde analizamos tu caso específico y te mostramos exactamente cuánto podrías ahorrar.',
+        },
+        {
+            id: 11,
+            type: 'bot',
+            text: '¿Listo para recuperar tu tiempo y dejar de perder clientes? Agenda una consultoría gratuita de 30 minutos y te muestro cómo funciona en tu negocio. 🚀',
             action: 'show_cta'
         }
     ];
@@ -103,7 +140,7 @@ export const HeroChatbot = () => {
                 {/* Chat Area */}
                 <div
                     ref={scrollRef}
-                    className="h-[350px] overflow-y-auto p-6 flex flex-col gap-4 custom-scrollbar"
+                    className="h-[450px] overflow-y-auto p-6 flex flex-col gap-4 custom-scrollbar"
                 >
                     <AnimatePresence>
                         {messages.map((msg) => (
@@ -114,8 +151,8 @@ export const HeroChatbot = () => {
                                 className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
                             >
                                 <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed ${msg.type === 'user'
-                                        ? 'bg-[#00C2FF]/20 text-white rounded-tr-sm border border-[#00C2FF]/20'
-                                        : 'bg-white/5 text-gray-200 rounded-tl-sm border border-white/10'
+                                    ? 'bg-[#00C2FF]/20 text-white rounded-tr-sm border border-[#00C2FF]/20'
+                                    : 'bg-white/5 text-gray-200 rounded-tl-sm border border-white/10'
                                     }`}>
                                     {msg.text}
 

@@ -37,9 +37,7 @@ import { motion, useInView, useAnimation } from 'framer-motion';
 import { ContactForm } from './ContactForm';
 import { generateAuditAction } from './actions';
 import { VisualAudit } from '../components/VisualAudit';
-import Pricing from '../components/Pricing';
 import { HeroChatbot } from '../components/HeroChatbot';
-import { Testimonials } from '../components/Testimonials';
 
 // --- ANIMATION HELPER ---
 const Reveal = ({ children, width = "fit-content" }: { children: React.ReactNode, width?: "fit-content" | "100%" }) => {
@@ -1191,8 +1189,6 @@ export default function Home() {
       <DemoShowcase />
       <SmartAudit />
       <Services />
-      <Pricing />
-      <Testimonials />
       <Process />
       <AboutUs />
       <FAQ />
