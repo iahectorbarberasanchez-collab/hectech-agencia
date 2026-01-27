@@ -99,14 +99,24 @@ export const HeroChatbot = () => {
             setIsTyping(true);
             setTimeout(() => {
                 const currentMessage = script[scriptIndex];
+                const nextIndex = scriptIndex + 1;
                 setMessages(prev => [...prev, currentMessage]);
                 setIsTyping(false);
-                setScriptIndex(prev => prev + 1);
+                setScriptIndex(nextIndex);
 
                 // Si el mensaje no tiene opciones ni acciones, continuar automáticamente
-                if (!currentMessage.options && !currentMessage.action && scriptIndex + 1 < script.length) {
+                if (!currentMessage.options && !currentMessage.action && nextIndex < script.length) {
                     setTimeout(() => {
-                        addNextMessage();
+                        // Llamar directamente con el siguiente índice
+                        if (nextIndex < script.length) {
+                            setIsTyping(true);
+                            setTimeout(() => {
+                                const nextMessage = script[nextIndex];
+                                setMessages(prev => [...prev, nextMessage]);
+                                setIsTyping(false);
+                                setScriptIndex(nextIndex + 1);
+                            }, 1500);
+                        }
                     }, 1000);
                 }
             }, 1500);
