@@ -15,7 +15,6 @@ import {
   Menu,
   X,
   CheckCircle2,
-  Play,
   Database,
   Globe,
   Sparkles,
@@ -222,7 +221,7 @@ const Hero = () => {
               href="#demos"
               className="px-8 py-4 rounded-xl font-bold text-white border border-white/20 transition-all flex items-center justify-center gap-2 group"
             >
-              <Play size={18} className="group-hover:text-[#00FF94] transition-colors" />
+              <Sparkles size={18} className="group-hover:text-[#00FF94] transition-colors" />
               Ver Demos en vivo
             </motion.a>
           </div>
@@ -322,72 +321,6 @@ const Benefits = () => {
     </section>
   );
 }
-
-const VideoDemo = () => {
-  const [showVideo, setShowVideo] = useState(false);
-
-  return (
-    <section className="py-24 relative overflow-hidden bg-gradient-to-b from-[#0A0A0A] to-black">
-      <div className="absolute inset-0 circuit-bg opacity-10 pointer-events-none"></div>
-
-      <div className="max-w-6xl mx-auto px-6 relative z-10">
-        <Reveal width="100%">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">
-              Mira cómo <span className="text-gradient">transformamos negocios</span>
-            </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">
-              Un vistazo rápido a cómo la IA puede automatizar tu negocio en minutos, no meses.
-            </p>
-          </div>
-        </Reveal>
-
-        <Reveal width="100%">
-          <div className="relative group cursor-pointer" onClick={() => setShowVideo(true)}>
-            <div className="aspect-video rounded-3xl overflow-hidden border border-white/10 relative">
-              <div className="absolute inset-0 bg-gradient-to-tr from-[#00FF94]/20 to-[#00C2FF]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <motion.div
-                  whileHover={{ scale: 1.1 }}
-                  className="w-24 h-24 rounded-full bg-[#00FF94] flex items-center justify-center shadow-[0_0_50px_rgba(0,255,148,0.5)]"
-                >
-                  <Play size={40} className="text-black ml-1" fill="black" />
-                </motion.div>
-              </div>
-              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center transition-opacity group-hover:opacity-0">
-                <div className="text-center">
-                  <div className="text-white text-2xl font-bold mb-2">Ver Demo en Acción</div>
-                  <div className="text-gray-300 text-sm">2 minutos que cambiarán tu negocio</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Reveal>
-
-        {showVideo && (
-          <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-6" onClick={() => setShowVideo(false)}>
-            <div className="relative w-full max-w-5xl" onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => setShowVideo(false)} className="absolute -top-12 right-0 text-white hover:text-[#00FF94] transition-colors">
-                <X size={32} />
-              </button>
-              <div className="aspect-video rounded-2xl overflow-hidden border border-white/20">
-                <iframe
-                  width="100%"
-                  height="100%"
-                  src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1"
-                  title="Demo HecTechAi"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="w-full h-full"
-                ></iframe>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </section>
-  );
-};
 
 
 const SmartAudit = () => {
@@ -1171,7 +1104,6 @@ export default function Home() {
       <Hero />
       <Benefits />
       <ROICalculator />
-      <VideoDemo />
       <DemoShowcase />
       <SmartAudit />
       <Services />
