@@ -208,7 +208,7 @@ NO uses jerga técnica innecesaria. Habla como un asesor de confianza que entien
     }
 }
 
-export async function generateVisualAuditAction(url: string) {
+export async function generateVisualAuditAction(url: string, email?: string) {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
@@ -225,6 +225,27 @@ export async function generateVisualAuditAction(url: string) {
         mockupPrompt: "A state-of-the-art landing page, glassmorphism style, neon emerald accents, deep dark mode, floating UI elements, 8k resolution, cinematic lighting, professional tech aesthetic.",
         screenshot: DEFAULT_SCREENSHOT
     };
+
+    // --- Enviar Lead de Auditoría Visual a n8n ---
+    const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
+    if (n8nWebhookUrl && email) {
+        try {
+            await fetch(n8nWebhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    lead_source: 'visual_audit',
+                    url,
+                    email,
+                    timestamp: new Date().toISOString(),
+                    url_origen: process.env.NEXT_PUBLIC_SITE_URL || 'hectechai.com'
+                }),
+            });
+            console.log('✅ Auditoría visual enviada a n8n correctamente');
+        } catch (e) {
+            console.error('Error enviando auditoría visual a n8n:', e);
+        }
+    }
 
     try {
         // 1. Intentar obtener Screenshot
@@ -253,26 +274,31 @@ export async function generateVisualAuditAction(url: string) {
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
         const prompt = `
-            Actúa como el Director de Conversión (CRO) de HecTechAi. Tu obsesión no es que la web sea bonita, sino que VENDA.
-            Analiza esta web (o su estructura base): ${url}
-            
-            1. ANÁLISIS DE FRICCIÓN (Bullet points):
-               - Identifica 3 puntos exactos donde el cliente está perdiendo dinero/leads (ej: formularios lentos, falta de llamada a la acción clara).
-               - Sé directo y enfocado al negocio.
-            
-            2. SOLUCIÓN HECTECH (La Venta):
-               - Por cada punto, explica cómo nuestra automatización (Chatbots, Agendas) lo resuelve.
-               - Enfoque: "Recuperar Tiempo" y "Captura Inmediata".
-            
-            3. PROMPT DE MOCKUP:
-               - Genera un prompt para un rediseño: "Clean, High-Trust, Minimalist, High-Conversion". No uses "Futuristic".
-            
-            Formato: 
-            [ANALISIS]
-            (Texto)
-            [PROMPT]
-            (Prompt)
-        `;
+Actúa como el Director de Conversión (CRO) de HecTechAi. Tu obsesión no es que la web sea bonita, sino que VENDA.
+
+IMPORTANTE: Responde SIEMPRE en español.
+
+Analiza esta web: ${url}
+
+1. ANÁLISIS DE FRICCIÓN (3 puntos exactos):
+   - Identifica dónde el cliente está perdiendo dinero/leads
+   - Sé directo y enfocado al negocio
+   - Usa viñetas con ❌
+
+2. SOLUCIÓN HECTECH:
+   - Por cada punto, explica cómo nuestra automatización lo resuelve
+   - Enfoque: "Recuperar Tiempo" y "Captura Inmediata"
+   - Usa viñetas con ✅
+
+3. PROMPT DE MOCKUP:
+   - Genera un prompt para rediseño: "Clean, High-Trust, Minimalist, High-Conversion"
+
+Formato:
+[ANALISIS]
+(Texto en español)
+[PROMPT]
+(Prompt en inglés para generación de imagen)
+`;
 
         try {
             const result = await model.generateContent([

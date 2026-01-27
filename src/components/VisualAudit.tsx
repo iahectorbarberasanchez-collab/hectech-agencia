@@ -6,6 +6,7 @@ import { generateVisualAuditAction } from '../app/actions';
 
 export function VisualAudit() {
     const [url, setUrl] = useState('');
+    const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<{ data: string; screenshot: string; mockupPrompt?: string } | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -17,7 +18,7 @@ export function VisualAudit() {
         setResult(null);
 
         try {
-            const response = await generateVisualAuditAction(url);
+            const response = await generateVisualAuditAction(url, email);
             if (response.success && 'data' in response) {
                 setResult({
                     data: response.data,
@@ -44,14 +45,21 @@ export function VisualAudit() {
                 <div className="flex flex-col sm:flex-row gap-3">
                     <input
                         type="text"
-                        placeholder="Introduce tu web para un análisis estético..."
+                        placeholder="https://tuweb.com"
                         className="flex-1 bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-colors"
                         value={url}
                         onChange={(e) => setUrl(e.target.value)}
                     />
+                    <input
+                        type="email"
+                        placeholder="Tu email (para enviarte el análisis)"
+                        className="flex-1 bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-colors"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
                     <button
                         onClick={handleAudit}
-                        disabled={loading || !url}
+                        disabled={loading || !url || !email}
                         className="bg-[#00FF94] text-black px-8 py-4 rounded-xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 min-w-[200px]"
                     >
                         {loading ? (
