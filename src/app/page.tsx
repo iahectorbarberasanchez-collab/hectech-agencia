@@ -1106,8 +1106,8 @@ export default function Home() {
       <DemoShowcase />
       <SmartAudit />
       <Services />
-      <ROICalculator />
       <Process />
+      <ROICalculator />
       <FAQ />
 
       {/* Contact Section reused from previous implementation but styled to match new theme */}
