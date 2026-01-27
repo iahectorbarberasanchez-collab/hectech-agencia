@@ -327,11 +327,14 @@ Formato:
     }
 }
 
-export async function getAutomationMetrics(clientId: string) {
+export async function getAutomationMetrics(clientId: string, password?: string) {
     if (!clientId) return { success: false, error: 'Identificador requerido' };
 
-    // ID de DEMO para previsualización inmediata
+    // Verificación de Contraseña para DEMO
     if (clientId.toUpperCase() === 'DEMO123') {
+        if (password !== 'hector2024') {
+            return { success: false, error: 'Contraseña incorrecta para la Demo.' };
+        }
         return {
             success: true,
             data: {
@@ -351,7 +354,12 @@ export async function getAutomationMetrics(clientId: string) {
         };
     }
 
+    if (!password) {
+        return { success: false, error: 'La contraseña es obligatoria para acceder.' };
+    }
+
     // INMUNIZACIÓN: Si no hay datos o falla el servidor, mostramos métricas simuladas realistas
+    // Solo si el password coincide con un valor de respaldo general (opcional, por ahora solo error)
     const DUMMY_METRICS = {
         success: true,
         data: {
@@ -375,11 +383,12 @@ export async function getAutomationMetrics(clientId: string) {
             .from('automation_metrics')
             .select('*')
             .or(`client_id.eq.${clientId},client_email.eq.${clientId}`)
+            .eq('password', password)
             .single();
 
         if (error || !data) {
-            console.warn("No se encontraron métricas reales, devolviendo simuladas.");
-            return DUMMY_METRICS;
+            console.warn("No se encontraron métricas reales o password incorrecto.");
+            return { success: false, error: 'Credenciales incorrectas o usuario no encontrado.' };
         }
 
         return {

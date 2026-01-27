@@ -59,6 +59,7 @@ interface MetricsData {
 
 export default function DashboardPage() {
     const [clientId, setClientId] = useState('');
+    const [password, setPassword] = useState('');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<MetricsData | null>(null);
@@ -72,7 +73,7 @@ export default function DashboardPage() {
         setError(null);
 
         try {
-            const response = await getAutomationMetrics(clientId);
+            const response = await getAutomationMetrics(clientId, password);
             if (response.success && response.data) {
                 setData(response.data as MetricsData);
                 setIsAuthenticated(true);
@@ -113,6 +114,20 @@ export default function DashboardPage() {
                                     className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-all"
                                     value={clientId}
                                     onChange={(e) => setClientId(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                                    <Lock size={14} className="text-[#00FF94]" />
+                                    Contraseña
+                                </label>
+                                <input
+                                    type="password"
+                                    placeholder="Introduce tu contraseña..."
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-[#00FF94] focus:outline-none transition-all"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
                                     required
                                 />
                             </div>
