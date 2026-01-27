@@ -17,6 +17,7 @@ import {
     Users
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getAutomationMetrics, requestDashboardAccess } from '../actions';
 
 // Componente para las tarjetas de estadísticas
@@ -120,11 +121,23 @@ export default function DashboardPage() {
         return (
             <main className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
                 <div className="w-full max-w-md animate-in fade-in zoom-in duration-500">
-                    <div className="text-center mb-10">
-                        <h1 className="text-4xl font-bold text-white mb-2 tracking-tighter">
-                            HEC<span className="text-[#00FF94]">TECH</span>
-                        </h1>
-                        <p className="text-gray-400">Acceso exclusivo para clientes</p>
+                    <div className="flex flex-col items-center justify-center mb-10 gap-4">
+                        <div className="flex items-center justify-center w-20 h-20 bg-white/5 rounded-2xl border border-white/10 shadow-[0_0_40px_rgba(0,255,148,0.1)] mb-2">
+                            <Image
+                                src="/logo.png"
+                                alt="HecTechAi Logo"
+                                width={56}
+                                height={56}
+                                className="object-contain"
+                                style={{ mixBlendMode: 'screen' }}
+                            />
+                        </div>
+                        <div className="text-center">
+                            <h1 className="text-4xl font-bold text-white tracking-tighter font-display">
+                                Hec<span className="text-[#00FF94]">TechAi</span>
+                            </h1>
+                            <p className="text-gray-400 mt-2">Acceso exclusivo para clientes</p>
+                        </div>
                     </div>
 
                     <div className="glass-card p-8 rounded-3xl bg-white/5 border border-white/10 shadow-2xl relative overflow-hidden group">
