@@ -24,6 +24,10 @@ export async function POST(req: Request) {
             consent_collection: {
                 terms_of_service: 'required',
             },
+            metadata: {
+                payment_type: 'agency_service',
+                contract_required: 'true'
+            }
         });
 
         return NextResponse.json({ sessionId: session.id, url: session.url });

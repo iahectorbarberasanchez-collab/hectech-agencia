@@ -1,80 +1,63 @@
+import React from 'react';
 import Link from 'next/link';
+import { ArrowLeft, ShieldCheck, FileText } from 'lucide-react';
 
 export default function TermsPage() {
     return (
-        <div className="min-h-screen bg-black text-gray-300 font-sans selection:bg-purple-500/30">
-            <div className="max-w-4xl mx-auto px-6 py-20">
-                <div className="mb-12">
-                    <Link href="/" className="text-sm text-purple-400 hover:text-purple-300 transition-colors mb-8 inline-block">
-                        ← Volver al inicio
-                    </Link>
-                    <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
-                        Términos y Condiciones
-                    </h1>
-                    <p className="text-gray-400">
-                        Última actualización: {new Date().toLocaleDateString('es-ES')}
-                    </p>
-                </div>
+        <div className="min-h-screen bg-[#050505] text-white p-6 md:p-12">
+            <div className="max-w-4xl mx-auto">
+                <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-[#00FF94] transition-colors mb-8">
+                    <ArrowLeft size={16} /> Volver al inicio
+                </Link>
 
-                <div className="space-y-12 prose prose-invert prose-purple max-w-none">
-                    <section>
-                        <h2 className="text-2xl font-semibold text-white mb-4">1. Introducción</h2>
-                        <p className="leading-relaxed">
-                            Bienvenido a HecTechAI. Al contratar nuestros servicios de automatización e inteligencia artificial,
-                            aceptas estos términos y condiciones. Nos dedicamos a transformar negocios mediante soluciones tecnológicas
-                            avanzadas, y estos términos rigen nuestra relación profesional.
-                        </p>
-                    </section>
+                <div className="glass-card p-8 md:p-12 rounded-3xl border border-white/10 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
+                        <FileText size={200} />
+                    </div>
 
-                    <section>
-                        <h2 className="text-2xl font-semibold text-white mb-4">2. Servicios</h2>
-                        <p className="leading-relaxed mb-4">
-                            HecTechAI ofrece servicios de implementación de chatbots, automatización de flujos de trabajo (n8n, Zapier)
-                            y consultoría de IA. El alcance específico de cada proyecto se define en la propuesta aceptada o en la descripción
-                            del servicio contratado.
-                        </p>
-                    </section>
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="w-12 h-12 bg-[#00FF94]/10 rounded-xl flex items-center justify-center text-[#00FF94]">
+                            <ShieldCheck size={24} />
+                        </div>
+                        <h1 className="text-3xl md:text-4xl font-bold font-display">Términos y Condiciones</h1>
+                    </div>
 
-                    <section>
-                        <h2 className="text-2xl font-semibold text-white mb-4">3. Pagos y Suscripciones</h2>
-                        <p className="leading-relaxed mb-4">
-                            Los servicios pueden facturarse como pago único o suscripción recurrente. Al proporcionar tus datos de pago,
-                            autorizas a HecTechAI a realizar los cargos correspondientes. Las suscripciones pueden cancelarse en cualquier
-                            momento con efecto al finalizar el periodo de facturación actual.
-                        </p>
-                    </section>
+                    <div className="space-y-6 text-gray-300 leading-relaxed">
+                        <p className="text-sm text-gray-500">Última actualización: {new Date().toLocaleDateString()}</p>
 
-                    <section>
-                        <h2 className="text-2xl font-semibold text-white mb-4">4. Propiedad Intelectual</h2>
-                        <p className="leading-relaxed mb-4">
-                            El cliente conserva la propiedad de sus datos. HecTechAI conserva la propiedad intelectual de los componentes
-                            preexistentes, metodologías y código base reutilizable utilizado en la implementación, otorgando al cliente
-                            una licencia de uso perpetua para la solución entregada.
-                        </p>
-                    </section>
+                        <section>
+                            <h2 className="text-xl font-bold text-white mb-2">1. Introducción</h2>
+                            <p>Bienvenido a HecTechAi. Al contratar nuestros servicios de automatización e inteligencia artificial, aceptas los siguientes términos y condiciones. Nos comprometemos a ofrecer soluciones tecnológicas de alta calidad para optimizar tu negocio.</p>
+                        </section>
 
-                    <section>
-                        <h2 className="text-2xl font-semibold text-white mb-4">5. Confidencialidad</h2>
-                        <p className="leading-relaxed mb-4">
-                            Nos comprometemos a mantener la estricta confidencialidad de toda la información comercial y técnica a la que
-                            tengamos acceso durante la prestación del servicio.
-                        </p>
-                    </section>
+                        <section>
+                            <h2 className="text-xl font-bold text-white mb-2">2. Servicios</h2>
+                            <p>HecTechAi provee servicios de desarrollo de chatbots, automatización de flujos de trabajo (n8n/Make) y consultoría de IA. Los detalles específicos de cada implementación se acordarán en la propuesta comercial.</p>
+                        </section>
 
-                    <section>
-                        <h2 className="text-2xl font-semibold text-white mb-4">6. Limitación de Responsabilidad</h2>
-                        <p className="leading-relaxed mb-4">
-                            HecTechAI no se hace responsable de pérdidas indirectas o consecuentes. Nuestra responsabilidad máxima se limita
-                            al importe pagado por el cliente por el servicio específico que originó la reclamación.
-                        </p>
-                    </section>
+                        <section>
+                            <h2 className="text-xl font-bold text-white mb-2">3. Pagos y Suscripciones</h2>
+                            <p>Los servicios se abonan mediante pago único o suscripción recurrente a través de nuestra pasarela segura (Stripe). Las suscripciones se pueden cancelar en cualquier momento con un preaviso de 30 días, salvo que se especifique lo contrario en el contrato particular.</p>
+                        </section>
 
-                    <div className="pt-8 border-t border-gray-800 mt-12">
-                        <p className="text-sm text-gray-500">
-                            HecTechAI - Agencia de Automatización e IA
-                            <br />
-                            Contacto: contacto@hectechai.com
-                        </p>
+                        <section>
+                            <h2 className="text-xl font-bold text-white mb-2">4. Propiedad Intelectual</h2>
+                            <p>El cliente mantiene la propiedad de sus datos. HecTechAi retiene los derechos sobre los componentes de software reutilizables y la metodología empleada, otorgando al cliente una licencia de uso perpetua sobre la solución implementada.</p>
+                        </section>
+
+                        <section>
+                            <h2 className="text-xl font-bold text-white mb-2">5. Responsabilidad</h2>
+                            <p>HecTechAi implementa las mejores prácticas de seguridad, pero no se hace responsable de fallos derivados de servicios de terceros (OpenAI, Google, servidores externos) fuera de nuestro control directo.</p>
+                        </section>
+
+                        <section>
+                            <h2 className="text-xl font-bold text-white mb-2">6. Contacto</h2>
+                            <p>Para cualquier duda legal o administrativa, contáctanos en <a href="mailto:hectechia@gmail.com" className="text-[#00FF94] hover:underline">hectechia@gmail.com</a>.</p>
+                        </section>
+                    </div>
+
+                    <div className="mt-12 pt-8 border-t border-white/10 text-center">
+                        <p className="text-sm text-gray-500">HecTechAi Automation Agency</p>
                     </div>
                 </div>
             </div>
