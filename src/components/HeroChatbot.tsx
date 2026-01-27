@@ -98,9 +98,17 @@ export const HeroChatbot = () => {
         if (scriptIndex < script.length) {
             setIsTyping(true);
             setTimeout(() => {
-                setMessages(prev => [...prev, script[scriptIndex]]);
+                const currentMessage = script[scriptIndex];
+                setMessages(prev => [...prev, currentMessage]);
                 setIsTyping(false);
                 setScriptIndex(prev => prev + 1);
+
+                // Si el mensaje no tiene opciones ni acciones, continuar automáticamente
+                if (!currentMessage.options && !currentMessage.action && scriptIndex + 1 < script.length) {
+                    setTimeout(() => {
+                        addNextMessage();
+                    }, 1000);
+                }
             }, 1500);
         }
     };

@@ -293,6 +293,9 @@ export async function getAutomationMetrics(clientId: string) {
                 total_actions: 2840,
                 hours_saved: 124,
                 roi_euros: "6200",
+                avg_response_time: 4.8,
+                qualified_leads: 156,
+                after_hours_actions: 842,
                 history: [
                     { month: 'Nov', value: 1850 },
                     { month: 'Dic', value: 2140 },
@@ -310,6 +313,9 @@ export async function getAutomationMetrics(clientId: string) {
             total_actions: 1240,
             hours_saved: 42,
             roi_euros: "2100",
+            avg_response_time: 5,
+            qualified_leads: 85,
+            after_hours_actions: 412,
             history: [
                 { month: 'Oct', value: 850 },
                 { month: 'Nov', value: 1050 },
@@ -337,6 +343,9 @@ export async function getAutomationMetrics(clientId: string) {
                 total_actions: data.total_actions || 0,
                 hours_saved: Math.floor((data.total_time_saved || 0) / 60),
                 roi_euros: ((data.total_time_saved || 0) / 60 * 50).toFixed(0),
+                avg_response_time: 5, // fallback
+                qualified_leads: Math.floor((data.total_actions || 0) * 0.1), // fallback
+                after_hours_actions: Math.floor((data.total_actions || 0) * 0.3), // fallback
                 history: [
                     { month: 'Oct', value: Math.floor((data.total_actions || 0) * 0.7) },
                     { month: 'Nov', value: Math.floor((data.total_actions || 0) * 0.9) },

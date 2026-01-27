@@ -10,7 +10,10 @@ import {
     ArrowLeft,
     Loader2,
     Lock,
-    AlertCircle
+    AlertCircle,
+    Moon,
+    Zap,
+    UserCheck
 } from 'lucide-react';
 import Link from 'next/link';
 import { getAutomationMetrics } from '../actions';
@@ -48,6 +51,9 @@ interface MetricsData {
     total_actions: number;
     hours_saved: number;
     roi_euros: string;
+    avg_response_time: number; // en segundos
+    qualified_leads: number;
+    after_hours_actions: number;
     history: Array<{ month: string; value: number }>;
 }
 
@@ -157,13 +163,20 @@ export default function DashboardPage() {
                 </header>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
                     <StatCard
                         title="Tareas Completadas"
                         value={data.total_actions}
                         icon={Activity}
                         unit="ejecuciones"
                         color="#00FF94"
+                    />
+                    <StatCard
+                        title="Atención 24/7"
+                        value={data.after_hours_actions}
+                        icon={Moon}
+                        unit="fuera de horario"
+                        color="#A855F7"
                     />
                     <StatCard
                         title="Tiempo Recuperado"
@@ -173,11 +186,25 @@ export default function DashboardPage() {
                         color="#00C2FF"
                     />
                     <StatCard
+                        title="Velocidad Media"
+                        value={data.avg_response_time}
+                        icon={Zap}
+                        unit="segundos"
+                        color="#FACC15"
+                    />
+                    <StatCard
+                        title="Leads Cualificados"
+                        value={data.qualified_leads}
+                        icon={UserCheck}
+                        unit="listos"
+                        color="#F472B6"
+                    />
+                    <StatCard
                         title="ROI Estimado"
                         value={data.roi_euros}
                         icon={BarChart3}
                         unit="€ ahorrados"
-                        color="#FFD700"
+                        color="#00FF94"
                     />
                 </div>
 
