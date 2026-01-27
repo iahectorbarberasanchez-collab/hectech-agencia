@@ -777,34 +777,22 @@ const Services = () => {
             </a>
           </div>
 
-          <Reveal width="100%">
-            <div className="md:col-span-3 glass-card rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-8 group">
-              <div className="flex-1">
-                <div className="w-12 h-12 bg-[#FFE600] rounded-lg flex items-center justify-center mb-6 text-black group-hover:rotate-12 transition-transform">
-                  <Search size={24} />
-                </div>
-                <h3 className="text-2xl md:text-3xl font-bold mb-2 text-white font-display">Auditoría de Procesos IA</h3>
-                <p className="text-gray-400 max-w-2xl mb-4 text-sm md:text-base">
-                  Analizamos tu operativa actual para identificar cuellos de botella y detectar dónde la IA tendrá el mayor impacto financiero inmediato.
-                </p>
-                <div className="bg-white/5 border border-white/10 rounded-xl p-4 inline-block">
-                  <p className="text-xs text-[#FFE600] font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
-                  <p className="text-xs md:text-sm text-gray-300">Mapeo de flujos de trabajo actuales y proyección de ahorro en costes operativos tras la implementación de agentes IA.</p>
-                </div>
+          <div className="glass-card rounded-3xl p-8 flex flex-col justify-between group border-white/5 hover:border-[#FFE600]/30 transition-colors">
+            <div className="relative z-10">
+              <div className="w-12 h-12 bg-white/5 rounded-lg flex items-center justify-center mb-6 text-[#FFE600] group-hover:scale-110 transition-transform">
+                <Search size={24} />
               </div>
-              <div className="shrink-0">
-                <motion.a
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  href="#contacto"
-                  className="inline-flex items-center gap-2 bg-[#00FF94] text-black px-8 py-4 rounded-full font-bold hover:scale-105 transition-all text-nowrap"
-                >
-                  Optimizar mi negocio
-                  <ArrowRight size={20} />
-                </motion.a>
-              </div>
+              <h3 className="text-2xl font-bold mb-2 text-white">Auditoría de Procesos IA</h3>
+              <p className="text-gray-400 text-sm mb-4">Analizamos tu operativa actual para identificar cuellos de botella y detectar dónde la IA tendrá el mayor impacto financiero inmediato.</p>
             </div>
-          </Reveal>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+              <p className="text-[10px] text-[#FFE600] font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
+              <p className="text-xs text-gray-300">Mapeo de flujos de trabajo actuales y proyección de ahorro en costes operativos tras la implementación de agentes IA.</p>
+            </div>
+            <a href="#contacto" className="mt-4 inline-flex items-center gap-2 text-[#FFE600] font-bold text-xs hover:gap-3 transition-all">
+              Optimizar mi negocio <ArrowRight size={14} />
+            </a>
+          </div>
         </div>
       </div>
     </section>
