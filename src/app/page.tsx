@@ -84,9 +84,7 @@ const Navbar = () => {
     { name: 'Beneficios', href: '#beneficios' },
     { name: 'Demos', href: '#demos' },
     { name: 'Auditoría IA ✨', href: '#auditoria-ia' },
-    { name: 'Precios', href: '#pricing' },
     { name: 'Servicios', href: '#servicios' },
-    { name: 'Sobre mí', href: '#sobre-nosotros' },
   ];
 
   return (
@@ -1190,7 +1188,6 @@ export default function Home() {
       <SmartAudit />
       <Services />
       <Process />
-      <AboutUs />
       <FAQ />
 
       {/* Contact Section reused from previous implementation but styled to match new theme */}
