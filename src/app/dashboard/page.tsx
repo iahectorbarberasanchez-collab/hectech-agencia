@@ -50,6 +50,7 @@ const StatCard = ({ title, value, icon: Icon, unit, color }: StatCardProps) => (
 
 interface MetricsData {
     client_name: string;
+    status: string; // Added status field
     total_actions: number;
     hours_saved: number;
     roi_euros: string;
@@ -290,98 +291,141 @@ export default function DashboardPage() {
                         <p className="text-gray-400">Dashboard de Impacto HecTechAi</p>
                     </div>
 
-                    <button
-                        onClick={() => setIsAuthenticated(false)}
-                        className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm hover:bg-white/10 transition-colors"
-                    >
-                        Cerrar Sesión
-                    </button>
+                    <div className="flex items-center gap-4">
+                        {(data.status === 'ONBOARDING' || data.status === 'ONBOARDING_IN_PROGRESS') && (
+                            <span className="px-3 py-1 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 rounded-full text-xs font-bold uppercase tracking-wider animate-pulse">
+                                Implementación en Curso
+                            </span>
+                        )}
+                        <button
+                            onClick={() => setIsAuthenticated(false)}
+                            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm hover:bg-white/10 transition-colors"
+                        >
+                            Cerrar Sesión
+                        </button>
+                    </div>
                 </header>
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
-                    <StatCard
-                        title="Tareas Completadas"
-                        value={data.total_actions}
-                        icon={Activity}
-                        unit="ejecuciones"
-                        color="#00FF94"
-                    />
-                    <StatCard
-                        title="Atención 24/7"
-                        value={data.after_hours_actions}
-                        icon={Moon}
-                        unit="fuera de horario"
-                        color="#A855F7"
-                    />
-                    <StatCard
-                        title="Tiempo Recuperado"
-                        value={data.hours_saved}
-                        icon={Clock}
-                        unit="horas"
-                        color="#00C2FF"
-                    />
-                    <StatCard
-                        title="Velocidad Media"
-                        value={data.avg_response_time}
-                        icon={Zap}
-                        unit="segundos"
-                        color="#FACC15"
-                    />
-                    <StatCard
-                        title="Leads Cualificados"
-                        value={data.qualified_leads}
-                        icon={UserCheck}
-                        unit="listos"
-                        color="#F472B6"
-                    />
-                    <StatCard
-                        title="ROI Estimado"
-                        value={data.roi_euros}
-                        icon={BarChart3}
-                        unit="€ ahorrados"
-                        color="#00FF94"
-                    />
-                </div>
+                {(data.status === 'ONBOARDING' || data.status === 'ONBOARDING_IN_PROGRESS') ? (
+                    /* ONBOARDING VIEW */
+                    <div className="flex flex-col items-center justify-center py-20 animate-in fade-in zoom-in duration-700">
+                        <div className="w-24 h-24 bg-yellow-500/10 rounded-full flex items-center justify-center mb-6 relative">
+                            <Zap size={40} className="text-yellow-500" />
+                            <div className="absolute inset-0 bg-yellow-500/20 rounded-full animate-ping opacity-20"></div>
+                        </div>
+                        <h2 className="text-3xl font-bold text-white mb-4 text-center">Estamos construyendo tu ecosistema</h2>
+                        <p className="text-gray-400 text-center max-w-lg mb-10 text-lg">
+                            Nuestro equipo está configurando tus agentes de IA. Tienes acceso a tu carpeta de proyecto en Google Drive para ver el progreso en tiempo real.
+                        </p>
 
-                {/* Charts & Detail Section */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
-                    <div className="glass-card p-8 rounded-3xl bg-white/5 border border-white/10 relative overflow-hidden h-[400px] flex flex-col">
-                        <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-[#00FF94]">
-                            <TrendingUp size={24} />
-                            Crecimiento de Eficiencia
-                        </h3>
-                        <div className="flex-1 flex items-end justify-between gap-4 pt-10">
-                            {data.history.map((item: { month: string; value: number }, i: number) => (
-                                <div key={i} className="flex-1 flex flex-col items-center gap-4">
-                                    <div
-                                        className="w-full bg-gradient-to-t from-[#00FF94]/20 to-[#00FF94] rounded-t-lg transition-all duration-1000"
-                                        style={{ height: `${(item.value / 1250) * 100}%` }}
-                                    ></div>
-                                    <span className="text-sm font-medium text-gray-500">{item.month}</span>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
+                            <div className="glass-card p-6 rounded-2xl bg-white/5 border border-white/10 opacity-50">
+                                <div className="text-[#00FF94] mb-3"><ShieldCheck size={24} /></div>
+                                <h3 className="text-white font-bold mb-1">1. Acuerdo</h3>
+                                <p className="text-xs text-gray-500">Completado</p>
+                            </div>
+                            <div className="glass-card p-6 rounded-2xl bg-[#00FF94]/5 border border-[#00FF94]/30 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-[#00FF94]"></div>
+                                <div className="text-yellow-500 mb-3"><Activity size={24} className="animate-spin-slow" /></div>
+                                <h3 className="text-white font-bold mb-1">2. Construcción</h3>
+                                <p className="text-xs text-[#00FF94]">En Progreso...</p>
+                            </div>
+                            <div className="glass-card p-6 rounded-2xl bg-white/5 border border-white/10 opacity-50">
+                                <div className="text-gray-500 mb-3"><Zap size={24} /></div>
+                                <h3 className="text-white font-bold mb-1">3. Activación</h3>
+                                <p className="text-xs text-gray-500">Pendiente</p>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    /* METRICS VIEW (Active) */
+                    <div className="space-y-10">
+                        {/* Stats Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+                            <StatCard
+                                title="Tareas Completadas"
+                                value={data.total_actions}
+                                icon={Activity}
+                                unit="ejecuciones"
+                                color="#00FF94"
+                            />
+                            <StatCard
+                                title="Atención 24/7"
+                                value={data.after_hours_actions}
+                                icon={Moon}
+                                unit="fuera de horario"
+                                color="#A855F7"
+                            />
+                            <StatCard
+                                title="Tiempo Recuperado"
+                                value={data.hours_saved}
+                                icon={Clock}
+                                unit="horas"
+                                color="#00C2FF"
+                            />
+                            <StatCard
+                                title="Velocidad Media"
+                                value={data.avg_response_time}
+                                icon={Zap}
+                                unit="segundos"
+                                color="#FACC15"
+                            />
+                            <StatCard
+                                title="Leads Cualificados"
+                                value={data.qualified_leads}
+                                icon={UserCheck}
+                                unit="listos"
+                                color="#F472B6"
+                            />
+                            <StatCard
+                                title="ROI Estimado"
+                                value={data.roi_euros}
+                                icon={BarChart3}
+                                unit="€ ahorrados"
+                                color="#00FF94"
+                            />
+                        </div>
+
+                        {/* Charts & Detail Section */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
+                            <div className="glass-card p-8 rounded-3xl bg-white/5 border border-white/10 relative overflow-hidden h-[400px] flex flex-col">
+                                <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-[#00FF94]">
+                                    <TrendingUp size={24} />
+                                    Crecimiento de Eficiencia
+                                </h3>
+                                <div className="flex-1 flex items-end justify-between gap-4 pt-10">
+                                    {data.history.map((item: { month: string; value: number }, i: number) => (
+                                        <div key={i} className="flex-1 flex flex-col items-center gap-4">
+                                            <div
+                                                className="w-full bg-gradient-to-t from-[#00FF94]/20 to-[#00FF94] rounded-t-lg transition-all duration-1000"
+                                                style={{ height: `${(item.value / 1250) * 100}%` }}
+                                            ></div>
+                                            <span className="text-sm font-medium text-gray-500">{item.month}</span>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                    </div>
+                            </div>
 
-                    <div className="glass-card p-8 rounded-3xl bg-white/5 border border-white/10 border-l-[#00FF94] border-l-4">
-                        <h3 className="text-xl font-bold mb-4">¿Qué significan estos datos?</h3>
-                        <div className="space-y-6">
-                            <div className="space-y-2">
-                                <p className="text-[#00FF94] font-bold text-lg">Impacto Operativo</p>
-                                <p className="text-gray-400 text-sm leading-relaxed">
-                                    Cada ejecución representa un proceso manual que ha sido eliminado de tu jornada. Actualmente, tu flujo está operando a una capacidad equivalente a {Math.floor(data.hours_saved / 8)} días de trabajo humano recuperados este mes.
-                                </p>
-                            </div>
-                            <div className="pt-4 border-t border-white/10">
-                                <p className="text-white font-medium mb-2 flex items-center gap-2 text-sm uppercase tracking-wider">
-                                    <ShieldCheck size={16} className="text-[#00FF94]" />
-                                    Estado del Sistema: <span className="text-[#00FF94]">Activo</span>
-                                </p>
+                            <div className="glass-card p-8 rounded-3xl bg-white/5 border border-white/10 border-l-[#00FF94] border-l-4">
+                                <h3 className="text-xl font-bold mb-4">¿Qué significan estos datos?</h3>
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <p className="text-[#00FF94] font-bold text-lg">Impacto Operativo</p>
+                                        <p className="text-gray-400 text-sm leading-relaxed">
+                                            Cada ejecución representa un proceso manual que ha sido eliminado de tu jornada. Actualmente, tu flujo está operando a una capacidad equivalente a {Math.floor(data.hours_saved / 8)} días de trabajo humano recuperados este mes.
+                                        </p>
+                                    </div>
+                                    <div className="pt-4 border-t border-white/10">
+                                        <p className="text-white font-medium mb-2 flex items-center gap-2 text-sm uppercase tracking-wider">
+                                            <ShieldCheck size={16} className="text-[#00FF94]" />
+                                            Estado del Sistema: <span className="text-[#00FF94]">Activo</span>
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                )}
             </div>
         </main>
     );
