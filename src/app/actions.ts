@@ -380,6 +380,10 @@ export async function getAutomationMetrics(clientId: string, password?: string) 
         }
     };
 
+    // DIAGNOSTIC LOGGING (To be removed after fix)
+    const usingServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+    console.log(`[Login Attempt] Client: ${clientId} | Using Service Key: ${usingServiceKey}`);
+
     try {
         const { data, error } = await supabase
             .from('automation_metrics')
@@ -388,9 +392,20 @@ export async function getAutomationMetrics(clientId: string, password?: string) 
             .eq('password', password)
             .single();
 
-        if (error || !data) {
-            console.warn("No se encontraron métricas reales o password incorrecto.");
-            return { success: false, error: 'Credenciales incorrectas o usuario no encontrado.' };
+        if (error) {
+            console.error("Supabase Login Error:", error);
+            // Detailed error for debugging production issues
+            if (error.code === 'PGRST116') {
+                return { success: false, error: 'Credenciales inválidas.' };
+            }
+            if (!usingServiceKey) {
+                return { success: false, error: 'ERROR CRÍTICO: Falta SUPABASE_SERVICE_ROLE_KEY en Vercel.' };
+            }
+            return { success: false, error: `Error de sistema: ${error.message}` };
+        }
+
+        if (!data) {
+            return { success: false, error: 'Usuario no encontrado.' };
         }
 
         return {
@@ -412,9 +427,9 @@ export async function getAutomationMetrics(clientId: string, password?: string) 
                 ]
             }
         };
-    } catch (e) {
-        console.error("Error crítico de métricas (INMUNIZADO):", e);
-        return DUMMY_METRICS;
+    } catch (e: any) {
+        console.error("Error crítico de métricas:", e);
+        return { success: false, error: `Excepción: ${e.message || 'Error desconocido'}` };
     }
 }
 
