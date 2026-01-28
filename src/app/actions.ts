@@ -382,7 +382,13 @@ export async function getAutomationMetrics(clientId: string, password?: string) 
 
     // DIAGNOSTIC LOGGING (To be removed after fix)
     const usingServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-    console.log(`[Login Attempt] Client: ${clientId} | Using Service Key: ${usingServiceKey}`);
+    const isPlaceholderUrl = supabaseUrl.includes('placeholder');
+
+    console.log(`[Login Attempt] Client: ${clientId} | ServiceKey: ${usingServiceKey} | URL: ${supabaseUrl}`);
+
+    if (isPlaceholderUrl) {
+        return { success: false, error: 'ERROR CONFIG: Falta NEXT_PUBLIC_SUPABASE_URL en Vercel.' };
+    }
 
     try {
         const { data, error } = await supabase
