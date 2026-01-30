@@ -1,0 +1,290 @@
+{
+  "name": "HecTechAi - Radar de Leads 2.0 (Growth)",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "n",
+              "name": "negocio",
+              "value": "INMOBILIARIAS",
+              "type": "string"
+            },
+            {
+              "id": "c",
+              "name": "ciudad",
+              "value": "sitges",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c6ff7939-5d5e-497f-82cb-45177a4f3d07",
+      "name": "Configurador de Búsqueda1",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -5984,
+        304
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/places",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "770b7aec4d634fe103d835122bb1629073efdd71"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.negocio }} en {{ $json.ciudad }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "HTTP Serper API1",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -5312,
+        304
+      ],
+      "typeVersion": 4.3,
+      "id": "39eeaae1-f467-4082-8d7c-1a1162c7b06a"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "places",
+        "options": {}
+      },
+      "name": "Split Results1",
+      "type": "n8n-nodes-base.itemLists",
+      "position": [
+        -5088,
+        304
+      ],
+      "typeVersion": 3.1,
+      "id": "57c86ce9-a898-4892-8ffb-578c679ca138"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "770b7aec4d634fe103d835122bb1629073efdd71"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"q\": \"site:{{ $json.website }} (instagram OR facebook OR linkedin) OR \\\"{{ $json.title }}\\\" instagram\",\n  \"num\": 5\n}",
+        "options": {}
+      },
+      "id": "social-search-node",
+      "name": "Buscar Redes Sociales",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -4864,
+        304
+      ],
+      "typeVersion": 4.3
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = JSON.stringify($input.all());\nconst instagram = text.match(/instagram\\.com\\/([^\\/\\?\\s\"']+)/)?.[0] || \"\";\nconst facebook = text.match(/facebook\\.com\\/([^\\/\\?\\s\"']+)/)?.[0] || \"\";\nconst linkedin = text.match(/linkedin\\.com\\/(?:company|in)\\/([^\\/\\?\\s\"']+)/)?.[0] || \"\";\n\nreturn {\n  json: {\n    ...$node[\"Split Results1\"].json,\n    instagram,\n    facebook,\n    linkedin,\n    has_social: (instagram || facebook || linkedin) ? \"SÍ\" : \"NO\"\n  }\n};"
+      },
+      "id": "social-extractor-node",
+      "name": "Extractor Social",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -4640,
+        304
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.website }}",
+        "options": {
+          "ignoreSslErrors": true
+        }
+      },
+      "id": "tech-audit-node",
+      "name": "Scan Código Web",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -4416,
+        304
+      ],
+      "typeVersion": 4.3,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const html = $input.item.json.data || \"\";\nconst has_chatbot = /intercom|zendesk|drift|crisp|tawk\\.to|tidio|chat|messenger/i.test(html) ? \"SÍ\" : \"NO\";\nconst has_pixel = /fbevents\\.js|google_tag_manager|ads-pixel/i.test(html) ? \"SÍ\" : \"NO\";\n\nreturn {\n  json: {\n    ...$node[\"Extractor Social\"].json,\n    has_chatbot,\n    has_pixel,\n    tech_debt: (has_chatbot === \"NO\") ? \"ALTA (Sin Chatbot)\" : \"BAJA\"\n  }\n};"
+      },
+      "id": "tech-analyzer-node",
+      "name": "Analista de Deuda Tech",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -4192,
+        304
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1DfBdKutQISGYh-IIZOyXkrHyGoTidKc4SseUbHD1mn4",
+          "mode": "list",
+          "cachedResultName": "Posibles clientes"
+        },
+        "sheetName": "={{ $('Configurador de Búsqueda1').first().json.negocio }}",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "NOMBRE": "={{ $json.title }}",
+            "WEB": "={{ $json.website }}",
+            "CORREO": "Esperando Extracción",
+            "INSTAGRAM": "={{ $json.instagram }}",
+            "DEUDA_TECH": "={{ $json.tech_debt }}",
+            "CHATBOT": "={{ $json.has_chatbot }}",
+            "ADS": "={{ $json.has_pixel }}",
+            "TELEFONO": "={{ $json.phoneNumber }}"
+          }
+        },
+        "options": {}
+      },
+      "name": "Guardar Radar 2.0",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        -3968,
+        304
+      ],
+      "typeVersion": 4.5,
+      "id": "36e82d7e-17d5-4624-82be-2a1e70be38e0"
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "id": "wait-radar-scan",
+      "name": "Espera Anti-Bot (5s)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        -4300,
+        304
+      ]
+    }
+  ],
+  "connections": {
+    "Configurador de Búsqueda1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Serper API1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Serper API1": {
+      "main": [
+        [
+          {
+            "node": "Split Results1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Results1": {
+      "main": [
+        [
+          {
+            "node": "Buscar Redes Sociales",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Redes Sociales": {
+      "main": [
+        [
+          {
+            "node": "Extractor Social",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extractor Social": {
+      "main": [
+        [
+          {
+            "node": "Scan Código Web",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scan Código Web": {
+      "main": [
+        [
+          {
+            "node": "Espera Anti-Bot (5s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Espera Anti-Bot (5s)": {
+      "main": [
+        [
+          {
+            "node": "Analista de Deuda Tech",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analista de Deuda Tech": {
+      "main": [
+        [
+          {
+            "node": "Guardar Radar 2.0",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

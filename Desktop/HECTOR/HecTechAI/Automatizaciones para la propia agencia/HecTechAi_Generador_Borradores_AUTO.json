@@ -1,0 +1,360 @@
+{
+  "name": "HecTechAi - Generador de Borradores de Venta (AUTO-INDUSTRIAL)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "generar-borradores-auto",
+        "options": {}
+      },
+      "id": "e7cc0983-2aae-49f1-a427-b55f9e81ed91",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        -200,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "getMetadata",
+        "documentId": {
+          "__rl": true,
+          "value": "1DfBdKutQISGYh-IIZOyXkrHyGoTidKc4SseUbHD1mn4",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "id": "get-metadata-sheets",
+      "name": "Listar Industrias",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        20,
+        0
+      ],
+      "typeVersion": 4.5,
+      "credentials": {
+        "googleApi": {
+          "id": "0Qi4WhYdVoinf6q4",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "sheets",
+        "options": {}
+      },
+      "id": "split-sheets",
+      "name": "Split by Industry",
+      "type": "n8n-nodes-base.itemLists",
+      "position": [
+        240,
+        0
+      ],
+      "typeVersion": 3.1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "filter-valid-sheets",
+              "leftValue": "={{ $json.properties.title }}",
+              "rightValue": "Sheet1",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "filter-industries",
+      "name": "Filter Industries",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        460,
+        0
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1DfBdKutQISGYh-IIZOyXkrHyGoTidKc4SseUbHD1mn4",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $json.properties.title }}",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "ENVIADO"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "leer-leads-dinamico",
+      "name": "Leer Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        680,
+        0
+      ],
+      "typeVersion": 4.5,
+      "credentials": {
+        "googleApi": {
+          "id": "0Qi4WhYdVoinf6q4",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "filter-pending",
+              "leftValue": "={{ $json.ENVIADO }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "filtrar-no-enviados",
+      "name": "Filtrar no enviados",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        900,
+        0
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=\"Eres Hector Barbera Sanchez, experto en automatización de procesos con IA y fundador de HecTechAi.\\n\\nRedacta un email de prospección ultra-personalizado para: {{ $json.NOMBRE }}.\\n\\nContexto:\\n-Negocio: {{ $json.NOMBRE }}\\n-Ciudad: {{ $json.CIUDAD }}\\n-Sector: {{ $node['Split by Industry'].json.properties.title }}\\n-Website: {{ $json.WEB }}\\n\\nTono: Cercano y profesional. Céntrate en recuperar TIEMPO, no en vender productos. Menciona https://hectechai.com.\"",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1120,
+        -100
+      ],
+      "id": "ai-agent-writer",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleVertex",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        100
+      ],
+      "id": "vertex-model",
+      "name": "Google Vertex Chat Model",
+      "credentials": {
+        "googleApi": {
+          "id": "Trrrz5GhihBmk2U9",
+          "name": "Vertex - HecTech"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "=Propuesta HecTech para {{ $node['Leer Leads'].json.NOMBRE }}",
+        "emailType": "html",
+        "message": "={{ $json.output.replace(/\\n/g, '<br>') }}",
+        "options": {
+          "sendTo": "={{ $node['Leer Leads'].json.CORREO }}"
+        }
+      },
+      "id": "create-draft",
+      "name": "Crear Borrador Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        1340,
+        -100
+      ],
+      "typeVersion": 2.2,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "yxY1T9Y8eda39qIG",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1DfBdKutQISGYh-IIZOyXkrHyGoTidKc4SseUbHD1mn4",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $node['Split by Industry'].json.properties.title }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+             "ENVIADO": "Draft Created"
+          },
+          "matchingColumns": [
+            "NOMBRE"
+          ]
+        },
+        "options": {}
+      },
+      "id": "update-google-sheets",
+      "name": "Update row in sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        1560,
+        -100
+      ],
+      "typeVersion": 4.5,
+      "credentials": {
+        "googleApi": {
+          "id": "0Qi4WhYdVoinf6q4",
+          "name": "Google Service Account account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Listar Industrias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar Industrias": {
+      "main": [
+        [
+          {
+            "node": "Split by Industry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split by Industry": {
+      "main": [
+        [
+          {
+            "node": "Filter Industries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Industries": {
+      "main": [
+        [
+          {
+            "node": "Leer Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Leads": {
+      "main": [
+        [
+          {
+            "node": "Filtrar no enviados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar no enviados": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Crear Borrador Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Vertex Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear Borrador Gmail": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
