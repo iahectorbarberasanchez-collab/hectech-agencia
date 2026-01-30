@@ -1,0 +1,122 @@
+{
+    "name": "HecTechAi - Onboarding PRO v1",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "stripe-webhook-production",
+                "options": {}
+            },
+            "id": "stripe-trigger",
+            "name": "Stripe Webhook (Pago)",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                0,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "boolean": [
+                        {
+                            "value1": "={{ $json.body.type }}",
+                            "value2": "checkout.session.completed"
+                        }
+                    ]
+                }
+            },
+            "id": "filter-payment",
+            "name": "Es Pago Exitoso?",
+            "type": "n8n-nodes-base.filter",
+            "typeVersion": 1,
+            "position": [
+                220,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://www.signwell.com/api/v1/document_templates/607b8d9a-4ac8-45ee-831c-98af070ba89c/send",
+                "authentication": "headerAuth",
+                "headerAuth": {
+                    "name": "X-Api-Key",
+                    "value": "YWNjZXNzOjg4OWVlNmUyYjAxNDhkYTM0OTZkYmQwZTViMmMzN2Nj"
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "test_mode",
+                            "value": "true"
+                        },
+                        {
+                            "name": "recipients",
+                            "value": "=[{\"name\": \"{{ $json.body.data.object.customer_details.name }}\", \"email\": \"{{ $json.body.data.object.customer_details.email }}\"}]"
+                        }
+                    ]
+                }
+            },
+            "id": "signwell-node",
+            "name": "Enviar Contrato (API)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                440,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "resource": "folder",
+                "name": "=Cliente - {{ $json.body.data.object.customer_details.name }}",
+                "driveId": "My Drive"
+            },
+            "id": "google-drive-node",
+            "name": "Crear Carpeta Drive",
+            "type": "n8n-nodes-base.googleDrive",
+            "typeVersion": 3,
+            "position": [
+                660,
+                0
+            ]
+        }
+    ],
+    "connections": {
+        "stripe-trigger": {
+            "main": [
+                [
+                    {
+                        "node": "filter-payment",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "filter-payment": {
+            "main": [
+                [
+                    {
+                        "node": "signwell-node",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "signwell-node": {
+            "main": [
+                [
+                    {
+                        "node": "google-drive-node",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

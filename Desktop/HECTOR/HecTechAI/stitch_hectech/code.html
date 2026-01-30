@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>HecTech - AI Automation Agency</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+    
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#39FF14", // Neon Green
+              "primary-dim": "#2bb812",
+              "primary-dark": "#2cc90e",
+              "background-light": "#F3F4F6", 
+              "background-dark": "#0A0A0A", 
+              "surface-dark": "#121212",
+              "surface-light": "#FFFFFF",
+              "text-gray-light": "#4B5563",
+              "text-gray-dark": "#9CA3AF",
+              "accent-gray": "#1E1E1E",
+            },
+            fontFamily: {
+              display: ['"Space Grotesk"', 'sans-serif'],
+              body: ['"Inter"', 'sans-serif'],
+            },
+            borderRadius: {
+              DEFAULT: "0.5rem",
+              "xl": "1rem",
+              "2xl": "1.5rem",
+            },
+            animation: {
+                'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                'float': 'float 6s ease-in-out infinite',
+                'fade-in-up': 'fadeInUp 0.5s ease-out',
+            },
+            keyframes: {
+                float: {
+                    '0%, 100%': { transform: 'translateY(0)' },
+                    '50%': { transform: 'translateY(-20px)' },
+                },
+                fadeInUp: {
+                    '0%': { opacity: '0', transform: 'translateY(10px)' },
+                    '100%': { opacity: '1', transform: 'translateY(0)' },
+                }
+            },
+            backgroundImage: {
+                'circuit-pattern': "url('https://www.transparenttextures.com/patterns/dark-matter.png')", 
+                'grid-pattern': "linear-gradient(to right, #1f1f1f 1px, transparent 1px), linear-gradient(to bottom, #1f1f1f 1px, transparent 1px)",
+                'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+            }
+          },
+        },
+      };
+    </script>
+
+    <!-- Custom CSS -->
+    <style>
+        .neon-glow-text, .neon-text-glow, .glow-text {
+            text-shadow: 0 0 10px rgba(57, 255, 20, 0.3), 0 0 20px rgba(57, 255, 20, 0.1);
+        }
+        .neon-glow-box, .glow-box {
+            box-shadow: 0 0 15px rgba(57, 255, 20, 0.2);
+        }
+        .bg-grid-pattern-custom {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        }
+        .dark .bg-grid-pattern-custom {
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        }
+        .light .bg-grid-pattern-custom {
+             background-image: linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+        }
+        
+        .card-hover-effect {
+            transition: all 0.3s ease;
+        }
+        .card-hover-effect:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 25px rgba(57, 255, 20, 0.15);
+            border-color: rgba(57, 255, 20, 0.5);
+        }
+        .glass-panel {
+            background: rgba(30, 30, 30, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .icon-glow {
+            filter: drop-shadow(0 0 8px rgba(57, 255, 20, 0.4));
+        }
+
+        .chat-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .chat-scroll::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+        .chat-scroll::-webkit-scrollbar-thumb {
+            background: #39FF14;
+            border-radius: 3px;
+        }
+        
+        /* React transition basics */
+        .fade-enter { opacity: 0; }
+        .fade-enter-active { opacity: 1; transition: opacity 200ms ease-in; }
+        .fade-exit { opacity: 1; }
+        .fade-exit-active { opacity: 0; transition: opacity 200ms ease-in; }
+    </style>
+
+    <!-- React & Libraries -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/history@5/umd/history.development.js"></script>
+    <script src="https://unpkg.com/react-router@6.3.0/umd/react-router.development.js"></script>
+    <script src="https://unpkg.com/react-router-dom@6.3.0/umd/react-router-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-body text-gray-900 dark:text-white transition-colors duration-300 antialiased overflow-x-hidden selection:bg-primary selection:text-black">
+
+<div id="root"></div>
+
+<script type="text/babel">
+    const { useState, useEffect } = React;
+    const { createRoot } = ReactDOM;
+    const { MemoryRouter, Routes, Route, Link, useNavigate, useLocation } = ReactRouterDOM;
+
+    // --- Component: Navigation Bar ---
+    // A unified navigation bar for all screens to ensure seamless transitions
+    const NavBar = () => {
+        const [isMenuOpen, setIsMenuOpen] = useState(false);
+        const navigate = useNavigate();
+
+        return (
+            <nav className="fixed w-full z-50 top-0 start-0 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md">
+                <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between p-4">
+                    <Link to="/" className="flex items-center space-x-3 rtl:space-x-reverse group">
+                        <div className="relative w-10 h-10 flex items-center justify-center">
+                            <div className="absolute inset-0 bg-primary opacity-20 rounded-lg blur-md group-hover:opacity-40 transition-opacity"></div>
+                            <span className="material-icons-outlined text-primary text-3xl relative z-10">memory</span>
+                        </div>
+                        <span className="self-center text-2xl font-bold font-display tracking-tight text-gray-900 dark:text-white">Hec<span className="text-primary neon-glow-text">Tech</span></span>
+                    </Link>
+                    
+                    <div className="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
+                        <button className="text-gray-900 dark:text-white bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 font-medium rounded-lg text-sm px-4 py-2 mr-2 border border-gray-300 dark:border-gray-600 hidden md:block">
+                            Acceder
+                        </button>
+                        <Link to="/demo" className="text-black bg-primary hover:bg-green-400 font-bold rounded-lg text-sm px-5 py-2.5 transition-all shadow-[0_0_15px_rgba(57,255,20,0.3)] hover:shadow-[0_0_25px_rgba(57,255,20,0.5)]">
+                            Ver Demo
+                        </Link>
+                        <button 
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            className="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 focus:outline-none"
+                        >
+                            <span className="sr-only">Open main menu</span>
+                            <span className="material-icons-outlined">menu</span>
+                        </button>
+                    </div>
+
+                    <div className={`${isMenuOpen ? 'block' : 'hidden'} items-center justify-between w-full md:flex md:w-auto md:order-1`}>
+                        <ul className="flex flex-col p-4 md:p-0 mt-4 font-medium border border-gray-100 rounded-lg bg-gray-50 md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 md:bg-transparent dark:bg-gray-800 md:dark:bg-transparent dark:border-gray-700">
+                            <li>
+                                <Link to="/" className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-primary md:p-0 dark:text-white dark:hover:text-primary transition-colors">Inicio</Link>
+                            </li>
+                            <li>
+                                <Link to="/solutions" className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-primary md:p-0 dark:text-white dark:hover:text-primary transition-colors">Soluciones</Link>
+                            </li>
+                             <li>
+                                <Link to="/demo" className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-primary md:p-0 dark:text-white dark:hover:text-primary transition-colors">Live Demo</Link>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+        );
+    };
+
+    // --- Component: Footer ---
+    const Footer = () => (
+        <footer className="bg-gray-100 dark:bg-black border-t border-gray-200 dark:border-white/10 py-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+                <div className="flex items-center gap-2">
+                    <span className="font-display font-bold text-xl text-gray-900 dark:text-white">Hec<span className="text-primary">Tech</span></span>
+                </div>
+                <div className="text-gray-500 dark:text-gray-500 text-sm">
+                    © 2023 HecTech Agency. Todos los derechos reservados.
+                </div>
+                <div className="flex space-x-6">
+                    <a className="text-gray-400 hover:text-primary transition-colors cursor-pointer">
+                        <span className="sr-only">Twitter</span>
+                        <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"></path></svg>
+                    </a>
+                </div>
+            </div>
+        </footer>
+    );
+
+    // --- Screen 1: Home Page ---
+    const HomePage = () => {
+        return (
+            <div className="pt-16">
+                <section className="relative min-h-screen flex items-center pt-12 pb-12 overflow-hidden bg-background-light dark:bg-background-dark">
+                    <div className="absolute inset-0 z-0 bg-grid-pattern-custom opacity-40"></div>
+                    <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-primary opacity-20 blur-[100px] rounded-full"></div>
+                    <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-blue-500 opacity-10 blur-[100px] rounded-full"></div>
+                    
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                            <div className="space-y-8 text-center lg:text-left animate-fade-in-up">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-900/10 dark:bg-green-900/30 border border-green-500/20 text-green-600 dark:text-green-400 text-sm font-medium">
+                                    <span className="flex h-2 w-2 relative">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                                    </span>
+                                    Nueva Tecnología GPT-4o Integrada
+                                </div>
+                                <h1 className="text-4xl md:text-6xl font-display font-bold leading-tight tracking-tight text-gray-900 dark:text-white">
+                                    Tu negocio, funcionando en <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-green-600 neon-glow-text">piloto automático</span> con Inteligencia Artificial.
+                                </h1>
+                                <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-light">
+                                    Ayudamos a pequeños negocios a ahorrar horas de trabajo y vender 24/7 mediante Chatbots inteligentes y Automatización de procesos.
+                                </p>
+                                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
+                                    <Link to="/demo" className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-black transition-all duration-200 bg-primary border border-transparent rounded-lg hover:bg-green-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400 shadow-[0_0_20px_rgba(57,255,20,0.4)] hover:shadow-[0_0_30px_rgba(57,255,20,0.6)] transform hover:-translate-y-1">
+                                        <span className="material-icons-outlined mr-2">calendar_month</span>
+                                        Agendar Consultoría Gratuita
+                                    </Link>
+                                    <Link to="/solutions" className="inline-flex items-center justify-center px-8 py-4 text-base font-medium text-gray-900 dark:text-white transition-all duration-200 bg-transparent border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 dark:focus:ring-gray-700 hover:border-primary">
+                                        <span className="material-icons-outlined mr-2 text-primary">play_circle</span>
+                                        ¿Por qué IA?
+                                    </Link>
+                                </div>
+                                <div className="pt-8 border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row items-center sm:items-start justify-center lg:justify-start gap-6 text-sm text-gray-500 dark:text-gray-400">
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex -space-x-2">
+                                            <img alt="User 1" className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-background-dark grayscale hover:grayscale-0 transition-all object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkB2gdjodMcAN7Y7uEMMdloKia0NDrLTWdYxKfRxPPa_-wYdkrd7AUQA1hR2HVI2RHY5sG4tRx9daZKQ9iI7u0V776x8DWlbA4tuasjBoAONHd42aRAq3w8PGZM0guI3VBNb0AxrX00yay8_1XLaQ483N30SYx3WXsGe8kbE1LpM6I2eloPnySDntPxPxGsAfKGn_KzDoT2nfXtvg8NdgvqKaCIsUBn8QHwhZPztub8zUfRAEl9lKjVDMmkxehB8i3U6nMw1cTyazk"/>
+                                            <img alt="User 2" className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-background-dark grayscale hover:grayscale-0 transition-all object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCStH7mvnFqScKlEYGWadx-xqC4lrVzbP9kJl54KEdr7ljeoqKWhIQM-D2RX6OksczD9QFAJEvuIu_S1t2YS1ZNewg4xKw6WrX59g_OF2QSKHY9nAEusbmEAcCn55tZY-IOZKBwmK7Y-_H_GCjdYi4KAXV-zXJ7YHpxysV6vVufjX3TdKj6Q9-Wz-X8iJHNqEqRaa0rObfFxI0Mfiwuqanq0S1QrRi9sOkzvG3G2dhrW0DQLoaKEJ5pmLxFZPLbCAhnBj6bHRV3JtRG"/>
+                                            <img alt="User 3" className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-background-dark grayscale hover:grayscale-0 transition-all object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBc6wdKnj2vYa_UxrW3r6zlVTCb9aaIpEBUEwujcn3fGeOqbidmvHfrjXbT0mud--ZNodwX3TRgyNot97bcyv3VliW9cPRt9AD33-aEKbsyyDUnCdn797WMsp1Rkag4eUJomMHspJgxmnqGT3bhaERyKSab34cAKIqFjuKa7dOMBqkHcTT9HReoAZ57zXAyYQFL5jFLknNqMAqBpd6oU7BGaSGyrEGvQ301Q4zPXAh8a8wj9JreOW8kNRWCYzOonLV06PvHIZfgJsO"/>
+                                        </div>
+                                        <p>+100 negocios automatizados</p>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <span className="material-icons-outlined text-primary text-base">bolt</span>
+                                        <p>Implementación en <span className="font-bold text-gray-900 dark:text-white">48 horas</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="relative lg:h-[600px] w-full flex items-center justify-center animate-float">
+                                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-radial from-primary/20 to-transparent blur-3xl rounded-full pointer-events-none"></div>
+                                <div className="relative w-full max-w-lg aspect-square">
+                                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-surface-dark border border-gray-700 rounded-3xl shadow-2xl z-20 flex items-center justify-center neon-glow-box">
+                                        <svg className="absolute inset-0 w-full h-full opacity-30 text-primary" fill="none" stroke="currentColor" strokeWidth="0.5" viewBox="0 0 100 100">
+                                            <path d="M10 10 H 90 V 90 H 10 Z"></path>
+                                            <path d="M50 0 V 10 M50 90 V 100 M0 50 H 10 M90 50 H 100"></path>
+                                        </svg>
+                                        <span className="material-icons-outlined text-primary text-7xl z-30 drop-shadow-[0_0_10px_rgba(57,255,20,0.8)]">smart_toy</span>
+                                    </div>
+                                    <div className="absolute top-[10%] left-[20%] p-4 bg-gray-800/80 backdrop-blur-xl border border-gray-700 rounded-2xl shadow-lg z-10 animate-pulse-slow">
+                                        <span className="material-icons-outlined text-blue-400 text-4xl">storefront</span>
+                                        <div className="absolute -bottom-2 -right-2 bg-primary text-black text-xs font-bold px-2 py-0.5 rounded-full">24/7</div>
+                                    </div>
+                                    <div className="absolute bottom-[20%] right-[10%] p-4 bg-gray-800/80 backdrop-blur-xl border border-gray-700 rounded-2xl shadow-lg z-10 animate-pulse-slow" style={{animationDelay: '1s'}}>
+                                        <span className="material-icons-outlined text-purple-400 text-4xl">chat</span>
+                                    </div>
+                                    <div className="absolute bottom-[10%] left-[15%] p-4 bg-gray-800/80 backdrop-blur-xl border border-gray-700 rounded-2xl shadow-lg z-10 animate-pulse-slow" style={{animationDelay: '0.5s'}}>
+                                        <span className="material-icons-outlined text-orange-400 text-4xl">auto_graph</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <section className="py-8 bg-gray-50 dark:bg-black border-y border-gray-200 dark:border-gray-800">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-6">Integraciones con tus herramientas favoritas</p>
+                        <div className="flex flex-wrap justify-center gap-8 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+                            <span className="text-xl md:text-2xl font-bold font-display text-gray-800 dark:text-gray-300 flex items-center gap-2"><span className="material-icons-outlined">whatsapp</span>WhatsApp</span>
+                            <span className="text-xl md:text-2xl font-bold font-display text-gray-800 dark:text-gray-300 flex items-center gap-2"><span className="material-icons-outlined">mail</span>Gmail</span>
+                            <span className="text-xl md:text-2xl font-bold font-display text-gray-800 dark:text-gray-300 flex items-center gap-2"><span className="material-icons-outlined">folder</span>Notion</span>
+                            <span className="text-xl md:text-2xl font-bold font-display text-gray-800 dark:text-gray-300 flex items-center gap-2"><span className="material-icons-outlined">calendar_today</span>Google Calendar</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        );
+    };
+
+    // --- Screen 2: Solutions / Features ---
+    const SolutionsPage = () => {
+        return (
+            <div className="pt-20">
+                <section className="relative py-20 overflow-hidden">
+                    <div className="absolute inset-0 bg-[size:50px_50px] bg-grid-pattern opacity-[0.05] dark:opacity-[0.1] pointer-events-none"></div>
+                    <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-primary/20 blur-[120px] rounded-full pointer-events-none"></div>
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold tracking-wide uppercase mb-6">
+                            <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                            Automatización Inteligente
+                        </div>
+                        <h1 className="font-display text-4xl md:text-6xl font-bold text-gray-900 dark:text-white leading-tight mb-6">
+                            Potencia tu negocio con <br className="hidden md:block"/>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-400 neon-text-glow">Inteligencia Artificial</span>
+                        </h1>
+                        <p className="mt-4 text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto font-light">
+                            Transformamos procesos manuales en sistemas autónomos eficientes. El futuro es ahora.
+                        </p>
+                    </div>
+                </section>
+
+                <section className="relative py-24 bg-white dark:bg-background-dark overflow-hidden">
+                    <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                        <div className="text-center mb-16">
+                            <h2 className="font-display text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+                                ¿Por qué tu negocio necesita <span className="text-primary">IA hoy?</span>
+                            </h2>
+                            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+                                La adopción temprana no es un lujo, es una ventaja competitiva decisiva en el mercado actual.
+                            </p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            {[
+                                { icon: 'schedule', title: 'Atención 24/7', text: 'Tus clientes no duermen. Nuestros chatbots atienden consultas, cierran ventas y resuelven dudas en cualquier momento.' },
+                                { icon: 'precision_manufacturing', title: 'Cero Errores', text: 'Elimina el error humano. La IA ejecuta tareas con precisión quirúrgica consistente, asegurando la calidad.' },
+                                { icon: 'trending_up', title: 'Reducción de Costes', text: 'Reduce gastos operativos hasta un 40% automatizando tareas y libera a tu equipo para estrategias de alto valor.' }
+                            ].map((item, index) => (
+                                <div key={index} className="group relative card-hover-effect">
+                                    <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl"></div>
+                                    <div className="relative h-full glass-panel dark:bg-[#121212]/80 bg-white border border-gray-200 dark:border-white/10 p-8 rounded-2xl flex flex-col items-start overflow-hidden">
+                                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-gray-100 to-white dark:from-[#1E1E1E] dark:to-[#0A0A0A] border border-gray-200 dark:border-white/10 flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                            <span className="material-symbols-outlined text-3xl text-primary icon-glow">{item.icon}</span>
+                                        </div>
+                                        <h3 className="font-display text-2xl font-bold text-gray-900 dark:text-white mb-4 group-hover:text-primary transition-colors">
+                                            {item.title}
+                                        </h3>
+                                        <p className="text-gray-600 dark:text-gray-400 leading-relaxed mb-6">
+                                            {item.text}
+                                        </p>
+                                        <div className="w-12 h-1 bg-primary rounded-full mt-auto group-hover:w-full transition-all duration-500 ease-out"></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            </div>
+        );
+    };
+
+    // --- Screen 3: Live Demo ---
+    const LiveDemoPage = () => {
+        const [activeTab, setActiveTab] = useState('inmobiliaria');
+        
+        const tabs = [
+            { id: 'inmobiliaria', icon: 'apartment', title: 'Inmobiliaria', desc: 'Agendamiento de visitas 24/7' },
+            { id: 'ecommerce', icon: 'shopping_cart', title: 'E-commerce', desc: 'Soporte pedidos y rastreo' },
+            { id: 'salud', icon: 'cardiology', title: 'Clínicas / Salud', desc: 'Triaje básico y citas' },
+            { id: 'restaurantes', icon: 'restaurant', title: 'Restaurantes', desc: 'Reservas y menú inteligente' }
+        ];
+
+        return (
+            <div className="pt-20">
+                <section className="relative py-12 lg:py-20 overflow-hidden min-h-screen flex flex-col justify-center">
+                    <div className="absolute inset-0 bg-circuit-pattern opacity-30 pointer-events-none"></div>
+                    <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[128px] pointer-events-none"></div>
+                    
+                    <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="text-center mb-12">
+                            <h2 className="text-primary font-display font-medium text-lg tracking-widest uppercase mb-4">Demostración en Vivo</h2>
+                            <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-black dark:text-white mb-6">
+                                Mira lo que la IA puede <br/>
+                                <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-emerald-400">hacer por tu sector</span>
+                            </h1>
+                            <p className="max-w-2xl mx-auto text-lg text-gray-600 dark:text-gray-400">
+                                Nuestros agentes de IA no duermen, no descansan y responden al instante.
+                            </p>
+                        </div>
+
+                        <div className="bg-surface-light dark:bg-surface-dark border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl overflow-hidden glow-box">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[600px]">
+                                {/* Sidebar */}
+                                <div className="lg:col-span-4 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#0f0f0f] p-6">
+                                    <h3 className="font-display text-gray-400 text-sm uppercase tracking-wider mb-6 ml-2">Sectores</h3>
+                                    <div className="space-y-2">
+                                        {tabs.map((tab) => (
+                                            <button
+                                                key={tab.id}
+                                                onClick={() => setActiveTab(tab.id)}
+                                                className={`w-full text-left px-4 py-4 rounded-xl flex items-center gap-4 transition-all duration-300 border-l-4 group
+                                                    ${activeTab === tab.id 
+                                                        ? 'bg-white dark:bg-gray-800 shadow-md border-primary' 
+                                                        : 'hover:bg-gray-200 dark:hover:bg-gray-800/50 border-transparent'}`}
+                                            >
+                                                <span className={`p-2 rounded-lg transition-colors 
+                                                    ${activeTab === tab.id ? 'bg-primary/10 text-primary' : 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-300'}`}>
+                                                    <span className="material-symbols-outlined">{tab.icon}</span>
+                                                </span>
+                                                <div>
+                                                    <span className={`block font-display font-bold ${activeTab === tab.id ? 'text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400'}`}>
+                                                        {tab.title}
+                                                    </span>
+                                                    <span className="text-xs text-gray-500 dark:text-gray-400">{tab.desc}</span>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    
+                                    <div className="mt-8 p-4 bg-primary/5 border border-primary/20 rounded-xl">
+                                        <div className="flex items-start gap-3">
+                                            <span className="material-symbols-outlined text-primary">psychology</span>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-800 dark:text-gray-200">¿No ves tu sector?</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Adaptamos el modelo en 48 horas.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Chat Area */}
+                                <div className="lg:col-span-8 bg-surface-light dark:bg-surface-dark relative flex flex-col">
+                                    {/* Render content based on activeTab */}
+                                    {activeTab === 'inmobiliaria' && (
+                                        <div className="h-full flex flex-col animate-fade-in-up">
+                                            <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-white dark:bg-surface-dark z-10">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="relative">
+                                                        <img alt="Avatar Agente" className="w-10 h-10 rounded-full object-cover border-2 border-primary" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-U7EaROV4OPsXAzuurdij-wy7gQqEy5l9czWEleSJVxWuUHeOXKSZMZgEqxarOGcoZ-Whjz6smLUTIIOVueCL1WAkd0KgDBUXV5-ZajdhMyKSIvn2NnCZtDv5N9aa8GxKlg_Z_GJQCXucNkWom4BdgLc6ltin17yCZQyRR-N_teqqkFGuh3X6A_u5SrPS2v0mm7gceg74d2aMla6uarD-bDEg88KuHXJSAY35xRjo9NXcfCr0cO282mLR0qgSWjEk9Z7rvJ5LoIcq"/>
+                                                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-primary border-2 border-white dark:border-surface-dark rounded-full"></span>
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-display font-bold text-gray-900 dark:text-white">Laura - Agente Inmobiliaria</h4>
+                                                        <p className="text-xs text-primary font-medium">En línea ahora</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex-1 p-6 overflow-y-auto chat-scroll bg-gray-50 dark:bg-[#0c0c0c] space-y-4">
+                                                <div className="flex items-start gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary flex-shrink-0"><span className="material-symbols-outlined text-sm">smart_toy</span></div>
+                                                    <div className="bg-white dark:bg-gray-800 p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[80%] border border-gray-200 dark:border-gray-700">
+                                                        <p className="text-sm text-gray-700 dark:text-gray-200">¡Hola! Bienvenido a Luxury Homes. 👋 Soy Laura, tu asistente virtual. ¿Buscas comprar o alquilar?</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-start gap-3 flex-row-reverse">
+                                                     <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 flex-shrink-0"><span className="material-symbols-outlined text-sm">person</span></div>
+                                                    <div className="bg-primary text-black p-3 rounded-2xl rounded-tr-none shadow-sm max-w-[80%]">
+                                                        <p className="text-sm font-medium">Busco alquilar 2 habitaciones en el centro.</p>
+                                                    </div>
+                                                </div>
+                                                 <div className="flex items-start gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary flex-shrink-0"><span className="material-symbols-outlined text-sm">smart_toy</span></div>
+                                                    <div className="bg-white dark:bg-gray-800 p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[80%] border border-gray-200 dark:border-gray-700">
+                                                        <p className="text-sm text-gray-700 dark:text-gray-200">Tengo esta opción disponible:</p>
+                                                        <div className="relative group cursor-pointer overflow-hidden rounded-lg mt-2 mb-2">
+                                                            <img alt="Apartment" className="w-full h-32 object-cover transition-transform group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBy30TK20YTGauAORjMEHK5vxoq1h8EYsf8f5pvrTberwMapYrlgMqJiNaQlBZvAyfj1_FZq8b5f8s6nfkiU42XJzaDwYRlKf2JmnNsA6uK_bPqw-2Wgx3R1HJ7ULxCUDtjvv3c3Zbba4wbSSdt0fWqXJ2tIdMxYIGmzK0236VtelTWueFnbCP95EF-HLEq9tLwK4qh0LqO66ca-MBi2J59AvfbxR1JATq4HnBvsEAGxBN5NVmQnK70qSeo-B_-rHpXnjKTyjzsieVi"/>
+                                                            <div className="absolute bottom-0 w-full bg-black/60 p-2"><p className="text-white text-xs font-bold">Edificio Skyline - $1,200/mes</p></div>
+                                                        </div>
+                                                        <p className="text-sm text-gray-700 dark:text-gray-200">¿Agendamos visita para el jueves?</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {activeTab === 'ecommerce' && (
+                                        <div className="h-full flex flex-col animate-fade-in-up">
+                                            <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-white dark:bg-surface-dark z-10">
+                                                <div className="flex items-center gap-3">
+                                                    <img alt="Support Bot" className="w-10 h-10 rounded-full object-cover border-2 border-primary" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2BUNj5MUEF7mc57eBwNCgtI4Hy9mS3_ou1dUgEdEdD7LZvXMe4XcKZpYHFYg5S86JoqR_IvXurSHTaZgMNrZc2NwZVE2ak41h1KAo0UWWXQ0hhEd5rk3bF_wAcaXFT_ckOryNrPxNChkbAVe2KKmU3g4oXyADtO-CYjnbWwHOikKcYRXb_g_CrWsKbiGWL3T4S8Q7bt9gNxc8Q2uhA5HRQLR5-qhjVnWvNPF9EhT2WXftZlfT18k7CNWh1lCGt_OGdqne236Og6V1"/>
+                                                    <div>
+                                                        <h4 className="font-display font-bold text-gray-900 dark:text-white">Soporte TiendaFit</h4>
+                                                        <p className="text-xs text-primary font-medium">Responde en &lt; 1s</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex-1 p-6 overflow-y-auto chat-scroll bg-gray-50 dark:bg-[#0c0c0c] space-y-4">
+                                                <div className="flex items-start gap-3 flex-row-reverse">
+                                                    <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center flex-shrink-0"><span className="material-symbols-outlined text-sm text-white">person</span></div>
+                                                    <div className="bg-primary text-black p-3 rounded-2xl rounded-tr-none shadow-sm max-w-[80%]">
+                                                        <p className="text-sm font-medium">¿Dónde está mi pedido? #MX-9921</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-start gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 flex-shrink-0"><span className="material-symbols-outlined text-sm">inventory_2</span></div>
+                                                    <div className="bg-white dark:bg-gray-800 p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[80%] border border-gray-200 dark:border-gray-700">
+                                                        <p className="text-sm text-gray-700 dark:text-gray-200">Localizado. Tu pedido #MX-9921 está en reparto.</p>
+                                                        <div className="mt-3 p-3 bg-gray-100 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center gap-3">
+                                                            <div className="bg-green-100 text-green-600 p-2 rounded"><span className="material-symbols-outlined">local_shipping</span></div>
+                                                            <div>
+                                                                <p className="text-xs font-bold text-gray-900 dark:text-white">Llega hoy antes de las 6:00 PM</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {activeTab === 'salud' && (
+                                        <div className="h-full flex flex-col animate-fade-in-up">
+                                             <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-white dark:bg-surface-dark z-10">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-teal-500 flex items-center justify-center text-white border-2 border-white dark:border-gray-800"><span className="material-symbols-outlined">medical_services</span></div>
+                                                    <div>
+                                                        <h4 className="font-display font-bold text-gray-900 dark:text-white">Clínica Sanitas</h4>
+                                                        <p className="text-xs text-teal-400 font-medium">Asistente de Citas</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex-1 p-6 overflow-y-auto chat-scroll bg-gray-50 dark:bg-[#0c0c0c] space-y-4">
+                                                 <div className="flex items-start gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-teal-500/20 flex items-center justify-center text-teal-500 flex-shrink-0"><span className="material-symbols-outlined text-sm">support_agent</span></div>
+                                                    <div className="bg-white dark:bg-gray-800 p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[80%] border border-gray-200 dark:border-gray-700">
+                                                        <p className="text-sm text-gray-700 dark:text-gray-200">Buenas tardes. ¿En qué especialidad necesitas tu cita?</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-start gap-3 flex-row-reverse">
+                                                    <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center flex-shrink-0"><span className="material-symbols-outlined text-sm text-white">person</span></div>
+                                                    <div className="bg-primary text-black p-3 rounded-2xl rounded-tr-none shadow-sm max-w-[80%]">
+                                                        <p className="text-sm font-medium">Dermatólogo, tengo una alergia.</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-start gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-teal-500/20 flex items-center justify-center text-teal-500 flex-shrink-0"><span className="material-symbols-outlined text-sm">calendar_month</span></div>
+                                                    <div className="bg-white dark:bg-gray-800 p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[80%] border border-gray-200 dark:border-gray-700">
+                                                        <p className="text-sm text-gray-700 dark:text-gray-200">La Dra. Martínez tiene disponibilidad:</p>
+                                                        <div className="flex gap-2 mt-3">
+                                                            <button className="px-3 py-1 bg-teal-500 text-white text-xs rounded-full hover:bg-teal-600 transition">Mañana 10:00 AM</button>
+                                                            <button className="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white text-xs rounded-full hover:bg-gray-300 transition">Viernes 4:00 PM</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {activeTab === 'restaurantes' && (
+                                        <div className="h-full flex flex-col animate-fade-in-up">
+                                             <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-white dark:bg-surface-dark z-10">
+                                                <div className="flex items-center gap-3">
+                                                    <img alt="Restaurant Bot" className="w-10 h-10 rounded-full object-cover border-2 border-primary" src="https://lh3.googleusercontent.com/aida-public/AB6AXuClKIidRlBRKjgzZgHvAUdUt62uKXL043heUu2on_6VTdjinUqp5FHO2ozHaur0EZMDqZ8IScbgRSkZ7OtsEyZhnKZZwCZVvyEFSorVxiCu0ZnVCfVcqhG4nFYMCMM8OsKklZQLYGC6TcxFQvkXJUANGbd9BOgpcnfJ-Gmp3CWs_5XZxyflMkEHHKq3jJQYN14K0VwJhUZtpmK-e1FEs82A1COn8YxXzCtwDwJPRpQKvenzZf1B0OxVUCgKhwrwpaFhoqRAfk0XIPyQ"/>
+                                                    <div>
+                                                        <h4 className="font-display font-bold text-gray-900 dark:text-white">Bistro Central</h4>
+                                                        <p className="text-xs text-orange-400 font-medium">Reservas &amp; Menú</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex-1 p-6 overflow-y-auto chat-scroll bg-gray-50 dark:bg-[#0c0c0c] space-y-4">
+                                                <div className="flex items-start gap-3 flex-row-reverse">
+                                                    <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center flex-shrink-0"><span className="material-symbols-outlined text-sm text-white">person</span></div>
+                                                    <div className="bg-primary text-black p-3 rounded-2xl rounded-tr-none shadow-sm max-w-[80%]">
+                                                        <p className="text-sm font-medium">Reserva para 4, sábado.</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-start gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-500 flex-shrink-0"><span className="material-symbols-outlined text-sm">restaurant_menu</span></div>
+                                                    <div className="bg-white dark:bg-gray-800 p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[80%] border border-gray-200 dark:border-gray-700">
+                                                        <p className="text-sm text-gray-700 dark:text-gray-200">¡Claro! 🍷 Tengo mesa en Terraza a las 8:00 PM. Este finde hay 2x1 en cócteles. 🍹</p>
+                                                    </div>
+                                                </div>
+                                                 <div className="flex items-start gap-3 flex-row-reverse">
+                                                    <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center flex-shrink-0"><span className="material-symbols-outlined text-sm text-white">person</span></div>
+                                                    <div className="bg-primary text-black p-3 rounded-2xl rounded-tr-none shadow-sm max-w-[80%]">
+                                                        <p className="text-sm font-medium">Terraza a las 8 está bien.</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-start gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-500 flex-shrink-0"><span className="material-symbols-outlined text-sm">check_circle</span></div>
+                                                    <div className="bg-white dark:bg-gray-800 p-3 rounded-2xl rounded-tl-none shadow-sm max-w-[80%] border border-gray-200 dark:border-gray-700">
+                                                        <p className="text-sm text-gray-700 dark:text-gray-200">¡Confirmado! ✅ Sábado 8:00 PM.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Input Area (Shared) */}
+                                    <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-surface-dark mt-auto">
+                                        <div className="relative">
+                                            <input 
+                                                className="w-full bg-gray-100 dark:bg-gray-900 border-none rounded-full py-3 px-5 text-sm focus:ring-2 focus:ring-primary dark:text-white" 
+                                                disabled 
+                                                placeholder="Escribe tu respuesta..." 
+                                                type="text"
+                                            />
+                                            <button className="absolute right-2 top-1.5 bg-primary text-black p-1.5 rounded-full hover:bg-primary-dim transition-colors">
+                                                <span className="material-symbols-outlined text-sm">send</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        );
+    };
+
+    // --- Main App Component ---
+    const App = () => {
+        return (
+            <MemoryRouter>
+                <div className="min-h-screen bg-background-light dark:bg-background-dark text-gray-900 dark:text-white flex flex-col">
+                    <NavBar />
+                    <main className="flex-grow">
+                        <Routes>
+                            <Route path="/" element={<HomePage />} />
+                            <Route path="/solutions" element={<SolutionsPage />} />
+                            <Route path="/demo" element={<LiveDemoPage />} />
+                        </Routes>
+                    </main>
+                    <Footer />
+                </div>
+            </MemoryRouter>
+        );
+    };
+
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+</script>
+</body>
+</html>

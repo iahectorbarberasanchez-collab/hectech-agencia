@@ -1,0 +1,367 @@
+{
+  "name": "Formulario web a Borrador Gmail",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "formulario-web",
+        "options": {}
+      },
+      "id": "0f128b83-93d2-49ad-8bb6-b860d68dd06a",
+      "name": "Webhook (Recibe Formulario)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        0
+      ],
+      "webhookId": "3285db55-9989-4662-bd01-5041c225dd13"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Capturamos el cuerpo del webhook\nconst body = items[0].json.body || items[0].json;\n\n// 1. Buscamos el nombre tanto en 'name' como en 'nombre'\nlet nombre = body.name || body.nombre || \"\";\n\n// 2. Si hay nombre, lo capitalizamos. Si no, lo dejamos vacío \n// para que la IA sepa que no lo tiene y use el saludo de empresa.\nif (nombre && nombre.toLowerCase() !== 'cliente') {\n  nombre = nombre.charAt(0).toUpperCase() + nombre.slice(1);\n} else {\n  nombre = \"\"; \n}\n\n// 3. Normalizamos el resto de campos para el AI Agent\nconst business = body.business || \"\";\nconst pain_point = body.pain_point || body.message || body.mensaje || \"\";\n\nreturn [\n  {\n    json: {\n      nombre: nombre,\n      email: body.email,\n      business: business,\n      pain_point: pain_point,\n      fecha: new Date().toISOString()\n    }\n  }\n];"
+      },
+      "id": "da203b52-72fc-4b69-bc08-1b281dc33a2c",
+      "name": "Limpieza de Datos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ 'Propuesta HecTech para ' + $('Limpieza de Datos').item.json.nombre }}",
+        "emailType": "html",
+        "message": "={{ $json.output }}",
+        "options": {
+          "sendTo": "={{ $('Limpieza de Datos').item.json.email }}"
+        }
+      },
+      "id": "e31bd07e-b8e5-44d1-9654-2c4cba67600f",
+      "name": "Crear Borrador Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        0
+      ],
+      "webhookId": "f911f8da-fb27-4cc0-a08f-a370f36acc11",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lr8yGqgpTLMrMV98",
+          "name": "Gmail - HecTech"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "projectId": {
+          "__rl": true,
+          "value": "n8n-vertex-483221",
+          "mode": "list",
+          "cachedResultName": "N8N-Vertex"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleVertex",
+      "typeVersion": 1,
+      "position": [
+        848,
+        208
+      ],
+      "id": "db33e5a7-402d-4d81-a672-97d61f8192dc",
+      "name": "Google Vertex Chat Model",
+      "credentials": {
+        "googleApi": {
+          "id": "Trrrz5GhihBmk2U9",
+          "name": "Vertex - HecTech"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "2df8c4ec-e7a8-807a-bc60-ed2980efdbc0",
+          "mode": "list",
+          "cachedResultName": "2df8c4ec-e7a8-807a-bc60-ed2980efdbc0",
+          "cachedResultUrl": "https://www.notion.so/2df8c4ece7a8807abc60ed2980efdbc0"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Nombre|title",
+              "title": "={{ $json.nombre }}"
+            },
+            {
+              "key": "Correo electrónico|email",
+              "emailValue": "={{ $json.email }}"
+            },
+            {
+              "key": "Estado|status",
+              "statusValue": "Lead"
+            },
+            {
+              "key": "Score|select",
+              "selectValue": "={{ $json.Score }}"
+            },
+            {
+              "key": "Investigacion IA|rich_text",
+              "textContent": "={{ $json.Investigacion_IA }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        0
+      ],
+      "id": "39c3a890-220d-4e21-860a-e7d13c4688ab",
+      "name": "Create a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "mV3jL4eIIAcQZop7",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        256,
+        224
+      ],
+      "id": "d1df3292-3eea-42e2-92a2-11f7606392b4",
+      "name": "SerpAPI",
+      "credentials": {
+        "serpApi": {
+          "id": "iVaWbRpAsVn8ePIH",
+          "name": "SerpAPI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "projectId": {
+          "__rl": true,
+          "value": "n8n-vertex-483221",
+          "mode": "list",
+          "cachedResultName": "N8N-Vertex"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleVertex",
+      "typeVersion": 1,
+      "position": [
+        112,
+        208
+      ],
+      "id": "e9e64f51-d43b-4117-b1f5-6b0bd9f69a68",
+      "name": "Google Vertex Chat Model1",
+      "credentials": {
+        "googleApi": {
+          "id": "Trrrz5GhihBmk2U9",
+          "name": "Vertex - HecTech"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Cogemos la salida de la IA\nlet ai_text = $input.item.json.output;\nai_text = ai_text.replace(/```json/g, '').replace(/```/g, '').trim();\n\n// 2. Cogemos los datos que vienen del nodo inmediatamente anterior (la IA)\n// Pero n8n nos permite acceder a los datos de \"atrás\" fácilmente\nconst datos_limpios = $node[\"Limpieza de Datos\"].json;\n\ntry {\n    const ai_data = JSON.parse(ai_text);\n    return {\n        ...datos_limpios, // Aquí va el Nombre y el Email\n        \"Score\": ai_data.score || ai_data.Score || \"REGULAR\",\n        \"Investigacion_IA\": ai_data.resumen || ai_data.resumen || \"Investigación completada.\"\n    };\n} catch (e) {\n    return {\n        ...datos_limpios,\n        \"Score\": \"ERROR\",\n        \"Investigacion_IA\": \"Error: \" + ai_text.substring(0, 50)\n    };\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        0
+      ],
+      "id": "1ed96482-e4f8-4d2c-8fb9-3084245ccb5f",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres el Analista de Leads Senior de HecTechAi. Tu misión es calificar cada entrada que llega por la web.\n\nemail: {{ $json.email }}\n\nPASOS A SEGUIR:\n1. Extrae el dominio del email (ej: de info@clinicaestetica.com saca 'clinicaestetica.com').\n2. Usa la herramienta de búsqueda para investigar a la empresa: sector, tamaño aproximado y relevancia.\n3. Clasifica el lead:\n   - VIP (9-10): Empresas claras, sectores con dinero (Clínicas, Abogados, Real Estate, SaaS).\n   - BUENO (6-8): Emails corporativos, pymes, mensajes detallados.\n   - REGULAR (1-5): Emails personales (@gmail, @hotmail), mensajes muy cortos o poco claros.\n\nIMPORTANTE: Tu respuesta debe ser ÚNICAMENTE un código JSON válido, sin texto antes ni después. Usa exactamente este formato:\n\n{\n    \"score\": \"🔥 VIP\",\"✅ Buen Lead\" o \"☁️ Regular\"\n  \"resumen\": \"Escribe aquí las 2 líneas de investigación\"\n}\n\n\"DO NOT use markdown formatting. NO backticks. NO '```json'. Return ONLY the raw string of the JSON object.\"",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        112,
+        0
+      ],
+      "id": "5a54e559-1879-4a19-867b-df777267932c",
+      "name": "Investigador"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres Héctor Barberá Sánchez, fundador de HecTechAi. Escribes de forma directa, profesional y sin rellenos corporativos innecesarios.\n\nDATOS PARA PERSONALIZAR:\n- Nombre: {{ $('Limpieza de Datos').item.json.nombre }}\n- Empresa: {{ $('Limpieza de Datos').item.json.business }}\n- Problema: {{ $('Limpieza de Datos').item.json.pain_point }}\n\nDATOS DE NUESTRO ANALISTA (Usa esto para demostrar autoridad):\n- Calificación del Lead: {{ $('Code in JavaScript').item.json.Score }}\n- Lo que sabemos de ellos: {{ $('Code in JavaScript').item.json.Investigacion_IA }}\n\n\nREGLAS DE ORO:\n1. SALUDO: \n   - Si tienes el Nombre del contacto, usa: \"Hola [Nombre],\"\n   - Si NO hay nombre pero hay Empresa, usa: \"Hola equipo de [Empresa],\"\n   - Si no hay ninguno, usa: \"Hola,\"\n2. ESTILO: No uses frases de plantilla como \"Espero que este email le encuentre bien\" o \"Me complace comunicarle\". Sé directo. \n3. Si el Score es 'VIP', sé especialmente entusiasta y profesional.\n4. Menciona algo sutil de lo que sabemos de ellos (ej: \"He estado echando un vistazo a vuestro posicionamiento en el sector inmobiliario y...\") para que vean que no es un bot.\n5. El tono debe ser directo: \"Sé que vuestro problema es X y en HecTechAi resolvemos exactamente eso automatizando Y\".\n6. EFECTO WOW (Mención al Analista de IA): \n   - Si el Score es 'VIP' o 'BUENO', incluye una frase del tipo: \"Te escribo con prioridad porque nuestro Analista de IA interno ha analizado vuestra presencia digital y os ha marcado como lead de alta relevancia.\"\n   - Si el Score es 'REGULAR', no menciones al analista para no sonar robótico.\n7. MARCA: Usa solo \"HecTechAi\". Olvida lo de \"agencia de automatización de...\".\n8. EL PROBLEMA: Haz referencia al problema específico que han escrito de forma natural. No lo copies y pegues entre comillas como un robot.\n9. CTA: El enlace de agenda es: https://calendar.app.google/15Sf7CTH5tnQB2uF6\n\n\nFORMATO DE SALIDA (Usa etiquetas HTML):\nEscribe el mensaje usando etiquetas <p> para los párrafos. Usa <b> para resaltar las frases clave.\n\nFIRMA HTML (Copia exacta al final del email):\n<br>\n<div style=\"border-top: 2px solid #00FF94; margin-top: 20px; padding-top: 15px; font-family: Arial, sans-serif;\">\n    <span style=\"font-weight: bold; font-size: 16px; color: #111;\">Héctor Barberá Sánchez</span><br>\n    <span style=\"color: #666; font-size: 14px;\">Fundador | <b>HecTechAi</b></span><br>\n    <div style=\"margin-top: 8px;\">\n        <a href=\"https://hectechai.com\" style=\"color: #00FF94; text-decoration: none; font-weight: bold; font-size: 14px;\">www.hectechai.com</a>\n    </div>\n</div>",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        848,
+        0
+      ],
+      "id": "90d928ec-0f7d-4786-a039-d4472d09dcbb",
+      "name": "Redactor Email"
+    },
+    {
+      "parameters": {
+        "amount": 30,
+        "unit": "seconds"
+      },
+      "id": "wait-before-draft",
+      "name": "Espera de Seguridad (30s)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        1072,
+        0
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook (Recibe Formulario)": {
+      "main": [
+        [
+          {
+            "node": "Limpieza de Datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpieza de Datos": {
+      "main": [
+        [
+          {
+            "node": "Investigador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear Borrador Gmail": {
+      "main": [
+        []
+      ]
+    },
+    "Google Vertex Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Redactor Email",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a database page": {
+      "main": [
+        [
+          {
+            "node": "Redactor Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI": {
+      "ai_tool": [
+        [
+          {
+            "node": "Investigador",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Vertex Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Investigador",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Create a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Investigador": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redactor Email": {
+      "main": [
+        [
+          {
+            "node": "Espera de Seguridad (30s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Espera de Seguridad (30s)": {
+      "main": [
+        [
+          {
+            "node": "Crear Borrador Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "4d77fb43-9136-482a-abcf-cde979fa9efd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9791a699843b5d5c3ab4a59b3d0465c1b31046881bb530937830bb8171d41568"
+  },
+  "id": "tHs1GgCz3UsSlYui",
+  "tags": []
+}
