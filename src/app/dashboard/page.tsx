@@ -12,7 +12,10 @@ import {
     Zap,
     UserCheck,
     Users,
-    ArrowLeft
+    ArrowLeft,
+    LifeBuoy,
+    CheckCircle2,
+    AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -67,6 +70,7 @@ export default function DashboardPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<Profile | null>(null);
+    const [activeTab, setActiveTab] = useState<'metrics' | 'support'>('metrics');
     const [metrics, setMetrics] = useState<DailyMetrics[]>([]);
 
     useEffect(() => {
@@ -159,6 +163,22 @@ export default function DashboardPage() {
                         </button>
                     </div>
                 </header>
+
+                {/* Navigation Tabs */}
+                <div className="flex gap-4 border-b border-white/10 pb-4">
+                    <button
+                        onClick={() => setActiveTab('metrics')}
+                        className={`text-sm font-medium transition-colors ${activeTab === 'metrics' ? 'text-[#00FF94] border-b-2 border-[#00FF94] pb-4 -mb-4.5' : 'text-gray-500 hover:text-white'}`}
+                    >
+                        Métricas de Impacto
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('support')}
+                        className={`text-sm font-medium transition-colors ${activeTab === 'support' ? 'text-[#00FF94] border-b-2 border-[#00FF94] pb-4 -mb-4.5' : 'text-gray-500 hover:text-white'}`}
+                    >
+                        Soporte Técnico
+                    </button>
+                </div>
 
                 {profile.status === 'building' ? (
                     /* Building / Onboarding View */
@@ -261,8 +281,92 @@ export default function DashboardPage() {
                             </div>
                         </div>
                     </div>
+                ) : (
+                /* Support View */
+                <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    {/* System Status */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="glass-card p-6 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-4">
+                            <div className="p-3 rounded-full bg-[#00FF94]/10 text-[#00FF94]">
+                                <CheckCircle2 size={24} />
+                            </div>
+                            <div>
+                                <h4 className="text-white font-bold text-sm">Flujos n8n</h4>
+                                <p className="text-[#00FF94] text-xs">Operativo</p>
+                            </div>
+                        </div>
+                        <div className="glass-card p-6 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-4">
+                            <div className="p-3 rounded-full bg-[#00FF94]/10 text-[#00FF94]">
+                                <CheckCircle2 size={24} />
+                            </div>
+                            <div>
+                                <h4 className="text-white font-bold text-sm">Base de Datos</h4>
+                                <p className="text-[#00FF94] text-xs">Operativo</p>
+                            </div>
+                        </div>
+                        <div className="glass-card p-6 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-4">
+                            <div className="p-3 rounded-full bg-[#00FF94]/10 text-[#00FF94]">
+                                <CheckCircle2 size={24} />
+                            </div>
+                            <div>
+                                <h4 className="text-white font-bold text-sm">IA Agents</h4>
+                                <p className="text-[#00FF94] text-xs">Operativo</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Ticket Form */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="glass-card p-8 rounded-3xl bg-white/5 border border-white/10">
+                            <div className="flex items-center gap-3 mb-6">
+                                <LifeBuoy className="text-[#00FF94]" />
+                                <h3 className="text-xl font-bold">Abrir Ticket de Soporte</h3>
+                            </div>
+                            <form className="space-y-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs text-gray-400 uppercase tracking-wider">Asunto</label>
+                                    <input
+                                        type="text"
+                                        placeholder="¿En qué podemos ayudarte?"
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-[#00FF94] outline-none transition-colors"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs text-gray-400 uppercase tracking-wider">Descripción</label>
+                                    <textarea
+                                        rows={4}
+                                        placeholder="Describe la incidencia o consulta..."
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-[#00FF94] outline-none transition-colors"
+                                    ></textarea>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => alert('Ticket simulado enviado con éxito a Notion/Supabase')}
+                                    className="w-full py-4 bg-[#00FF94] text-black font-bold rounded-xl hover:bg-[#00e685] transition-colors flex items-center justify-center gap-2"
+                                >
+                                    Enviar Solicitud
+                                </button>
+                            </form>
+                        </div>
+
+                        <div className="glass-card p-8 rounded-3xl bg-white/5 border border-white/10 border-l-purple-500 border-l-4">
+                            <h3 className="text-xl font-bold mb-4">Mantenimiento HecTechAi</h3>
+                            <div className="space-y-4">
+                                <div className="flex gap-4">
+                                    <div className="mt-1"><AlertCircle size={18} className="text-purple-400" /></div>
+                                    <div>
+                                        <p className="text-white text-sm font-bold">Próxima Optimización</p>
+                                        <p className="text-gray-400 text-xs">05/02/2026 - Actualización de modelos LLM</p>
+                                    </div>
+                                </div>
+                                <p className="text-gray-400 text-sm leading-relaxed pt-4 border-t border-white/10">
+                                    Tu ecosistema está bajo monitoreo continuo. Cualquier anomalía detectada por nuestro sistema de IA generará una alerta automática en nuestra central.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 )}
-            </div>
+                </div>
         </main>
     );
 }
