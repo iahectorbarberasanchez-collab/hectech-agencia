@@ -331,14 +331,49 @@ Formato:
     }
 }
 
-export async function getAutomationMetrics(clientId: string, password?: string) {
-    if (!clientId) return { success: false, error: 'Identificador requerido' };
+import { cookies } from 'next/headers';
 
-    // Verificación de Contraseña para DEMO
-    if (clientId.toUpperCase() === 'DEMO123') {
-        if (password !== 'hector2024') {
+export async function logoutAction() {
+    const cookieStore = await cookies();
+    cookieStore.delete('hectech_session');
+    return { success: true };
+}
+
+export async function getAutomationMetrics(clientId?: string, password?: string) {
+    const cookieStore = await cookies();
+
+    // 1. Determinar el Client ID (por Argumento o por Cookie)
+    let effectiveClientId = clientId;
+    let isLoginAttempt = !!(clientId && password);
+
+    if (!effectiveClientId) {
+        const sessionCookie = cookieStore.get('hectech_session');
+        if (sessionCookie) {
+            effectiveClientId = sessionCookie.value;
+        } else {
+            return { success: false, error: 'Sesión no iniciada.' };
+        }
+    }
+
+    if (!effectiveClientId) return { success: false, error: 'Identificador requerido' };
+
+    // 2. Verificación de Contraseña para DEMO
+    if (effectiveClientId.toUpperCase() === 'DEMO123') {
+        // En login, verificamos pass. En sesión, confiamos en la cookie (o podríamos validar algo más)
+        if (isLoginAttempt && password !== 'hector2024') {
             return { success: false, error: 'Contraseña incorrecta para la Demo.' };
         }
+
+        // Login exitoso o Sesión válida -> Configurar Cookie si es login
+        if (isLoginAttempt) {
+            cookieStore.set('hectech_session', 'DEMO123', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                path: '/',
+                maxAge: 60 * 60 * 24 * 7 // 7 días
+            });
+        }
+
         return {
             success: true,
             data: {
@@ -384,19 +419,27 @@ export async function getAutomationMetrics(clientId: string, password?: string) 
     const usingServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
     const isPlaceholderUrl = supabaseUrl.includes('placeholder');
 
-    console.log(`[Login Attempt] Client: ${clientId} | ServiceKey: ${usingServiceKey} | URL: ${supabaseUrl}`);
+    console.log(`[Auth Attempt] Client: ${effectiveClientId} | Mode: ${isLoginAttempt ? 'Login' : 'Session'} | URL: ${supabaseUrl}`);
 
     if (isPlaceholderUrl) {
         return { success: false, error: 'ERROR CONFIG: Falta NEXT_PUBLIC_SUPABASE_URL en Vercel.' };
     }
 
     try {
-        const { data, error } = await supabase
+        // Construir query base
+        let query = supabase
             .from('automation_metrics')
             .select('*')
-            .or(`client_id.eq.${clientId},client_email.eq.${clientId}`)
-            .eq('password', password)
-            .single();
+            .or(`client_id.eq.${effectiveClientId},client_email.eq.${effectiveClientId}`);
+
+        // Si es login, validamos password explícitamente. 
+        // Si es sesión (cookie), confiamos en que el ID es válido por la cookie HTTPOnly.
+        if (isLoginAttempt) {
+            query = query.eq('password', password);
+        }
+
+        // Ejecutar query con .single() al final
+        const { data, error } = await query.single();
 
         if (error) {
             console.error("Supabase Login Error:", error);
@@ -412,6 +455,16 @@ export async function getAutomationMetrics(clientId: string, password?: string) 
 
         if (!data) {
             return { success: false, error: 'Usuario no encontrado.' };
+        }
+
+        // Si llegamos aquí, login es válido. Setear cookie si es intento de login
+        if (isLoginAttempt) {
+            cookieStore.set('hectech_session', effectiveClientId, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                path: '/',
+                maxAge: 60 * 60 * 24 * 7 // 7 días
+            });
         }
 
         return {
