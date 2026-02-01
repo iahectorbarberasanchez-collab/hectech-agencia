@@ -28,7 +28,7 @@ const supabase = createClient(
 interface Profile {
     id: string;
     company_name: string;
-    status: 'building' | 'active';
+    status: 'building' | 'active' | 'live';
 }
 
 interface DailyMetrics {
@@ -91,16 +91,22 @@ export default function DashboardPage() {
                 setProfile(profileData);
             }
 
-            // 3. Si está activo, obtener métricas (daily_metrics)
-            if (profileData?.status === 'active') {
+            // 3. Si está activo o live, obtener métricas (daily_metrics)
+            if (profileData?.status === 'active' || profileData?.status === 'live') {
+                console.log("Fetching metrics for user:", session.user.id);
                 const { data: metricsData, error: metricsError } = await supabase
                     .from('daily_metrics')
                     .select('*')
                     .eq('client_id', session.user.id);
 
-                if (!metricsError && metricsData) {
-                    setMetrics(metricsData);
+                if (metricsError) {
+                    console.error("Metrics error:", metricsError);
+                } else {
+                    console.log("Metrics recovered:", metricsData?.length, metricsData);
+                    setMetrics(metricsData || []);
                 }
+            } else {
+                console.log("Profile status is not active or live:", profileData?.status);
             }
 
             setLoading(false);
@@ -159,6 +165,13 @@ export default function DashboardPage() {
                         </button>
                     </div>
                 </header>
+
+                {/* Debug Banner */}
+                <div className="bg-blue-500/10 border border-blue-500/30 p-2 rounded text-[10px] flex gap-4 text-blue-300">
+                    <span>ID: {profile.id}</span>
+                    <span>Status: {profile.status}</span>
+                    <span>Metrics: {metrics.length}</span>
+                </div>
 
                 {profile.status === 'building' ? (
                     /* Building / Onboarding View */
