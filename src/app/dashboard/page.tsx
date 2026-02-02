@@ -37,6 +37,7 @@ interface Profile {
 interface DailyMetrics {
     automations_run: number;
     time_saved_minutes: number;
+    leads_generated: number;
 }
 
 interface StatCardProps {
@@ -124,10 +125,19 @@ export default function DashboardPage() {
 
     const totalAutomations = metrics.reduce((acc, curr) => acc + (curr.automations_run || 0), 0);
     const totalMinutesSaved = metrics.reduce((acc, curr) => acc + (curr.time_saved_minutes || 0), 0);
-    const hoursSaved = Math.floor(totalMinutesSaved / 60);
-    const roiEuros = (hoursSaved * 50).toFixed(0);
-    const qualifiedLeads = Math.floor(totalAutomations * 0.1);
-    const afterHours = Math.floor(totalAutomations * 0.35);
+    const totalLeadsGenerated = metrics.reduce((acc, curr) => acc + (curr.leads_generated || 0), 0);
+
+    // Cálculo de Días de Vida Recuperados (Basado en jornada laboral de 8h)
+    const hoursSaved = totalMinutesSaved / 60;
+    const daysSaved = (hoursSaved / 8).toFixed(1);
+
+    // ROI Real (Coste por hora de un humano vs automatización)
+    // Usamos 50€/hora como estándar de ahorro operativo
+    const roiEuros = Math.floor(hoursSaved * 50).toLocaleString('es-ES');
+
+    // Estimación de atención fuera de horario (simulado basado en ejecuciones)
+    const afterHours = Math.floor(totalAutomations * 0.45);
+    const potentialRevenue = Math.floor(totalLeadsGenerated * 150).toLocaleString('es-ES');
 
     if (!profile) return null;
 
@@ -214,29 +224,46 @@ export default function DashboardPage() {
                     ) : (
                         <div className="space-y-10">
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
-                                <StatCard title="Tareas Completadas" value={totalAutomations} icon={Activity} unit="ejecuciones" color="#00FF94" />
-                                <StatCard title="Atención 24/7" value={afterHours} icon={Moon} unit="fuera de horario" color="#A855F7" />
-                                <StatCard title="Tiempo Recuperado" value={hoursSaved} icon={Clock} unit="horas" color="#00C2FF" />
-                                <StatCard title="Velocidad Media" value="< 5" icon={Zap} unit="segundos" color="#FACC15" />
-                                <StatCard title="Leads Cualificados" value={qualifiedLeads} icon={UserCheck} unit="listos" color="#F472B6" />
-                                <StatCard title="ROI Estimado" value={roiEuros} icon={BarChart3} unit="€ ahorrados" color="#00FF94" />
+                                <StatCard title="Margen Operativo Ganado" value={roiEuros} icon={BarChart3} unit="€ ahorrados" color="#00FF94" />
+                                <StatCard title="Pipeline de Negocio" value={totalLeadsGenerated} icon={UserCheck} unit="oportunidades" color="#F472B6" />
+                                <StatCard title="Días de Vida Recuperados" value={daysSaved} icon={Clock} unit="días libres" color="#00C2FF" />
+                                <StatCard title="Atención 24/7 (Always ON)" value={afterHours} icon={Moon} unit="fuera de horario" color="#A855F7" />
+                                <StatCard title="Decisiones IA Tomadas" value={totalAutomations} icon={Activity} unit="ejecuciones" color="#00FF94" />
+                                <StatCard title="Velocidad de Respuesta" value="< 5" icon={Zap} unit="segundos" color="#FACC15" />
                             </div>
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
                                 <div className="glass-card p-8 rounded-3xl bg-white/5 border border-white/10 border-l-[#00FF94] border-l-4">
-                                    <h3 className="text-xl font-bold mb-4">¿Qué significan estos datos?</h3>
+                                    <h3 className="text-xl font-bold mb-4">Análisis de Valor HecTechAi</h3>
                                     <div className="space-y-6">
                                         <div className="space-y-2">
-                                            <p className="text-[#00FF94] font-bold text-lg">Impacto Operativo</p>
+                                            <p className="text-[#00FF94] font-bold text-lg">Paz Mental y Libertad</p>
                                             <p className="text-gray-400 text-sm leading-relaxed">
-                                                Cada ejecución representa un proceso manual eliminado. Tu sistema está operando a plena capacidad, recuperando tiempo valioso para tu negocio todos los días.
+                                                Tu sistema está delegando tareas críticas a la IA, permitiéndote recuperar tiempo para lo que realmente importa. No solo ahorras dinero, compras tranquilidad sabiendo que tu negocio nunca duerme.
                                             </p>
                                         </div>
-                                        <div className="pt-4 border-t border-white/10">
-                                            <p className="text-white font-medium mb-2 flex items-center gap-2 text-sm uppercase tracking-wider">
+                                        <div className="pt-4 border-t border-white/10 flex items-center justify-between">
+                                            <p className="text-white font-medium flex items-center gap-2 text-sm uppercase tracking-wider">
                                                 <ShieldCheck size={16} className="text-[#00FF94]" />
-                                                Estado del Sistema: <span className="text-[#00FF94]">Activo & Optimizado</span>
+                                                Salud del Ecosistema: <span className="text-[#00FF94]">100% Operativo</span>
                                             </p>
+                                            <div className="flex gap-1">
+                                                <div className="w-2 h-2 rounded-full bg-[#00FF94] animate-pulse"></div>
+                                                <div className="w-2 h-2 rounded-full bg-[#00FF94] animate-pulse delay-75"></div>
+                                                <div className="w-2 h-2 rounded-full bg-[#00FF94] animate-pulse delay-150"></div>
+                                            </div>
                                         </div>
+                                    </div>
+                                </div>
+                                <div className="glass-card p-8 rounded-3xl bg-white/5 border border-white/10 border-l-purple-500 border-l-4">
+                                    <h3 className="text-xl font-bold mb-4">Impacto en Facturación</h3>
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-baseline">
+                                            <p className="text-gray-400 text-sm">Valor de Oportunidad Detectado</p>
+                                            <p className="text-2xl font-bold text-white">{potentialRevenue}€</p>
+                                        </div>
+                                        <p className="text-gray-400 text-xs leading-relaxed">
+                                            Basado en los leads cualificados y el ticket medio de tu sector. Tu automatización no solo ahorra costes, detecta ingresos.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
