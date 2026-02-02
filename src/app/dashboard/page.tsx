@@ -143,7 +143,7 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        {profile.is_admin && (
+                        {profile.is_admin && profile.id === '845fd047-a093-4b9f-b8a9-45526f9c3124' && (
                             <Link
                                 href="/admin"
                                 className="px-4 py-2 bg-[#00FF94]/10 border border-[#00FF94]/30 text-[#00FF94] rounded-lg text-sm font-bold hover:bg-[#00FF94]/20 transition-all flex items-center gap-2"
