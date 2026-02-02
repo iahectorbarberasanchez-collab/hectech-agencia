@@ -34,6 +34,9 @@ interface ClientProfile {
 export default function AdminPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
+    const [isUnlocked, setIsUnlocked] = useState(false);
+    const [password, setPassword] = useState('');
+    const [verifying, setVerifying] = useState(false);
     const [clients, setClients] = useState<ClientProfile[]>([]);
     const [isAdmin, setIsAdmin] = useState(false);
     const [stats, setStats] = useState({
@@ -50,7 +53,7 @@ export default function AdminPage() {
                 return;
             }
 
-            // Verificar si es admin
+            // Verificar si es admin en DB (primera capa)
             const { data: profile } = await supabase
                 .from('profiles')
                 .select('is_admin')
@@ -63,27 +66,51 @@ export default function AdminPage() {
             }
 
             setIsAdmin(true);
-
-            // Obtener todos los clientes (perfiles)
-            const { data: profilesData } = await supabase
-                .from('profiles')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (profilesData) {
-                const clientsOnly = profilesData.filter(p => !p.is_admin);
-                setClients(clientsOnly);
-                setStats({
-                    totalClients: clientsOnly.length,
-                    activeDeployments: clientsOnly.filter(c => c.status === 'live').length,
-                    pendingSetup: clientsOnly.filter(c => c.status === 'building').length
-                });
-            }
-
             setLoading(false);
         }
         checkAdminAndFetch();
     }, [router]);
+
+    const handleUnlock = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setVerifying(true);
+        try {
+            const res = await fetch('/api/admin/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setIsUnlocked(true);
+                fetchData();
+            } else {
+                alert('Clave incorrecta. Acceso denegado.');
+            }
+        } catch (err) {
+            alert('Error de conexión');
+        } finally {
+            setVerifying(false);
+        }
+    };
+
+    const fetchData = async () => {
+        // Obtener todos los clientes (perfiles)
+        const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (profilesData) {
+            const clientsOnly = profilesData.filter(p => !p.is_admin);
+            setClients(clientsOnly);
+            setStats({
+                totalClients: clientsOnly.length,
+                activeDeployments: clientsOnly.filter(c => c.status === 'live').length,
+                pendingSetup: clientsOnly.filter(c => c.status === 'building').length
+            });
+        }
+    };
 
     const updateClientStatus = async (clientId: string, newStatus: string) => {
         const { error } = await supabase
@@ -104,6 +131,42 @@ export default function AdminPage() {
         return (
             <main className="min-h-screen bg-[#050505] flex items-center justify-center">
                 <Loader2 className="animate-spin text-[#00FF94]" size={48} />
+            </main>
+        );
+    }
+
+    if (!isUnlocked) {
+        return (
+            <main className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
+                <div className="max-w-md w-full glass-card p-10 rounded-3xl bg-white/5 border border-white/10 text-center space-y-8 animate-in fade-in zoom-in duration-500">
+                    <div className="w-20 h-20 bg-[#00FF94]/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-[#00FF94]/20 shadow-[0_0_30px_rgba(0,255,148,0.1)]">
+                        <ShieldCheck className="text-[#00FF94]" size={40} />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-bold mb-2">Acceso Restringido</h2>
+                        <p className="text-gray-400 text-sm">Introduce la clave de agencia para continuar</p>
+                    </div>
+                    <form onSubmit={handleUnlock} className="space-y-4">
+                        <input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Contraseña de Maestro"
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center focus:outline-none focus:border-[#00FF94]/50 transition-all font-mono tracking-widest"
+                            autoFocus
+                        />
+                        <button
+                            type="submit"
+                            disabled={verifying}
+                            className="w-full py-3 bg-[#00FF94] text-black font-bold rounded-xl hover:bg-[#00FF94]/90 transition-all flex items-center justify-center gap-2"
+                        >
+                            {verifying ? <Loader2 className="animate-spin" size={20} /> : 'Desbloquear Panel'}
+                        </button>
+                    </form>
+                    <Link href="/dashboard" className="inline-block text-gray-500 hover:text-white text-xs transition-colors underline-offset-4 hover:underline">
+                        Volver al Dashboard
+                    </Link>
+                </div>
             </main>
         );
     }
@@ -155,7 +218,7 @@ export default function AdminPage() {
                 <div className="glass-card rounded-3xl bg-white/5 border border-white/10 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
                     <div className="p-8 border-b border-white/10 flex justify-between items-center">
                         <h3 className="text-xl font-bold">Gestión de Clientes</h3>
-                        <button onClick={() => window.location.reload()} className="p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-400">
+                        <button onClick={() => fetchData()} className="p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-400">
                             <RefreshCw size={18} />
                         </button>
                     </div>
@@ -175,8 +238,8 @@ export default function AdminPage() {
                                         <td className="px-8 py-6 font-medium text-white">{client.company_name}</td>
                                         <td className="px-8 py-6">
                                             <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter ${client.status === 'live' ? 'bg-[#00FF94]/10 text-[#00FF94] border border-[#00FF94]/20' :
-                                                    client.status === 'active' ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' :
-                                                        'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
+                                                client.status === 'active' ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' :
+                                                    'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
                                                 }`}>
                                                 {client.status}
                                             </span>
