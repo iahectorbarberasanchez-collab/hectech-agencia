@@ -15,7 +15,13 @@ import {
     ArrowLeft,
     LifeBuoy,
     CheckCircle2,
-    AlertCircle
+    AlertCircle,
+    X,
+    Copy,
+    ChevronRight,
+    Menu,
+    LogOut,
+    Settings
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -85,6 +91,9 @@ export default function DashboardPage() {
     const [activeTab, setActiveTab] = useState<'metrics' | 'support' | 'leads'>('metrics');
     const [metrics, setMetrics] = useState<DailyMetrics[]>([]);
     const [leads, setLeads] = useState<Lead[]>([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [draftContent, setDraftContent] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
 
     useEffect(() => {
         async function getData() {
@@ -138,6 +147,30 @@ export default function DashboardPage() {
         await supabase.auth.signOut();
         router.push('/login');
         router.refresh();
+    };
+
+    const handleGenerateDraft = async (leadId: string) => {
+        setIsGenerating(true);
+        setIsModalOpen(true);
+        setDraftContent('');
+
+        try {
+            const response = await fetch('/api/leads/generate-draft', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ leadId })
+            });
+
+            if (!response.ok) throw new Error('Failed to generate draft');
+
+            const data = await response.json();
+            setDraftContent(data.draft);
+        } catch (error) {
+            console.error('Error:', error);
+            setDraftContent('Hubo un error al generar la propuesta. Por favor, inténtalo de nuevo.');
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     if (loading) {
@@ -336,8 +369,8 @@ export default function DashboardPage() {
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${lead.status === 'RADAR_LEAD' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/30' :
-                                                                lead.status === 'CONTACTED' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30' :
-                                                                    'bg-green-500/10 text-green-400 border border-green-500/30'
+                                                            lead.status === 'CONTACTED' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30' :
+                                                                'bg-green-500/10 text-green-400 border border-green-500/30'
                                                             }`}>
                                                             {lead.status}
                                                         </span>
@@ -355,8 +388,13 @@ export default function DashboardPage() {
                                                         )}
                                                     </td>
                                                     <td className="px-6 py-4 text-right">
-                                                        <button className="p-2 hover:bg-[#00FF94]/10 rounded-lg transition-colors group" title="Generar Borrador (Simulado)">
-                                                            <Zap size={16} className="text-gray-500 group-hover:text-[#00FF94]" />
+                                                        <button
+                                                            disabled={isGenerating}
+                                                            onClick={() => handleGenerateDraft(lead.id)}
+                                                            className="p-2 hover:bg-[#00FF94]/10 rounded-lg transition-colors group disabled:opacity-50"
+                                                            title="Generar Propuesta con IA"
+                                                        >
+                                                            <Zap size={16} className={`${isGenerating ? 'animate-pulse text-yellow-400' : 'text-gray-500 group-hover:text-[#00FF94]'}`} />
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -372,6 +410,56 @@ export default function DashboardPage() {
                                 </table>
                             </div>
                         </div>
+
+                        {/* AI Draft Modal */}
+                        {isModalOpen && (
+                            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+                                <div className="glass-card w-full max-w-2xl bg-[#0a0a0a] border border-white/10 rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+                                    <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-[#00FF94]/10 rounded-lg">
+                                                <Zap size={20} className="text-[#00FF94]" />
+                                            </div>
+                                            <h3 className="text-xl font-bold text-white">Propuesta Generada por IA</h3>
+                                        </div>
+                                        <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                                            <X size={20} className="text-gray-400" />
+                                        </button>
+                                    </div>
+                                    <div className="p-8">
+                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 min-h-[200px] whitespace-pre-wrap text-gray-300 text-sm leading-relaxed mb-6 font-mono">
+                                            {isGenerating ? (
+                                                <div className="flex flex-col items-center justify-center h-full py-10 gap-4">
+                                                    <div className="w-10 h-10 border-4 border-[#00FF94]/20 border-t-[#00FF94] rounded-full animate-spin"></div>
+                                                    <p className="text-[#00FF94] animate-pulse">Redactando propuesta estratégica...</p>
+                                                </div>
+                                            ) : (
+                                                draftContent
+                                            )}
+                                        </div>
+                                        <div className="flex gap-4">
+                                            <button
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(draftContent);
+                                                    alert('¡Copiado al portapapeles!');
+                                                }}
+                                                disabled={isGenerating}
+                                                className="flex-1 py-4 bg-[#00FF94] text-black font-bold rounded-xl hover:bg-[#00e685] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                                            >
+                                                <Copy size={18} />
+                                                Copiar Propuesta
+                                            </button>
+                                            <button
+                                                onClick={() => setIsModalOpen(false)}
+                                                className="flex-1 py-4 bg-white/5 text-white font-bold rounded-xl border border-white/10 hover:bg-white/10 transition-colors"
+                                            >
+                                                Cerrar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">

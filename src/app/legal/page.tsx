@@ -1,51 +1,56 @@
+import React from 'react';
 import Link from 'next/link';
+import { ArrowLeft, Scale, FileText } from 'lucide-react';
 
-const LegalLayout = ({ children, title }: { children: React.ReactNode, title: string }) => (
-    <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00FF94] selection:text-black pt-32 pb-24">
-        <div className="max-w-4xl mx-auto px-6">
-            <h1 className="text-4xl md:text-5xl font-bold mb-12 text-gradient">{title}</h1>
-            <div className="glass-card p-8 md:p-12 rounded-3xl border border-white/10 prose prose-invert max-w-none">
-                {children}
-            </div>
-            <div className="mt-12">
-                <Link href="/" className="text-[#00FF94] hover:underline flex items-center gap-2">
-                    ← Volver al inicio
+export default function LegalPage() {
+    return (
+        <div className="min-h-screen bg-[#050505] text-white p-6 md:p-12">
+            <div className="max-w-4xl mx-auto">
+                <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-[#00FF94] transition-colors mb-8">
+                    <ArrowLeft size={16} /> Volver al inicio
                 </Link>
+
+                <div className="glass-card p-8 md:p-12 rounded-3xl border border-white/10 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
+                        <Scale size={200} />
+                    </div>
+
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="w-12 h-12 bg-[#00FF94]/10 rounded-xl flex items-center justify-center text-[#00FF94]">
+                            <FileText size={24} />
+                        </div>
+                        <h1 className="text-3xl md:text-4xl font-bold font-display">Aviso Legal</h1>
+                    </div>
+
+                    <div className="space-y-6 text-gray-300 leading-relaxed">
+                        <p className="text-sm text-gray-500">Última actualización: {new Date().toLocaleDateString()}</p>
+
+                        <section>
+                            <h2 className="text-xl font-bold text-white mb-2">1. Datos Identificativos</h2>
+                            <p>En cumplimiento con el deber de información recogido en artículo 10 de la Ley 34/2002, de 11 de julio, de Servicios de la Sociedad de la Información y del Comercio Electrónico (LSSI-CE), se facilitan los siguientes datos:</p>
+                            <ul className="list-disc pl-6 space-y-2">
+                                <li><strong>Titular:</strong> Hector Barbera Sanchez (HecTechAi)</li>
+                                <li><strong>Email:</strong> <a href="mailto:hectechia@gmail.com" className="text-[#00FF94] hover:underline">hectechia@gmail.com</a></li>
+                                <li><strong>Sitio Web:</strong> hectechai.com</li>
+                            </ul>
+                        </section>
+
+                        <section>
+                            <h2 className="text-xl font-bold text-white mb-2">2. Propiedad Intelectual</h2>
+                            <p>El diseño de la web, su código fuente, logos, marcas y demás signos distintivos que aparecen en el mismo pertenecen a HecTechAi y están protegidos por los correspondientes derechos de propiedad intelectual e industrial.</p>
+                        </section>
+
+                        <section>
+                            <h2 className="text-xl font-bold text-white mb-2">3. Exclusión de Responsabilidad</h2>
+                            <p>HecTechAi no se hace responsable de los daños y perjuicios de cualquier naturaleza que pudieran ocasionar, a título enunciativo: errores u omisiones en los contenidos, falta de disponibilidad del portal o la transmisión de virus o programas maliciosos o lesivos en los contenidos, a pesar de haber adoptado todas las medidas tecnológicas necesarias para evitarlo.</p>
+                        </section>
+                    </div>
+
+                    <div className="mt-12 pt-8 border-t border-white/10 text-center">
+                        <p className="text-sm text-gray-500">HecTechAi Automation Agency</p>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-);
-
-export default function AvisoLegal() {
-    return (
-        <LegalLayout title="Aviso Legal">
-            <section className="space-y-6">
-                <div>
-                    <h2 className="text-2xl font-bold text-white mb-4 border-b border-white/10 pb-2">1. Datos del Titular</h2>
-                    <p className="text-gray-400">
-                        En cumplimiento de la Ley 34/2002, de 11 de julio, de servicios de la sociedad de la información y de comercio electrónico (LSSI-CE), se informa de los datos del titular del sitio web:
-                    </p>
-                    <ul className="text-gray-400 list-disc pl-6 mt-4 space-y-2">
-                        <li><strong>Titular:</strong> Hector Barbera Sanchez</li>
-                        <li><strong>Email:</strong> hectechia@gmail.com</li>
-                        <li><strong>Actividad:</strong> Consultoría y Desarrollo de Soluciones de Automatización con IA</li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h2 className="text-2xl font-bold text-white mb-4 border-b border-white/10 pb-2">2. Propiedad Intelectual</h2>
-                    <p className="text-gray-400">
-                        Todo el contenido de este sitio web (textos, imágenes, logotipos, diseño) es propiedad de HecTechAi o de sus licenciantes y está protegido por las leyes de propiedad intelectual e industrial.
-                    </p>
-                </div>
-
-                <div>
-                    <h2 className="text-2xl font-bold text-white mb-4 border-b border-white/10 pb-2">3. Exención de Responsabilidad</h2>
-                    <p className="text-gray-400">
-                        HecTechAi no se hace responsable de los daños o perjuicios que pudieran derivarse del uso de los contenidos o servicios ofrecidos en este sitio, ni de la información contenida en páginas web de terceros a las que se pueda acceder mediante enlaces.
-                    </p>
-                </div>
-            </section>
-        </LegalLayout>
     );
 }

@@ -175,7 +175,7 @@ export async function generateAuditAction(business: string, painPoint: string, e
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
         const prompt = `
-Eres el consultor estratégico de HecTechAi, experto en automatización con IA para pequeños negocios.
+Eres el Director Estratégico de HecTechAi. Tu objetivo no es solo informar, sino demostrar que el negocio del cliente está perdiendo oportunidades críticas que solo tú puedes resolver.
 
 IMPORTANTE: Responde SIEMPRE en español.
 
@@ -183,17 +183,15 @@ Un cliente tiene un negocio de tipo: "${business}"
 Su mayor problema es: "${painPoint}"
 
 Tu tarea:
-1. Analiza brevemente cómo este problema le está costando dinero/tiempo (1 párrafo)
-2. Propón 2-3 soluciones de automatización específicas para su sector (usa viñetas con ✅)
-3. Enfócate en resultados medibles: horas ahorradas, leads capturados, ventas 24/7
-4. Sé directo y persuasivo, pero no agresivo
+1. DIAGNÓSTICO DE IMPACTO: Explica en 2-3 líneas por qué este problema está "desangrando" su negocio (insiste en el tiempo o dinero que se escapa cada día).
+2. LA VENTAJA HECTECH: Menciona 2 transformaciones de alto nivel (resultados potentes, no pasos técnicos). Ejemplo: "Convertiremos tu atención al cliente en una máquina de ventas 24/7 que funciona mientras duermes".
+3. BRECHA ESTRATÉGICA: Menciona explícitamente que existen puntos de fricción técnica específicos para su operativa que solo pueden resolverse con una auditoría profunda.
 
-Formato de respuesta:
-- Máximo 4 párrafos
-- Usa emojis estratégicamente (✅, 🚀, ⚡, 💰)
-- Termina con un call-to-action suave invitando a agendar una consultoría
-
-NO uses jerga técnica innecesaria. Habla como un asesor de confianza que entiende su negocio.
+Formato:
+- Máximo 2 párrafos cortos (total menos de 100 palabras).
+- Usa emojis estratégicamente (⚡, 🚀, 💰).
+- Tono: Experto, directo y selectivo.
+- Call to Action (CTA) Final: Obligatorio terminar con: "Este análisis es solo la superficie. Los flujos de automatización que realmente escalan tu negocio requieren una configuración personalizada. Agenda tu consultoría para cerrar esta brecha."
 `;
 
         try {

@@ -26,33 +26,33 @@ export default function TermsPage() {
                         <p className="text-sm text-gray-500">Última actualización: {new Date().toLocaleDateString()}</p>
 
                         <section>
-                            <h2 className="text-xl font-bold text-white mb-2">1. Introducción</h2>
-                            <p>Bienvenido a HecTechAi. Al contratar nuestros servicios de automatización e inteligencia artificial, aceptas los siguientes términos y condiciones. Nos comprometemos a ofrecer soluciones tecnológicas de alta calidad para optimizar tu negocio.</p>
+                            <h2 className="text-xl font-bold text-white mb-2">1. Introducción y Servicios</h2>
+                            <p>Bienvenido a HecTechAi. Al contratar nuestros servicios de automatización e inteligencia artificial, aceptas los siguientes términos. HecTechAi provee desarrollo de chatbots, automatización de procesos (n8n/Make) y consultoría estratégica de IA.</p>
                         </section>
 
                         <section>
-                            <h2 className="text-xl font-bold text-white mb-2">2. Servicios</h2>
-                            <p>HecTechAi provee servicios de desarrollo de chatbots, automatización de flujos de trabajo (n8n/Make) y consultoría de IA. Los detalles específicos de cada implementación se acordarán en la propuesta comercial.</p>
+                            <h2 className="text-xl font-bold text-white mb-2">2. Modelo de Pagos (50/50)</h2>
+                            <p>Para proyectos de implementación única, se establece un pago del 50% por adelantado para iniciar los trabajos y el 50% restante antes del paso a producción y entrega final. Los pagos se procesan de forma segura a través de Stripe.</p>
                         </section>
 
                         <section>
-                            <h2 className="text-xl font-bold text-white mb-2">3. Pagos y Suscripciones</h2>
-                            <p>Los servicios se abonan mediante pago único o suscripción recurrente a través de nuestra pasarela segura (Stripe). Las suscripciones se pueden cancelar en cualquier momento con un preaviso de 30 días, salvo que se especifique lo contrario en el contrato particular.</p>
+                            <h2 className="text-xl font-bold text-white mb-2">3. Suscripción de Mantenimiento</h2>
+                            <p>El servicio de mantenimiento mensual garantiza la operatividad de los flujos, monitorización de errores y actualizaciones de API. Este cargo es recurrente y se abona el día 1 de cada mes. <strong>El impago de la suscripción resultará en la suspensión automática de los flujos y servicios hospedados en la infraestructura de HecTechAi.</strong></p>
                         </section>
 
                         <section>
-                            <h2 className="text-xl font-bold text-white mb-2">4. Propiedad Intelectual</h2>
-                            <p>El cliente mantiene la propiedad de sus datos. HecTechAi retiene los derechos sobre los componentes de software reutilizables y la metodología empleada, otorgando al cliente una licencia de uso perpetua sobre la solución implementada.</p>
+                            <h2 className="text-xl font-bold text-white mb-2">4. Limitación de Responsabilidad (IA)</h2>
+                            <p>El cliente reconoce que la Inteligencia Artificial (LLMs) puede generar errores, imprecisiones o "alucinaciones". HecTechAi implementa filtros de seguridad, pero el cliente es responsable de la supervisión final del contenido generado. HecTechAi no se hace responsable de daños derivados de errores lógicos de la IA o fallos en servicios de terceros (OpenAI, Anthropic, Google, etc.).</p>
                         </section>
 
                         <section>
-                            <h2 className="text-xl font-bold text-white mb-2">5. Responsabilidad</h2>
-                            <p>HecTechAi implementa las mejores prácticas de seguridad, pero no se hace responsable de fallos derivados de servicios de terceros (OpenAI, Google, servidores externos) fuera de nuestro control directo.</p>
+                            <h2 className="text-xl font-bold text-white mb-2">5. Propiedad Intelectual y Hosting</h2>
+                            <p>HecTechAi hospeda las automatizaciones en servidores propios para garantizar el mantenimiento. El cliente recibe una licencia de uso sobre los flujos implementados. La propiedad de los datos procesados pertenece íntegramente al cliente.</p>
                         </section>
 
                         <section>
                             <h2 className="text-xl font-bold text-white mb-2">6. Contacto</h2>
-                            <p>Para cualquier duda legal o administrativa, contáctanos en <a href="mailto:hectechia@gmail.com" className="text-[#00FF94] hover:underline">hectechia@gmail.com</a>.</p>
+                            <p>Para dudas legales o administrativas: <a href="mailto:hectechia@gmail.com" className="text-[#00FF94] hover:underline">hectechia@gmail.com</a>.</p>
                         </section>
                     </div>
 

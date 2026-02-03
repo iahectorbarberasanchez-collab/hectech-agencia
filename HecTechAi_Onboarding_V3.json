@@ -1,0 +1,570 @@
+{
+    "name": "HecTechAi - Onboarding V3 (Fixed for Supabase Auth)",
+    "nodes": [
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{ $json.data[0].description }}",
+                            "operation": "contains",
+                            "value2": "Depósito Inicial - Setup"
+                        }
+                    ]
+                }
+            },
+            "name": "Switch Tipo Producto",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                -6192,
+                -880
+            ],
+            "id": "b7af83c0-9104-4bec-ae42-746a9343378f"
+        },
+        {
+            "parameters": {
+                "events": [
+                    "checkout.session.completed"
+                ]
+            },
+            "name": "Stripe Trigger1",
+            "type": "n8n-nodes-base.stripeTrigger",
+            "typeVersion": 1,
+            "position": [
+                -6624,
+                -880
+            ],
+            "id": "5e02ad8e-02ca-40ab-965a-e07eebe436f8",
+            "webhookId": "6129f4ec-61e0-4cc5-89f4-77c73d97194f",
+            "credentials": {
+                "stripeApi": {
+                    "id": "e9gYtCWAcO5DQliZ",
+                    "name": "Stripe account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "url": "=https://api.stripe.com/v1/checkout/sessions/{{ $json.data.object.id }}/line_items",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "stripeApi",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.3,
+            "position": [
+                -6416,
+                -880
+            ],
+            "id": "fed77ea7-d6b1-4d51-aae7-8219350c5727",
+            "name": "HTTP Request",
+            "credentials": {
+                "stripeApi": {
+                    "id": "e9gYtCWAcO5DQliZ",
+                    "name": "Stripe account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Generar contraseña segura\nconst password = Math.random().toString(36).slice(-8).toUpperCase() + 'A1!'; // Adding complexity for Supabase defaults\n\nlet stripeData;\ntry {\n   stripeData = $('Stripe Trigger1').first().json.data.object;\n} catch(e) {\n   stripeData = items[0].json._original_session || items[0].json;\n}\nconst customerEmail = stripeData?.customer_details?.email || 'test@client.com';\n// Store customer name\nconst customerName = stripeData?.customer_details?.name || 'Cliente Nuevo';\n\nreturn [\n  {\n    json: {\n      password,\n      email: customerEmail,\n      name: customerName\n    }\n  }\n];"
+            },
+            "name": "Generar Datos (Inicial)1",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -5840,
+                -1056
+            ],
+            "id": "854fc793-95db-4d85-9536-67e05eb65f5f"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://yafprrydilhktdxduotq.supabase.co/auth/v1/admin/users",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "headerAuth",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "email",
+                            "value": "={{ $json.email }}"
+                        },
+                        {
+                            "name": "password",
+                            "value": "={{ $json.password }}"
+                        },
+                        {
+                            "name": "email_confirm",
+                            "value": "true"
+                        },
+                        {
+                            "name": "user_metadata",
+                            "value": "={{ {\"full_name\": $json.name} }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Supabase Admin (Crear User)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.3,
+            "position": [
+                -5600,
+                -1250
+            ],
+            "id": "custom-supabase-admin-create",
+            "notes": "Creates user in Supabase Auth",
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "service-role-key-placeholder",
+                    "name": "Supabase Service Role Header"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "tableId": "profiles",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": "id",
+                            "fieldValue": "={{ $json.id }}"
+                        },
+                        {
+                            "fieldId": "company_name",
+                            "fieldValue": "={{ $('Generar Datos (Inicial)1').item.json.name }}"
+                        },
+                        {
+                            "fieldId": "status",
+                            "fieldValue": "building"
+                        }
+                    ]
+                }
+            },
+            "name": "Supabase (Crear Perfil)",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                -5380,
+                -1250
+            ],
+            "id": "new-supabase-profile-create",
+            "credentials": {
+                "supabaseApi": {
+                    "id": "xVuDQffxb3qg5Ypl",
+                    "name": "Supabase account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "resource": "databasePage",
+                "operation": "getAll",
+                "databaseId": {
+                    "__rl": true,
+                    "value": "2df8c4ec-e7a8-807a-bc60-ed2980efdbc0",
+                    "mode": "list"
+                },
+                "filterType": "manual",
+                "filters": {
+                    "conditions": [
+                        {
+                            "key": "Email|email",
+                            "condition": "equals",
+                            "emailValue": "={{ $('Generar Datos (Inicial)1').item.json.email }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Notion (Buscar Cliente)2",
+            "type": "n8n-nodes-base.notion",
+            "typeVersion": 2,
+            "position": [
+                -5616,
+                -1056
+            ],
+            "id": "aa953b40-2601-42db-b3de-46c358228d21",
+            "credentials": {
+                "notionApi": {
+                    "id": "pDyNSRof6PTG8Cvr",
+                    "name": "Notion account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "resource": "databasePage",
+                "operation": "update",
+                "pageId": {
+                    "__rl": true,
+                    "mode": "id",
+                    "value": "={{$json.id}}"
+                },
+                "propertiesUi": {
+                    "propertyValues": [
+                        {
+                            "key": "Estado|status",
+                            "statusValue": "Onboarding"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Notion (Estado: Onboarding)1",
+            "type": "n8n-nodes-base.notion",
+            "typeVersion": 2,
+            "position": [
+                -5392,
+                -1056
+            ],
+            "id": "ab97eba7-e63f-44b1-a666-fabf881c739d",
+            "credentials": {
+                "notionApi": {
+                    "id": "pDyNSRof6PTG8Cvr",
+                    "name": "Notion account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "authentication": "serviceAccount",
+                "resource": "folder",
+                "name": "={{$node[\"Generar Datos (Inicial)1\"].json[\"name\"]}}",
+                "options": {
+                    "parents": [
+                        "12SXVpFpQOAwTlvCCrdA09-oszPxebVni"
+                    ]
+                }
+            },
+            "name": "Google Drive (Crear Carpeta)1",
+            "type": "n8n-nodes-base.googleDrive",
+            "typeVersion": 2,
+            "position": [
+                -5160,
+                -1250
+            ],
+            "id": "19d662e8-4e03-4fd7-ac87-af33322ee07d",
+            "credentials": {
+                "googleApi": {
+                    "id": "0Qi4WhYdVoinf6q4",
+                    "name": "Google Service Account account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "resource": "draft",
+                "subject": "🚀 Bienvenido a HecTechAi - Tus Credenciales",
+                "emailType": "html",
+                "message": "=<!DOCTYPE html> <html> ... (Rest of HTML) ... </html>",
+                "options": {
+                    "sendTo": "={{ $('Generar Datos (Inicial)1').item.json.email }}"
+                }
+            },
+            "name": "Gmail (Bienvenida)1",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2,
+            "position": [
+                -4940,
+                -1250
+            ],
+            "id": "3129efcf-8a4e-4a88-a8f0-1b8b92a40881",
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "yxY1T9Y8eda39qIG",
+                    "name": "Gmail account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// BUSCAR DATOS EN EL TRIGGER ORIGINAL\nlet stripeData;\ntry {\n   stripeData = $('Stripe Trigger1').first().json.data.object;\n} catch(e) {\n   stripeData = items[0].json._original_session || items[0].json;\n}\nconst customerEmail = stripeData?.customer_details?.email;\nconst customerName = stripeData?.customer_details?.name || 'Cliente';\nif (!customerEmail) {\n   // Fallback por si acaso\n   return [{json: { email: \"test@hectech.ai\", name: \"Usuario Pruebas\" }}];\n}\nreturn [\n  {\n    json: {\n      email: customerEmail,\n      name: customerName\n    }\n  }\n];"
+            },
+            "name": "Extraer Email (Final)1",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -5840,
+                -656
+            ],
+            "id": "a5af64ae-438f-4063-9e59-844fccdc3620"
+        },
+        {
+            "parameters": {
+                "operation": "update",
+                "tableId": "profiles",
+                "filters": {
+                    "conditions": [
+                        {
+                            "keyName": "email",
+                            "condition": "eq",
+                            "keyValue": "={{ $json.email }}"
+                        }
+                    ]
+                },
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldId": "status",
+                            "fieldValue": "active"
+                        }
+                    ]
+                }
+            },
+            "name": "Supabase (Activar Perfil)",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                -5616,
+                -656
+            ],
+            "id": "activate-supabase-profile",
+            "credentials": {
+                "supabaseApi": {
+                    "id": "xVuDQffxb3qg5Ypl",
+                    "name": "Supabase account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "resource": "databasePage",
+                "operation": "getAll",
+                "databaseId": {
+                    "__rl": true,
+                    "value": "2df8c4ec-e7a8-807a-bc60-ed2980efdbc0",
+                    "mode": "list"
+                },
+                "filterType": "manual",
+                "filters": {
+                    "conditions": [
+                        {
+                            "key": "Email|email",
+                            "condition": "equals",
+                            "emailValue": "={{ $json.email }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Notion (Buscar Cliente Final)1",
+            "type": "n8n-nodes-base.notion",
+            "typeVersion": 2,
+            "position": [
+                -5616,
+                -464
+            ],
+            "id": "eeb42231-d729-4c61-a797-6a16d364f986",
+            "credentials": {
+                "notionApi": {
+                    "id": "pDyNSRof6PTG8Cvr",
+                    "name": "Notion account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "resource": "databasePage",
+                "operation": "update",
+                "pageId": {
+                    "__rl": true,
+                    "value": "={{$json.id}}",
+                    "mode": "id"
+                },
+                "propertiesUi": {
+                    "propertyValues": [
+                        {
+                            "key": "Estado|status",
+                            "statusValue": "Desplegado"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Notion (Estado: Activo)1",
+            "type": "n8n-nodes-base.notion",
+            "typeVersion": 2,
+            "position": [
+                -5392,
+                -464
+            ],
+            "id": "75bfa09b-4dd8-4bc5-9939-79757c1bea30",
+            "credentials": {
+                "notionApi": {
+                    "id": "pDyNSRof6PTG8Cvr",
+                    "name": "Notion account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "resource": "draft",
+                "subject": "🚀 ¡Tu Automatización está DESPLEGADA!",
+                "emailType": "html",
+                "message": "=<!DOCTYPE html> <html> ... (Rest of HTML) ... </html>",
+                "options": {
+                    "sendTo": "={{ $('Extraer Email (Final)1').item.json.email }}"
+                }
+            },
+            "name": "Gmail (Lanzamiento)1",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": 2,
+            "position": [
+                -5392,
+                -656
+            ],
+            "id": "77931bdd-2313-4cf7-8dab-d176694533e0",
+            "webhookId": "33371247-a1ed-4c3a-a2d3-245505b584ee",
+            "credentials": {
+                "gmailOAuth2": {
+                    "id": "yxY1T9Y8eda39qIG",
+                    "name": "Gmail account"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Switch Tipo Producto": {
+            "main": [
+                [
+                    {
+                        "node": "Generar Datos (Inicial)1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Extraer Email (Final)1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Stripe Trigger1": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP Request",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP Request": {
+            "main": [
+                [
+                    {
+                        "node": "Switch Tipo Producto",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Generar Datos (Inicial)1": {
+            "main": [
+                [
+                    {
+                        "node": "Supabase Admin (Crear User)",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Notion (Buscar Cliente)2",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Supabase Admin (Crear User)": {
+            "main": [
+                [
+                    {
+                        "node": "Supabase (Crear Perfil)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Supabase (Crear Perfil)": {
+            "main": [
+                [
+                    {
+                        "node": "Google Drive (Crear Carpeta)1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Google Drive (Crear Carpeta)1": {
+            "main": [
+                [
+                    {
+                        "node": "Gmail (Bienvenida)1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Notion (Buscar Cliente)2": {
+            "main": [
+                [
+                    {
+                        "node": "Notion (Estado: Onboarding)1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extraer Email (Final)1": {
+            "main": [
+                [
+                    {
+                        "node": "Supabase (Activar Perfil)",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Notion (Buscar Cliente Final)1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Supabase (Activar Perfil)": {
+            "main": [
+                [
+                    {
+                        "node": "Gmail (Lanzamiento)1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Notion (Buscar Cliente Final)1": {
+            "main": [
+                [
+                    {
+                        "node": "Notion (Estado: Activo)1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

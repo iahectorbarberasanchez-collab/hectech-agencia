@@ -1,58 +1,61 @@
+import React from 'react';
 import Link from 'next/link';
+import { ArrowLeft, ShieldCheck, Lock } from 'lucide-react';
 
-const LegalLayout = ({ children, title }: { children: React.ReactNode, title: string }) => (
-    <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#00FF94] selection:text-black pt-32 pb-24">
-        <div className="max-w-4xl mx-auto px-6">
-            <h1 className="text-4xl md:text-5xl font-bold mb-12 text-gradient">{title}</h1>
-            <div className="glass-card p-8 md:p-12 rounded-3xl border border-white/10 prose prose-invert max-w-none">
-                {children}
-            </div>
-            <div className="mt-12">
-                <Link href="/" className="text-[#00FF94] hover:underline flex items-center gap-2">
-                    ← Volver al inicio
+export default function PrivacyPage() {
+    return (
+        <div className="min-h-screen bg-[#050505] text-white p-6 md:p-12">
+            <div className="max-w-4xl mx-auto">
+                <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-[#00FF94] transition-colors mb-8">
+                    <ArrowLeft size={16} /> Volver al inicio
                 </Link>
+
+                <div className="glass-card p-8 md:p-12 rounded-3xl border border-white/10 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
+                        <Lock size={200} />
+                    </div>
+
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="w-12 h-12 bg-[#00FF94]/10 rounded-xl flex items-center justify-center text-[#00FF94]">
+                            <ShieldCheck size={24} />
+                        </div>
+                        <h1 className="text-3xl md:text-4xl font-bold font-display">Política de Privacidad</h1>
+                    </div>
+
+                    <div className="space-y-6 text-gray-300 leading-relaxed">
+                        <p className="text-sm text-gray-500">Última actualización: {new Date().toLocaleDateString()}</p>
+
+                        <section>
+                            <h2 className="text-xl font-bold text-white mb-2">1. Responsable del Tratamiento</h2>
+                            <p>HecTechAi, con email de contacto <a href="mailto:hectechia@gmail.com" className="text-[#00FF94] hover:underline">hectechia@gmail.com</a>, es el responsable del tratamiento de los datos personales que nos proporciones a través de esta web.</p>
+                        </section>
+
+                        <section>
+                            <h2 className="text-xl font-bold text-white mb-2">2. Finalidad</h2>
+                            <p>Los datos recogidos (nombre, email, teléfono y descripción del negocio) se utilizan exclusivamente para:</p>
+                            <ul className="list-disc pl-6 space-y-2">
+                                <li>Responder a tus solicitudes de información.</li>
+                                <li>Realizar la Auditoría IA solicitada.</li>
+                                <li>Gestionar la relación comercial en caso de contratación.</li>
+                            </ul>
+                        </section>
+
+                        <section>
+                            <h2 className="text-xl font-bold text-white mb-2">3. Conservación</h2>
+                            <p>Tus datos se conservarán durante el tiempo necesario para cumplir con la finalidad para la que fueron recabados y para determinar las posibles responsabilidades que se pudieran derivar de dicha finalidad y del tratamiento de los datos.</p>
+                        </section>
+
+                        <section>
+                            <h2 className="text-xl font-bold text-white mb-2">4. Derechos</h2>
+                            <p>Puedes ejercer tus derechos de acceso, rectificación, supresión y portabilidad de tus datos, de limitación y oposición a su tratamiento, enviando un correo a <a href="mailto:hectechia@gmail.com" className="text-[#00FF94] hover:underline">hectechia@gmail.com</a>.</p>
+                        </section>
+                    </div>
+
+                    <div className="mt-12 pt-8 border-t border-white/10 text-center">
+                        <p className="text-sm text-gray-500">HecTechAi Automation Agency</p>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-);
-
-export default function PoliticaPrivacidad() {
-    return (
-        <LegalLayout title="Política de Privacidad">
-            <section className="space-y-6">
-                <div>
-                    <h2 className="text-2xl font-bold text-white mb-4 border-b border-white/10 pb-2">1. Información al Usuario</h2>
-                    <p className="text-gray-400">
-                        HecTechAi (Hector Barbera Sanchez) es el responsable del tratamiento de los datos personales del Usuario. Estos datos serán tratados de conformidad con lo dispuesto en el Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018 (LOPDGDD).
-                    </p>
-                </div>
-
-                <div>
-                    <h2 className="text-2xl font-bold text-white mb-4 border-b border-white/10 pb-2">2. Finalidad del Tratamiento</h2>
-                    <p className="text-gray-400">
-                        Los datos facilitados a través del formulario de contacto se utilizarán exclusivamente para:
-                    </p>
-                    <ul className="text-gray-400 list-disc pl-6 mt-2 space-y-1">
-                        <li>Responder a consultas o solicitudes de información.</li>
-                        <li>Gestionar la prestación de servicios solicitados.</li>
-                        <li>Enviar información comercial relacionada con nuestros servicios (solo si se ha solicitado).</li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h2 className="text-2xl font-bold text-white mb-4 border-b border-white/10 pb-2">3. Legitimación y Conservación</h2>
-                    <p className="text-gray-400">
-                        La base legal para el tratamiento es el consentimiento del interesado al enviar el formulario. Los datos se conservarán mientras exista un interés mutuo para mantener el fin del tratamiento.
-                    </p>
-                </div>
-
-                <div>
-                    <h2 className="text-2xl font-bold text-white mb-4 border-b border-white/10 pb-2">4. Derechos del Usuario</h2>
-                    <p className="text-gray-400">
-                        El usuario puede ejercer en cualquier momento sus derechos de acceso, rectificación, portabilidad, supresión, limitación y oposición dirigiéndose a <a href="mailto:hectechia@gmail.com" className="text-[#00FF94]">hectechia@gmail.com</a>.
-                    </p>
-                </div>
-            </section>
-        </LegalLayout>
     );
 }
