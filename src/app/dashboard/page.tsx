@@ -40,6 +40,18 @@ interface DailyMetrics {
     leads_generated: number;
 }
 
+interface Lead {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    status: string;
+    website?: string;
+    tech_debt?: string;
+    has_chatbot?: boolean;
+    created_at: string;
+}
+
 interface StatCardProps {
     title: string;
     value: string | number;
@@ -70,8 +82,9 @@ export default function DashboardPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<Profile | null>(null);
-    const [activeTab, setActiveTab] = useState<'metrics' | 'support'>('metrics');
+    const [activeTab, setActiveTab] = useState<'metrics' | 'support' | 'leads'>('metrics');
     const [metrics, setMetrics] = useState<DailyMetrics[]>([]);
+    const [leads, setLeads] = useState<Lead[]>([]);
 
     useEffect(() => {
         async function getData() {
@@ -93,7 +106,7 @@ export default function DashboardPage() {
                 setProfile(profileData);
             }
 
-            if (profileData?.status === 'active' || profileData?.status === 'live') {
+            if (profileData?.status === 'active' || profileData?.status === 'live' || profileData?.is_admin) {
                 const { data: metricsData, error: metricsError } = await supabase
                     .from('daily_metrics')
                     .select('*')
@@ -101,6 +114,18 @@ export default function DashboardPage() {
 
                 if (!metricsError && metricsData) {
                     setMetrics(metricsData);
+                }
+
+                // Fetch Leads if admin
+                if (profileData?.is_admin) {
+                    const { data: leadsData, error: leadsError } = await supabase
+                        .from('leads')
+                        .select('*')
+                        .order('created_at', { ascending: false });
+
+                    if (!leadsError && leadsData) {
+                        setLeads(leadsData);
+                    }
                 }
             }
 
@@ -183,6 +208,14 @@ export default function DashboardPage() {
                     >
                         Métricas de Impacto
                     </button>
+                    {profile.is_admin && (
+                        <button
+                            onClick={() => setActiveTab('leads')}
+                            className={`text-sm font-medium transition-colors ${activeTab === 'leads' ? 'text-[#00FF94] border-b-2 border-[#00FF94] pb-4 -mb-4.5' : 'text-gray-500 hover:text-white'}`}
+                        >
+                            Radar de Leads (CRM)
+                        </button>
+                    )}
                     <button
                         onClick={() => setActiveTab('support')}
                         className={`text-sm font-medium transition-colors ${activeTab === 'support' ? 'text-[#00FF94] border-b-2 border-[#00FF94] pb-4 -mb-4.5' : 'text-gray-500 hover:text-white'}`}
@@ -269,6 +302,77 @@ export default function DashboardPage() {
                             </div>
                         </div>
                     )
+                ) : activeTab === 'leads' ? (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-xl font-bold flex items-center gap-2">
+                                <Users className="text-[#00FF94]" />
+                                Pipeline de Captación (Radar)
+                            </h3>
+                            <div className="text-xs text-gray-400">
+                                {leads.length} leads encontrados
+                            </div>
+                        </div>
+
+                        <div className="glass-card overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-white/10 bg-white/5 text-xs uppercase tracking-wider text-gray-400">
+                                            <th className="px-6 py-4 font-medium">Nombre / Negocio</th>
+                                            <th className="px-6 py-4 font-medium">Estado</th>
+                                            <th className="px-6 py-4 font-medium">Deuda Tech</th>
+                                            <th className="px-6 py-4 font-medium">Chatbot</th>
+                                            <th className="px-6 py-4 font-medium">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/10">
+                                        {leads.length > 0 ? (
+                                            leads.map((lead) => (
+                                                <tr key={lead.id} className="hover:bg-white/5 transition-colors group">
+                                                    <td className="px-6 py-4">
+                                                        <div className="font-bold text-white">{lead.name}</div>
+                                                        <div className="text-xs text-gray-500">{lead.email || lead.website || 'Sin datos'}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${lead.status === 'RADAR_LEAD' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/30' :
+                                                                lead.status === 'CONTACTED' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30' :
+                                                                    'bg-green-500/10 text-green-400 border border-green-500/30'
+                                                            }`}>
+                                                            {lead.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className={`text-xs ${lead.tech_debt === 'ALTA' ? 'text-red-400' : 'text-gray-400'}`}>
+                                                            {lead.tech_debt || 'Desconocida'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        {lead.has_chatbot ? (
+                                                            <CheckCircle2 size={16} className="text-[#00FF94]" />
+                                                        ) : (
+                                                            <AlertCircle size={16} className="text-red-400" />
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        <button className="p-2 hover:bg-[#00FF94]/10 rounded-lg transition-colors group" title="Generar Borrador (Simulado)">
+                                                            <Zap size={16} className="text-gray-500 group-hover:text-[#00FF94]" />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={5} className="px-6 py-10 text-center text-gray-500 italic">
+                                                    No se han encontrado leads en el Radar.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 ) : (
                     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
