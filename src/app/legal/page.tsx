@@ -48,7 +48,7 @@ export default function LegalPage() {
 
                         <section>
                             <h2 className="text-xl font-bold text-white mb-2">4. Jurisdicción</h2>
-                            <p>Para la resolución de cualquier controversia derivada del uso de este sitio web, las partes se someten expresamente a los Juzgados y Tribunales de <strong>Valencia, España</strong>.</p>
+                            <p>Para la resolución de cualquier controversia derivada del uso de este sitio web, las partes se someten expresamente a los Juzgados y Tribunales de <strong>Sitges, Barcelona</strong>.</p>
                         </section>
                     </div>
 

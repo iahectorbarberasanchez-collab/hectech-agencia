@@ -68,7 +68,7 @@ export default function TermsPage() {
 
                         <section>
                             <h2 className="text-xl font-bold text-white mb-2">9. Jurisdicción y Ley Aplicable</h2>
-                            <p>Este acuerdo se rige por la legislación española. Para cualquier controversia, las partes se someten expresamente a los Juzgados y Tribunales de <strong>Valencia, España</strong>, renunciando a cualquier otro fuero.</p>
+                            <p>Este acuerdo se rige por la legislación española. Para cualquier controversia, las partes se someten expresamente a los Juzgados y Tribunales de <strong>Sitges, Barcelona</strong>, renunciando a cualquier otro fuero.</p>
                         </section>
 
                         <section>
