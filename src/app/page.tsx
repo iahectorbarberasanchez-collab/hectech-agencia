@@ -89,19 +89,19 @@ const Navbar = () => {
   return (
     <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-[#050505]/90 backdrop-blur-md border-b border-white/5 py-4' : 'bg-transparent py-6'}`}>
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-        <div className="flex items-center gap-3 cursor-pointer">
+        <a href="#" className="flex items-center gap-3 cursor-pointer group">
           <Image
             src="/logo.png"
             alt="HecTechAi Logo"
             width={56}
             height={56}
-            className="object-contain"
+            className="object-contain group-hover:scale-110 transition-transform"
             style={{ mixBlendMode: 'screen' }}
           />
-          <div className="flex items-center gap-2 font-display font-bold text-xl md:text-3xl tracking-tighter text-white">
+          <div className="flex items-center gap-2 font-display font-bold text-xl md:text-3xl tracking-tighter text-white group-hover:text-[#00FF94] transition-colors">
             <span>Hec<span className="text-[#00FF94]">TechAi</span></span>
           </div>
-        </div>
+        </a>
 
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
