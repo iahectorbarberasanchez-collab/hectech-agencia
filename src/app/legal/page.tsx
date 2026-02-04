@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Scale, FileText } from 'lucide-react';
+import { Footer } from '../../components/Footer';
 
 export default function LegalPage() {
     return (
@@ -44,6 +45,11 @@ export default function LegalPage() {
                             <h2 className="text-xl font-bold text-white mb-2">3. Exclusión de Responsabilidad</h2>
                             <p>HecTechAi no se hace responsable de los daños y perjuicios de cualquier naturaleza que pudieran ocasionar, a título enunciativo: errores u omisiones en los contenidos, falta de disponibilidad del portal o la transmisión de virus o programas maliciosos o lesivos en los contenidos, a pesar de haber adoptado todas las medidas tecnológicas necesarias para evitarlo.</p>
                         </section>
+
+                        <section>
+                            <h2 className="text-xl font-bold text-white mb-2">4. Jurisdicción</h2>
+                            <p>Para la resolución de cualquier controversia derivada del uso de este sitio web, las partes se someten expresamente a los Juzgados y Tribunales de <strong>Valencia, España</strong>.</p>
+                        </section>
                     </div>
 
                     <div className="mt-12 pt-8 border-t border-white/10 text-center">
@@ -51,6 +57,7 @@ export default function LegalPage() {
                     </div>
                 </div>
             </div>
+            <Footer />
         </div>
     );
 }

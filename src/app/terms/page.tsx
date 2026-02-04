@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, ShieldCheck, FileText } from 'lucide-react';
+import { Footer } from '../../components/Footer';
 
 export default function TermsPage() {
     return (
@@ -51,7 +52,27 @@ export default function TermsPage() {
                         </section>
 
                         <section>
-                            <h2 className="text-xl font-bold text-white mb-2">6. Contacto</h2>
+                            <h2 className="text-xl font-bold text-white mb-2">6. Limitación de Responsabilidad Económica</h2>
+                            <p>En ningún caso la responsabilidad total de HecTechAi excederá el importe total pagado por el cliente en los últimos tres (3) meses anteriores al evento que origine la reclamación. Esta limitación no aplicará en casos de dolo o negligencia grave debidamente probada.</p>
+                        </section>
+
+                        <section>
+                            <h2 className="text-xl font-bold text-white mb-2">7. Disponibilidad del Servicio (SLA)</h2>
+                            <p>HecTechAi no garantiza un tiempo de actividad (uptime) del 100% debido a la dependencia de servicios de terceros (OpenAI, Anthropic, Google, etc.). Los tiempos de respuesta y disponibilidad están sujetos a la operatividad de dichos proveedores externos.</p>
+                        </section>
+
+                        <section>
+                            <h2 className="text-xl font-bold text-white mb-2">8. Cancelación y Reembolsos</h2>
+                            <p>El servicio de mantenimiento mensual puede cancelarse con quince (15) días de preaviso antes de la renovación. No existen reembolsos por periodos no disfrutados. El impago resultará en la suspensión automática tras 7 días de mora.</p>
+                        </section>
+
+                        <section>
+                            <h2 className="text-xl font-bold text-white mb-2">9. Jurisdicción y Ley Aplicable</h2>
+                            <p>Este acuerdo se rige por la legislación española. Para cualquier controversia, las partes se someten expresamente a los Juzgados y Tribunales de <strong>Valencia, España</strong>, renunciando a cualquier otro fuero.</p>
+                        </section>
+
+                        <section>
+                            <h2 className="text-xl font-bold text-white mb-2">10. Contacto</h2>
                             <p>Para dudas legales o administrativas: <a href="mailto:hectechia@gmail.com" className="text-[#00FF94] hover:underline">hectechia@gmail.com</a>.</p>
                         </section>
                     </div>
@@ -61,6 +82,7 @@ export default function TermsPage() {
                     </div>
                 </div>
             </div>
+            <Footer />
         </div>
     );
 }

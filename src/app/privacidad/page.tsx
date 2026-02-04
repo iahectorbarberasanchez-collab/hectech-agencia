@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, ShieldCheck, Lock } from 'lucide-react';
+import { Footer } from '../../components/Footer';
 
 export default function PrivacyPage() {
     return (
@@ -56,6 +57,7 @@ export default function PrivacyPage() {
                     </div>
                 </div>
             </div>
+            <Footer />
         </div>
     );
 }

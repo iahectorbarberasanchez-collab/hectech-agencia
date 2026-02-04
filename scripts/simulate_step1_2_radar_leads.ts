@@ -5,9 +5,15 @@ console.log('║  🎯 SIMULACIÓN PASO 1.2: RADAR DE LEADS 2.0              ║
 console.log('╚═══════════════════════════════════════════════════════════╝\n');
 
 // Verificar que las credenciales necesarias estén configuradas
-const SERPER_API_KEY = '770b7aec4d634fe103d835122bb1629073efdd71'; // Del workflow
+const SERPER_API_KEY = '8cbceb1fc8dba23d2dd1f6cb079c55808fc65c48'; // Key actualizada del workflow
 const N8N_BASE_URL = process.env.N8N_BASE_URL;
 const N8N_API_KEY = process.env.N8N_API_KEY;
+
+// Importar cliente de Supabase
+import { createClient } from '@supabase/supabase-js';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 console.log('📋 Configuración del Radar:');
 console.log(`   Tipo de negocio: INMOBILIARIAS`);
@@ -36,7 +42,7 @@ async function checkWorkflowStatus() {
             return null;
         }
 
-        const workflows = await response.json();
+        const workflows = (await response.json()) as { data: any[] };
         const radarWorkflow = workflows.data?.find((w: any) =>
             w.name.includes('Radar de Leads 2.0') || w.name.includes('Radar de Leads')
         );
@@ -97,16 +103,25 @@ async function testSerpAPI() {
     }
 }
 
-async function checkGoogleSheetsIntegration() {
-    console.log('\n⏳ PASO 3/4: Verificando integración con Google Sheets...');
-    console.log('   Documento ID: 1DfBdKutQISGYh-IIZOyXkrHyGoTidKc4SseUbHD1mn4');
-    console.log('   Hoja: INMOBILIARIAS');
-    console.log('');
-    console.log('   ⚠️  Esta verificación debe hacerse manualmente:');
-    console.log('   1. Abre el Google Sheet en tu navegador');
-    console.log('   2. Verifica que la hoja "INMOBILIARIAS" existe');
-    console.log('   3. Ejecuta el workflow manualmente desde n8n');
-    console.log('   4. Verifica que se agreguen nuevas filas al sheet');
+async function checkSupabaseIntegration() {
+    console.log('\n⏳ PASO 3/4: Verificando integración con Supabase (Tabla radar_leads)...');
+
+    // Contar registros antes de la ejecución
+    const { count: countBefore, error } = await supabase
+        .from('radar_leads')
+        .select('*', { count: 'exact', head: true });
+
+    if (error) {
+        if (error.code === '42P01') { // table_undefined
+            console.log('❌ Error: La tabla radar_leads no existe en Supabase.');
+            return { initialCount: 0, error: true };
+        }
+        console.log(`❌ Error conectando con Supabase: ${error.message}`);
+        return { initialCount: 0, error: true };
+    }
+
+    console.log(`   Registros actuales en 'radar_leads': ${countBefore}`);
+    return { initialCount: countBefore || 0, error: false };
 }
 
 async function executeWorkflow(workflowId: string) {
@@ -139,27 +154,39 @@ async function executeWorkflow(workflowId: string) {
 async function main() {
     const workflow = await checkWorkflowStatus();
     const serpApiOk = await testSerpAPI();
-    await checkGoogleSheetsIntegration();
+    const dbStatus = await checkSupabaseIntegration();
 
     console.log('\n╔═══════════════════════════════════════════════════════════╗');
     console.log('║  📊 RESUMEN DE LA SIMULACIÓN                             ║');
     console.log('╚═══════════════════════════════════════════════════════════╝\n');
 
-    if (workflow && workflow.active && serpApiOk) {
+    if (workflow && workflow.active && serpApiOk && !dbStatus.error) {
         console.log('✅ Puntos de verificación completados:');
         console.log('   1. Workflow encontrado y activo en n8n');
         console.log('   2. SerpAPI funcionando correctamente');
+        console.log('   3. Conexión con Supabase correcta');
         console.log('');
 
         if (N8N_API_KEY && N8N_BASE_URL) {
             const executed = await executeWorkflow(workflow.id);
             if (executed) {
                 console.log('✅ Workflow ejecutado exitosamente');
-                console.log('');
-                console.log('🔍 Verificaciones manuales pendientes:');
-                console.log('   1. Ve a n8n → Executions y verifica que se ejecutó sin errores');
-                console.log('   2. Abre el Google Sheet y verifica que se agregaron nuevos leads');
-                console.log('   3. Verifica que los datos incluyen: nombre, web, redes sociales, análisis tech');
+                console.log('⏳ Esperando 10 segundos para procesar resultados...');
+                await new Promise(resolve => setTimeout(resolve, 10000));
+
+                // Verificar si hay nuevos registros
+                const { count: countAfter } = await supabase
+                    .from('radar_leads')
+                    .select('*', { count: 'exact', head: true });
+
+                const newLeads = (countAfter || 0) - dbStatus.initialCount;
+
+                if (newLeads > 0) {
+                    console.log(`✅ ÉXITO TOTAL: Se han creado ${newLeads} nuevos leads en la tabla 'radar_leads'.`);
+                } else {
+                    console.log('⚠️  El workflow se ejecutó pero no se detectaron nuevos registros en Supabase aún.');
+                    console.log('   Verifica la pestaña Executions en n8n para ver posibles errores lógicos.');
+                }
             }
         } else {
             console.log('⚠️  Para ejecutar el workflow automáticamente:');
@@ -176,13 +203,16 @@ async function main() {
         if (!serpApiOk) {
             console.log('   ❌ SerpAPI no responde - verificar API key');
         }
+        if (dbStatus.error) {
+            console.log('   ❌ Error conectando con base de datos');
+        }
         console.log('');
         console.log('📝 Pasos para activar el Radar de Leads:');
         console.log('   1. Accede a n8n: https://mis-automatizaciones-n8n.ucbepc.easypanel.host/');
         console.log('   2. Importa el workflow "HecTechAi - Radar de Leads 2.0.json"');
         console.log('   3. Activa el workflow');
         console.log('   4. Ejecuta manualmente para probar');
-        console.log('   5. Verifica resultados en Google Sheets');
+        console.log('   5. Verifica resultados en Supabase (Tabla radar_leads)');
     }
 
     console.log('\n🎯 Próximo paso:');
