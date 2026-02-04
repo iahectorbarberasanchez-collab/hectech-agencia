@@ -1,6 +1,6 @@
 # 📚 HecTechAi Strategic & Technical Knowledge Base
 
-Última actualización: 28/1/2026, 16:59:30
+Última actualización: 4/2/2026, 11:25:49
 
 Este documento es el MANIFIESTO ESTRATÉGICO Y TÉCNICO central de HecTechAi sobre HecTechAi. Se ha generado automáticamente para servir de base al Gemini Gem.
 
@@ -123,15 +123,49 @@ Este documento sirve como manual de instrucciones para situaciones críticas y p
 * **Implementación Base:** Desde 1.500€ (Setup de n8n + 1 Bot).
 * **Mantenimiento (Recurrencia):** 200€-500€/mes según volumen de ejecuciones.
 
-## 4. El "Filtro de Calidad" de Héctor
+* **Control de Calidad ("Quality Gate")**
 
-* Antes de entregar cualquier flujo, hazte estas 3 preguntas:
-    1. ¿Sustituye al menos 1 hora de trabajo humano al día?
-    2. ¿Es capaz de manejar errores sin romperse?
-    3. ¿Los datos se guardan en Supabase o Notion para el Dashboard del cliente?
+* **Definición:** Es el check mental obligatorio que debes hacer antes de dar por buena cualquier idea o automatización. Si no cumple estos 3 puntos, NO sirve:
+    1. **ROI Claro:** ¿Ahorra tiempo real o genera dinero? (No automatizamos por capricho).
+    2. **Robustez:** ¿Qué pasa si falla la API? (Debe tener manejo de errores).
+    3. **Visibilidad:** ¿El cliente verá el resultado en su Dashboard? (Si no lo ve, no lo valora). **OBLIGATORIO:** Integrar el **Nodo de Telemetría de Supabase** (tabla `daily_metrics`) al final de cada flujo.
+
+## 5. Protocolo de Implementación n8n (MANDATORIO)
+
+Cada automatización entregada a un cliente DEBE incluir:
+
+* **Nodo de Telemetría (Upsert):** Al final del flujo principal o tras hitos críticos.
+* **Tabla:** `public.daily_metrics` de Supabase.
+* **Métrica:** Incremento de `automations_run`, `time_saved_minutes` y `leads_generated` (si aplica).
+* **Propósito:** Alimentar el Dashboard de Impacto del cliente automáticamente.
+
+## 6. Estrategia de Hosting y Multitenancy (Agencia como Host)
+
+Para maximizar el control, la recurrencia y la calidad del servicio, HecTechAi opera bajo el modelo de **Hosting Centralizado**:
+
+* **Instancia Propia:** Las automatizaciones de los clientes se ejecutan en el n8n de la agencia (Easypanel/Hetzner).
+* **Aislamiento Logístico:** Cada cliente se organiza mediante **Tags** y una nomenclatura estricta: `[NOMBRE_CLIENTE] - Nombre del Proceso`.
+* **Credenciales:** Se deben usar siempre credenciales proporcionadas por el cliente (Standard API Keys o Usuarios de colaborador). Nunca usar cuentas personales de la agencia para flujos de clientes.
+* **Control de Pago:** El acceso a la ejecución de los flujos está vinculado a la suscripción de Stripe. Si el mantenimiento falla, el flujo se pausa.
+
+## 7. Protocolo de Blindaje Legal y Contratos
+
+Para cada nuevo cliente, el flujo de Onboarding V3 debe ejecutar automáticamente:
+
+1. **Generación de Contrato:** n8n toma los datos de Stripe (`nombre`, `dni`, `presupuesto`) y rellena el [CONTRATO_BASE_IA.md](file:///c:/Users/ester/Desktop/HECTOR/HecTechAI/TEMPLATES/CONTRATO_BASE_IA.md).
+2. **Almacenamiento Seguro:** Subida automática del contrato en PDF/Markdown a la carpeta del cliente en **Google Drive**.
+3. **Confirmación Técnica:** Marcar en Supabase `contract_accepted: true` (vinculado a la aceptación de T&C en el checkout de Stripe).
+4. **Copia para Héctor:** Notificación por Telegram con link al contrato generado para supervisión rápida.
+
+## 8. Protocolo de Auto-Sincronización (MANDATORIO)
+
+Para garantizar que el sistema y su documentación sean siempre una imagen fiel de la realidad, se establecen dos reglas de ejecución automática para la IA:
+
+1. **Actualización de Listas de Tareas:** Los archivos `task.md` y `PENDING_TASKS.md` deben actualizarse proactivamente tras cada avance significativo o cambio en el estado del proyecto.
+2. **Sincronización con GitHub:** Cualquier cambio realizado en el código de la web (`hectech-agency`) debe ser seguido inmediatamente por un `git commit` y `git push` para asegurar que el repositorio remoto esté siempre al día.
 
 ---
-*Manual generado para el Notebook de HecTech*
+*Manual operativo actualizado tras la validación de protocolos de sincronización.*
 
 
 ---
@@ -147,7 +181,7 @@ Este documento detalla los flujos de dinero, márgenes y políticas de cobro de 
 * **Setup Fee (Implementación):** Cobro único por la creación de la infraestructura (bots, integraciones, CRM).
   * *Rango:* 1.000€ - 5.000€ dependiendo de la complejidad.
 * **Mantenimiento Mensual (Retainer):** Asegura que todo siga funcionando y optimiza los prompts.
-  * *Rango:* 200€ - 600€/mes.
+  * *Tarifa Estándar:* Alrededor de **100€/mes** (según consumo).
 * **Consultoría Estratégica:** Sesiones 1 a 1 de optimización.
   * *Tarifa:* 150€/hora.
 
@@ -185,29 +219,32 @@ Para calcular la rentabilidad real, el Gem debe considerar:
 
 Este documento define cómo manejamos la legalidad y la seguridad, para que el Gem pueda asesorar a Héctor y a los clientes con rigor.
 
-## 1. Seguridad de la Infraestructura (Stack)
+## 1. Seguridad de la Infraestructura (The AAA Stack)
 
-* **Supabase:** Los datos se almacenan en servidores de la UE (Irlanda/Bélgica) para cumplir con el RGPD. Usamos cifrado en reposo (AES-256) y en tránsito (TLS).
-* **n8n:** Los flujos procesan datos de forma temporal. No almacenamos registros sensibles en los nodos de n8n más allá del tiempo necesario para la ejecución.
-* **Vercel:** Hosting seguro con certificaciones de cumplimiento estándar.
+* **Supabase:** Base de datos relacional (PostgreSQL). Los datos se almacenan físicamente en la región de la UE (**Irlanda/Bélgica**) para cumplimiento estricto del RGPD. Implementamos aislamiento de datos a nivel de fila (RLS) y cifrado AES-256.
+* **n8n (Orquestador):** Procesamiento de datos en contenedores Docker seguros. No hay persistencia de datos sensibles en los nodos de n8n más allá del tiempo de ejecución (transimisión segura).
+* **Vercel:** Hosting de la capa de presentación con protección DDoS y certificados SSL/TLS automáticos.
 
 ## 2. Propiedad Intelectual (IP)
 
-* **Código Propio:** El código de la landing y los flujos base de n8n son propiedad de HecTechAi.
-* **Código Entregado:** El cliente recibe licencia de uso de los flujos implementados, pero la lógica base y los conectores son propiedad intelectual de la agencia (modelo SaaS/Agencia).
+* **Activos de Agencia:** Los "Motores de Automatización" (prompts maestros, lógica de n8n orquestada y flujos de onboarding) son propiedad intelectual de HecTechAi.
+* **Licencia de Cliente:** Al contratar, el cliente adquiere una **Licencia de Uso No Exclusiva** mientras mantenga el servicio activo. Los datos introducidos y procesados son 100% propiedad del cliente.
 
-## 3. Limitación de Responsabilidad (IA)
+## 3. Limitación de Responsabilidad (IA Guardrails)
 
-* Las alucinaciones de la IA son un riesgo conocido. HecTechAi implementa "barreras de seguridad" (guardrails), pero el cliente es responsable de la supervisión final de la información generada por los bots.
-* No garantizamos un ROI exacto, sino una mejora en la operativa basada en datos históricos.
+* **Fallo Lógico:** La IA puede cometer errores (alucinaciones). HecTechAi utiliza sistemas de validación dual (ej. un modelo revisa lo que otro escribe) para minimizar riesgos, pero la supervisión final es responsabilidad del cliente.
+* **Terceros:** No nos responsabilizamos de caídas en APIs de terceros (OpenAI, Google, Anthropic). El uptime depende de dichos proveedores externos.
+* **Límite Económico:** Responsabilidad limitada a los últimos 3 meses facturados.
+* **Jurisdicción:** Valencia, España.
 
 ## 4. Protección de Datos (RGPD)
 
-* **Audit Trail:** Todas las interacciones de los formularios web quedan registradas en Supabase con fecha y consentimiento.
-* **Derecho al olvido:** Protocolo para borrar cualquier lead de Supabase si el cliente lo solicita.
+* **Ubicación de Servidores:** Confirmada en zona europea (Irlanda).
+* **Flujos de Consentimiento:** Integrados en la landing y los checkouts de Stripe.
+* **Derecho al Olvido:** Protocolo automatizado en n8n para purga de datos bajo demanda.
 
 ---
-*Manual legal para el soporte del Gem de HecTech*
+Para detalles técnicos profundos de blindaje, consultar el [Manual HecTech Shield](file:///c:/Users/ester/Desktop/HECTOR/HecTechAI/HECTECH_LEGAL_SHIELD.md).
 
 
 ---
@@ -277,31 +314,46 @@ Tu infraestructura cubre prácticamente todas las áreas clave de una empresa mo
 
 ## Flujos de Trabajo de la Agencia
 
-## 🚀 Workflow en Producción (ACTIVO)
+# HecTechAi Automation Inventory (V2)
 
-Estos son los flujos que están **actualmente desplegados y funcionando** en el servidor VPS.
+> ⚠️ **SYSTEM NOTE:** This file is synchronized with `HECTECH_REALITY_OPS.md`. All workflows listed here are verified in `n8n/backups/`.
 
-### 1. Onboarding & Automación de Pagos (Core)
+## 🤖 Workflows Activos (Verificados)
 
-* **Estado:** ✅ ACTIVO
-* **Trigger:** webhook Stripe (`checkout.session.completed`).
-* **Acción:**
-  * Procesa pagos (Inicial/Final).
-  * Crea credenciales en Supabase.
-  * Gestiona Notion (CRM) y Drive.
-  * Envía emails transaccionales.
-* **Archivo:** [client_onboarding.json](n8n/client_onboarding.json)
+La agencia opera con una infraestructura de 5 automatizaciones principales que forman el motor de servicios:
+
+1. **Onboarding V3**
+   - **Archivo:** `Onboarding_V3.json`
+   - **Función:** Activación automática tras pago en Stripe. Crea CRM en Notion, carpetas en Drive y Workspace de proyecto.
+   - **Nivel:** Core / Operativo
+
+2. **Central de Errores**
+   - **Archivo:** `hectechai___central_de_errores__email___telegram__antigravity_funciona.json`
+   - **Función:** Monitorización 24/7 de todos los flujos de n8n con alertas instantáneas a Telegram.
+   - **Nivel:** Infraestructura / Mantenimiento
+
+3. **Radar de Leads V3**
+   - **Archivo:** `HecTechAi_Radar_Leads_V3.json`
+   - **Función:** Escaneo automático de menciones y palabras clave. Incluye deduplicación avanzada (Upsert), extracción de contactos y enriquecimiento con `business_type`.
+   - **Nivel:** Estratégico / Ventas
+
+4. **Formulario Web a Borrador Gmail**
+   - **Archivo:** `formulario_web_a_borrador_gmail_antigravity_funciona.json`
+   - **Función:** Convierte leads entrantes en borradores de respuesta inmediata en Gmail para que el agente solo tenga que pulsar "Enviar".
+   - **Nivel:** Ventas / Velocidad
+
+5. **Generador de Borradores de Venta**
+   - **Archivo:** `generador_de_borradores_de_venta_antigravity_funciona.json`
+   - **Función:** Utiliza IA para redactar propuestas y correos de venta personalizados basados en los datos del lead.
+   - **Nivel:** Ventas / Personalización
 
 ---
 
-## 📂 Librería de Plantillas (Templates)
+## ⚠️ Workflows Secundarios / Legacy
 
-Estos flujos están disponibles en la carpeta `Automatizaciones para la propia agencia` pero **NO están activos** necesariamente. Son recursos para implementar según necesidad.
-
-* `Formulario web a Borrador Gmail.json`: IA para redactar respuestas a leads.
-* `HecTechAi - Radar de Leads 2.0.json`: Scraper de redes sociales.
-* `HecTechAi - Propuestas VIP.json`: Generador de PDFs.
-* `Crear proyectos de clientes.json`: Versión legacy del onboarding.
+- **Crear Proyectos de Clientes (Legacy)**
+  - **Archivo:** `crear_proyectos_de_clientes_antigravity_funciona.json`
+  - **Status:** Activo pero en proceso de ser absorbido por Onboarding V3.
 
 
 ---
