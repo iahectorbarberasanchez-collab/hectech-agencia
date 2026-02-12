@@ -5,7 +5,7 @@ console.log('║  🎯 SIMULACIÓN PASO 1.2: RADAR DE LEADS 2.0              ║
 console.log('╚═══════════════════════════════════════════════════════════╝\n');
 
 // Verificar que las credenciales necesarias estén configuradas
-const SERPER_API_KEY = '8cbceb1fc8dba23d2dd1f6cb079c55808fc65c48'; // Key actualizada del workflow
+const SERPER_API_KEY = '7233220d5758b9c4377d4905c3bff4043d91e161'; // Key actualizada del workflow
 const N8N_BASE_URL = process.env.N8N_BASE_URL;
 const N8N_API_KEY = process.env.N8N_API_KEY;
 
@@ -208,7 +208,7 @@ async function main() {
         }
         console.log('');
         console.log('📝 Pasos para activar el Radar de Leads:');
-        console.log('   1. Accede a n8n: https://mis-automatizaciones-n8n.ucbepc.easypanel.host/');
+        console.log('   1. Accede a n8n: https://n8n.hectechai.com/');
         console.log('   2. Importa el workflow "HecTechAi - Radar de Leads 2.0.json"');
         console.log('   3. Activa el workflow');
         console.log('   4. Ejecuta manualmente para probar');

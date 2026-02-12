@@ -16,12 +16,10 @@ import {
     LifeBuoy,
     CheckCircle2,
     AlertCircle,
-    X,
-    Copy,
-    ChevronRight,
-    Menu,
     LogOut,
-    Settings
+    Settings,
+    MessageSquare,
+    Phone
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -35,7 +33,6 @@ const supabase = createClient(
 
 interface Profile {
     id: string;
-    company_name: string;
     status: 'building' | 'active' | 'live';
     is_admin?: boolean;
 }
@@ -56,6 +53,15 @@ interface Lead {
     tech_debt?: string;
     has_chatbot?: boolean;
     created_at: string;
+}
+
+interface ConciergeLog {
+    id: string;
+    phone_number: string;
+    user_message: string;
+    ai_response: string;
+    timestamp: string;
+    status: string;
 }
 
 interface StatCardProps {
@@ -88,9 +94,10 @@ export default function DashboardPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<Profile | null>(null);
-    const [activeTab, setActiveTab] = useState<'metrics' | 'support' | 'leads'>('metrics');
+    const [activeTab, setActiveTab] = useState<'metrics' | 'support' | 'leads' | 'concierge'>('metrics');
     const [metrics, setMetrics] = useState<DailyMetrics[]>([]);
     const [leads, setLeads] = useState<Lead[]>([]);
+    const [conciergeLogs, setConciergeLogs] = useState<ConciergeLog[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [draftContent, setDraftContent] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
@@ -117,7 +124,7 @@ export default function DashboardPage() {
 
             if (profileData?.status === 'active' || profileData?.status === 'live' || profileData?.is_admin) {
                 const { data: metricsData, error: metricsError } = await supabase
-                    .from('daily_metrics')
+                    .from('v_daily_metrics')
                     .select('*')
                     .eq('client_id', session.user.id);
 
@@ -128,7 +135,7 @@ export default function DashboardPage() {
                 // Fetch Leads if admin
                 if (profileData?.is_admin) {
                     const { data: leadsData, error: leadsError } = await supabase
-                        .from('leads')
+                        .from('marketing_leads')
                         .select('*')
                         .order('created_at', { ascending: false });
 
@@ -136,6 +143,22 @@ export default function DashboardPage() {
                         setLeads(leadsData);
                     }
                 }
+
+                // Fetch Concierge Logs
+                const { data: conciergeData, error: conciergeError } = await supabase
+                    .from('concierge_logs')
+                    .select('*')
+                    .order('timestamp', { ascending: false })
+                    .limit(50);
+
+                if (!conciergeError && conciergeData) {
+                    setConciergeLogs(conciergeData);
+                }
+            }
+
+            // Auto-select Concierge tab for Sitges Demo user
+            if (session.user.id === '845fd047-a093-4b9f-b8a9-45526f9c3124') {
+                setActiveTab('concierge');
             }
 
             setLoading(false);
@@ -205,7 +228,7 @@ export default function DashboardPage() {
                 <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div className="animate-in slide-in-from-left duration-700">
                         <h1 className="text-3xl font-bold tracking-tight mb-1">
-                            Bienvenido, <span className="text-[#00FF94]">{profile.company_name || 'Cliente'}</span>
+                            Bienvenido a <span className="text-[#00FF94]">HecTechAi</span>
                         </h1>
                         <p className="text-gray-400">Dashboard de Impacto HecTechAi</p>
                     </div>
@@ -241,6 +264,14 @@ export default function DashboardPage() {
                     >
                         Métricas de Impacto
                     </button>
+                    {(profile.is_admin || profile.id === '845fd047-a093-4b9f-b8a9-45526f9c3124') && (
+                        <button
+                            onClick={() => setActiveTab('concierge')}
+                            className={`text-sm font-medium transition-colors ${activeTab === 'concierge' ? 'text-[#00FF94] border-b-2 border-[#00FF94] pb-4 -mb-4.5' : 'text-gray-500 hover:text-white'}`}
+                        >
+                            Sitges Concierge (Live)
+                        </button>
+                    )}
                     {profile.is_admin && (
                         <button
                             onClick={() => setActiveTab('leads')}
@@ -410,56 +441,118 @@ export default function DashboardPage() {
                                 </table>
                             </div>
                         </div>
-
-                        {/* AI Draft Modal */}
-                        {isModalOpen && (
-                            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-                                <div className="glass-card w-full max-w-2xl bg-[#0a0a0a] border border-white/10 rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
-                                    <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-[#00FF94]/10 rounded-lg">
-                                                <Zap size={20} className="text-[#00FF94]" />
-                                            </div>
-                                            <h3 className="text-xl font-bold text-white">Propuesta Generada por IA</h3>
-                                        </div>
-                                        <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                                            <X size={20} className="text-gray-400" />
-                                        </button>
-                                    </div>
-                                    <div className="p-8">
-                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 min-h-[200px] whitespace-pre-wrap text-gray-300 text-sm leading-relaxed mb-6 font-mono">
-                                            {isGenerating ? (
-                                                <div className="flex flex-col items-center justify-center h-full py-10 gap-4">
-                                                    <div className="w-10 h-10 border-4 border-[#00FF94]/20 border-t-[#00FF94] rounded-full animate-spin"></div>
-                                                    <p className="text-[#00FF94] animate-pulse">Redactando propuesta estratégica...</p>
-                                                </div>
-                                            ) : (
-                                                draftContent
-                                            )}
-                                        </div>
-                                        <div className="flex gap-4">
-                                            <button
-                                                onClick={() => {
-                                                    navigator.clipboard.writeText(draftContent);
-                                                    alert('¡Copiado al portapapeles!');
-                                                }}
-                                                disabled={isGenerating}
-                                                className="flex-1 py-4 bg-[#00FF94] text-black font-bold rounded-xl hover:bg-[#00e685] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                                            >
-                                                <Copy size={18} />
-                                                Copiar Propuesta
-                                            </button>
-                                            <button
-                                                onClick={() => setIsModalOpen(false)}
-                                                className="flex-1 py-4 bg-white/5 text-white font-bold rounded-xl border border-white/10 hover:bg-white/10 transition-colors"
-                                            >
-                                                Cerrar
-                                            </button>
-                                        </div>
-                                    </div>
+                    </div>
+                ) : activeTab === 'concierge' ? (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        {/* ROI Header for Sitges Concierge */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div className="glass-card p-6 rounded-2xl bg-[#00FF94]/5 border border-[#00FF94]/20">
+                                <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Horas de Gestión Ahorradas</p>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-2xl font-bold text-white">{(conciergeLogs.length * 5 / 60).toFixed(1)}</span>
+                                    <span className="text-sm text-[#00FF94]">horas</span>
                                 </div>
+                                <p className="text-[10px] text-gray-500 mt-2">Basado en 5 min/interacción</p>
                             </div>
-                        )}
+                            <div className="glass-card p-6 rounded-2xl bg-white/5 border border-white/10">
+                                <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Coste Operativo Evitado</p>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-2xl font-bold text-white">{(conciergeLogs.length * 5 / 60 * 15).toFixed(0)}€</span>
+                                    <span className="text-sm text-purple-400">ahorrados</span>
+                                </div>
+                                <p className="text-[10px] text-gray-500 mt-2">Cálculo estimado (15€/hora)</p>
+                            </div>
+                            <div className="glass-card p-6 rounded-2xl bg-[#00FF94]/5 border border-[#00FF94]/20 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-2 opacity-10">
+                                    <Clock size={48} className="text-[#00FF94]" />
+                                </div>
+                                <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Disponibilidad 24/7</p>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-2xl font-bold text-[#00FF94]">100%</span>
+                                    <span className="text-sm text-gray-400">Always ON</span>
+                                </div>
+                                <p className="text-[10px] text-gray-500 mt-2">Sin costes de nocturnidad</p>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-xl font-bold flex items-center gap-2">
+                                <MessageSquare className="text-[#00FF94]" />
+                                Live Concierge Interactions
+                                <span className="flex items-center gap-2 px-3 py-1 bg-[#00FF94]/10 border border-[#00FF94]/30 text-[#00FF94] rounded-full text-[10px] font-bold uppercase tracking-wider ml-4">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#00FF94] animate-pulse"></span>
+                                    Live Stream
+                                </span>
+                            </h3>
+                            <button
+                                onClick={() => router.refresh()}
+                                className="text-xs text-gray-400 hover:text-[#00FF94] transition-colors flex items-center gap-1"
+                            >
+                                <Zap size={14} /> Refrescar logs
+                            </button>
+                        </div>
+
+                        <div className="glass-card overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-white/10 bg-white/5 text-xs uppercase tracking-wider text-gray-400">
+                                            <th className="px-6 py-4 font-medium">Guest (Teléfono)</th>
+                                            <th className="px-6 py-4 font-medium">Mensaje del Huésped</th>
+                                            <th className="px-6 py-4 font-medium">Respuesta del Concierge IA</th>
+                                            <th className="px-6 py-4 font-medium">Timestamp</th>
+                                            <th className="px-6 py-4 font-medium text-center">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/10">
+                                        {conciergeLogs.length > 0 ? (
+                                            conciergeLogs.map((log) => (
+                                                <tr key={log.id} className="hover:bg-white/5 transition-colors group">
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-2 text-white font-medium">
+                                                            <Phone size={14} className="text-gray-500" />
+                                                            {log.phone_number}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 max-w-xs">
+                                                        <p className="text-sm text-gray-300 line-clamp-2 italic">
+                                                            "{log.user_message}"
+                                                        </p>
+                                                    </td>
+                                                    <td className="px-6 py-4 max-w-md">
+                                                        <p className="text-sm text-[#00FF94]/80 line-clamp-3">
+                                                            {log.ai_response}
+                                                        </p>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-xs text-gray-500">
+                                                        {new Date(log.timestamp).toLocaleString('es-ES', {
+                                                            day: '2-digit',
+                                                            month: '2-digit',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${log.status === 'success'
+                                                            ? 'bg-[#00FF94]/10 text-[#00FF94] border border-[#00FF94]/20'
+                                                            : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                                                            }`}>
+                                                            {log.status}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={5} className="px-6 py-10 text-center text-gray-500 italic">
+                                                    No hay interacciones registradas todavía. El concierge está listo para hablar.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 ) : (
                     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
