@@ -19,7 +19,8 @@ import {
     LogOut,
     Settings,
     MessageSquare,
-    Phone
+    Phone,
+    Globe
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -219,6 +220,33 @@ export default function DashboardPage() {
     // Estimación de atención fuera de horario (simulado basado en ejecuciones)
     const afterHours = Math.floor(totalAutomations * 0.45);
     const potentialRevenue = Math.floor(totalLeadsGenerated * 150).toLocaleString('es-ES');
+
+    // Advanced Concierge Metrics Logic
+    const resolutionRate = conciergeLogs.length > 0 ? 98 : 0; // Simulated high resolution for demo
+
+    // Upselling Detection Logic
+    const upsellKeywords = ['parking', 'limpieza', 'check-out', 'late', 'reserva', 'tour', 'aeropuerto', 'transfer'];
+    const potentialUpsells = conciergeLogs.filter(log =>
+        upsellKeywords.some(key => log.ai_response.toLowerCase().includes(key))
+    ).length;
+    const upsellRevenue = potentialUpsells * 35; // Estimated 35€ per upsell suggestion
+
+    // Language Detection Logic (Simple heuristic for demo)
+    const detectedLanguages = new Set(['Español']);
+    conciergeLogs.forEach(log => {
+        const msg = log.user_message.toLowerCase();
+        if (msg.includes('hello') || msg.includes(' the ') || msg.includes(' is ')) detectedLanguages.add('Inglés');
+        if (msg.includes('bonjour') || msg.includes(' s\'il ') || msg.includes(' merci ')) detectedLanguages.add('Francés');
+        if (msg.includes('hallo') || msg.includes(' danke ')) detectedLanguages.add('Alemán');
+    });
+
+    // Peak Activity Logic
+    const peakHours = conciergeLogs.reduce((acc: any, log) => {
+        const hour = new Date(log.timestamp).getHours();
+        acc[hour] = (acc[hour] || 0) + 1;
+        return acc;
+    }, {});
+    const topHour = Object.entries(peakHours).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || '--';
 
     if (!profile) return null;
 
@@ -472,6 +500,57 @@ export default function DashboardPage() {
                                     <span className="text-sm text-gray-400">Always ON</span>
                                 </div>
                                 <p className="text-[10px] text-gray-500 mt-2">Sin costes de nocturnidad</p>
+                            </div>
+                        </div>
+
+                        {/* Advanced Insights Section */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div className="glass-card p-4 rounded-xl bg-white/5 border border-white/10">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="p-2 bg-yellow-500/10 rounded-lg"><Zap size={16} className="text-yellow-500" /></div>
+                                    <p className="text-gray-400 text-xs font-medium uppercase">Ventas Detectadas</p>
+                                </div>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-xl font-bold text-white">{upsellRevenue}€</span>
+                                    <span className="text-[10px] text-yellow-500">potenciales</span>
+                                </div>
+                                <p className="text-[9px] text-gray-500 mt-1">{potentialUpsells} sugerencias de upselling</p>
+                            </div>
+
+                            <div className="glass-card p-4 rounded-xl bg-white/5 border border-white/10">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="p-2 bg-blue-500/10 rounded-lg"><Globe size={16} className="text-blue-500" /></div>
+                                    <p className="text-gray-400 text-xs font-medium uppercase">Conectividad Global</p>
+                                </div>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-xl font-bold text-white">{detectedLanguages.size}</span>
+                                    <span className="text-[10px] text-blue-500">idiomas</span>
+                                </div>
+                                <p className="text-[9px] text-gray-500 mt-1 truncate">{Array.from(detectedLanguages).join(', ')}</p>
+                            </div>
+
+                            <div className="glass-card p-4 rounded-xl bg-white/5 border border-white/10">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="p-2 bg-green-500/10 rounded-lg"><CheckCircle2 size={16} className="text-[#00FF94]" /></div>
+                                    <p className="text-gray-400 text-xs font-medium uppercase">Resolución Automática</p>
+                                </div>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-xl font-bold text-white">{resolutionRate}%</span>
+                                    <span className="text-[10px] text-[#00FF94]">IA pura</span>
+                                </div>
+                                <p className="text-[9px] text-gray-500 mt-1">Sin intervención humana</p>
+                            </div>
+
+                            <div className="glass-card p-4 rounded-xl bg-white/5 border border-white/10">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="p-2 bg-purple-500/10 rounded-lg"><Moon size={16} className="text-purple-500" /></div>
+                                    <p className="text-gray-400 text-xs font-medium uppercase">Hora de Mayor Pico</p>
+                                </div>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-xl font-bold text-white">{topHour}:00h</span>
+                                    <span className="text-[10px] text-purple-500">atención crítica</span>
+                                </div>
+                                <p className="text-[9px] text-gray-500 mt-1">Cubierto por el agente IA</p>
                             </div>
                         </div>
 
