@@ -119,6 +119,7 @@ export default function DashboardPage() {
     const [ticketSubject, setTicketSubject] = useState('');
     const [ticketDescription, setTicketDescription] = useState('');
     const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
+    const [ticketSuccess, setTicketSuccess] = useState(false);
 
     useEffect(() => {
         async function getData() {
@@ -216,13 +217,16 @@ export default function DashboardPage() {
         if (!ticketSubject || !ticketDescription) return;
 
         setIsSubmittingTicket(true);
+        const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || 'https://n8n.hectechai.com/webhook/formulario-soporte-web';
+
         try {
-            const response = await fetch('https://n8n.hectechai.com/webhook/formulario-soporte-web', {
+            const response = await fetch(webhookUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     type: 'support_ticket',
                     user_id: profile?.id,
+                    email: (await supabase.auth.getUser()).data.user?.email, // Obtener email actual
                     company: profile?.company_name,
                     subject: ticketSubject,
                     description: ticketDescription,
@@ -231,9 +235,11 @@ export default function DashboardPage() {
             });
 
             if (response.ok) {
-                alert('¡Ticket enviado con éxito! Nos pondremos en contacto contigo pronto.');
+                setTicketSuccess(true);
                 setTicketSubject('');
                 setTicketDescription('');
+                // Ocultar mensaje de éxito tras unos segundos
+                setTimeout(() => setTicketSuccess(false), 5000);
             } else {
                 throw new Error('Error en el servidor');
             }
@@ -790,6 +796,13 @@ export default function DashboardPage() {
                                             'Enviar Solicitud'
                                         )}
                                     </button>
+
+                                    {ticketSuccess && (
+                                        <div className="mt-4 p-4 bg-[#00FF94]/10 border border-[#00FF94]/20 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <CheckCircle2 size={18} className="text-[#00FF94]" />
+                                            <p className="text-[#00FF94] text-sm font-medium">¡Ticket enviado con éxito! Nos pondremos en contacto contigo pronto.</p>
+                                        </div>
+                                    )}
                                 </form>
                             </div>
                             <div className="glass-card p-8 rounded-3xl bg-white/5 border border-white/10 border-l-purple-500 border-l-4">
