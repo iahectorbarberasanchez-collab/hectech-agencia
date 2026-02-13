@@ -1,0 +1,145 @@
+{
+    "name": "HecTech - Soporte Técnico Dashboard",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "formulario-soporte-web",
+                "options": {}
+            },
+            "name": "Webhook Dashboard",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                200,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{$node[\"Webhook Dashboard\"].json[\"body\"][\"type\"]}}",
+                            "value2": "support_ticket"
+                        }
+                    ]
+                }
+            },
+            "name": "Es Ticket Soporte?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                420,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "insert",
+                "table": "support_tickets",
+                "data": "={{JSON.stringify({ \"user_id\": $node[\"Webhook Dashboard\"].json[\"body\"][\"user_id\"], \"company_name\": $node[\"Webhook Dashboard\"].json[\"body\"][\"company\"], \"subject\": $node[\"Webhook Dashboard\"].json[\"body\"][\"subject\"], \"description\": $node[\"Webhook Dashboard\"].json[\"body\"][\"description\"] })}}",
+                "options": {}
+            },
+            "name": "Guardar en Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                640,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "resource": "message",
+                "toAddresses": "hectechia@gmail.com",
+                "subject": "=Ticket Soporte: {{$node[\"Webhook Dashboard\"].json[\"body\"][\"subject\"]}} [{{$node[\"Webhook Dashboard\"].json[\"body\"][\"company\"]}}]",
+                "message": "=Hola Hector,\n\nHas recibido un nuevo ticket de soporte de la plataforma.\n\n🏢 Empresa: {{$node[\"Webhook Dashboard\"].json[\"body\"][\"company\"]}}\n👤 ID Usuario: {{$node[\"Webhook Dashboard\"].json[\"body\"][\"user_id\"]}}\n📧 Email Cliente: {{$node[\"Webhook Dashboard\"].json[\"body\"][\"email\"]}}\n\n📌 Asunto: {{$node[\"Webhook Dashboard\"].json[\"body\"][\"subject\"]}}\n📝 Descripción: {{$node[\"Webhook Dashboard\"].json[\"body\"][\"description\"]}}\n\n📅 Fecha: {{$node[\"Webhook Dashboard\"].json[\"body\"][\"timestamp\"]}}",
+                "additionalFields": {}
+            },
+            "name": "Gmail Notificación Admin",
+            "type": "n8n-nodes-base.googleGmail",
+            "typeVersion": 1,
+            "position": [
+                860,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "resource": "message",
+                "toAddresses": "={{$node[\"Webhook Dashboard\"].json[\"body\"][\"email\"]}}",
+                "subject": "=Hemos recibido tu solicitud de soporte: {{$node[\"Webhook Dashboard\"].json[\"body\"][\"subject\"]}}",
+                "message": "=Hola,\n\nTe confirmamos que hemos recibido correctamente tu ticket de soporte.\n\nDetalles recibidos:\n- Asunto: {{$node[\"Webhook Dashboard\"].json[\"body\"][\"subject\"]}}\n- Descripción: {{$node[\"Webhook Dashboard\"].json[\"body\"][\"description\"]}}\n\nNuestro equipo técnico ha sido notificado y revisará tu caso lo antes posible.\n\nGracias por confiar en HecTechAI.\n\n--\nEquipo de Soporte HecTechAI",
+                "additionalFields": {}
+            },
+            "name": "Gmail Confirmación Cliente",
+            "type": "n8n-nodes-base.googleGmail",
+            "typeVersion": 1,
+            "position": [
+                860,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "chatId": "5163668316",
+                "text": "=🚨 NUEVO TICKET DE SOPORTE\n\n🏢 Empresa: {{$node[\"Webhook Dashboard\"].json[\"body\"][\"company\"]}}\n💬 Asunto: {{$node[\"Webhook Dashboard\"].json[\"body\"][\"subject\"]}}\n\n📝 Descripción: {{$node[\"Webhook Dashboard\"].json[\"body\"][\"description\"]}}",
+                "additionalFields": {}
+            },
+            "name": "Aviso Telegram",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1,
+            "position": [
+                860,
+                400
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook Dashboard": {
+            "main": [
+                [
+                    {
+                        "node": "Es Ticket Soporte?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Es Ticket Soporte?": {
+            "main": [
+                [
+                    {
+                        "node": "Guardar en Supabase",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Gmail Notificación Admin",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Gmail Confirmación Cliente",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                []
+            ]
+        },
+        "Gmail Notificación Admin": {
+            "main": [
+                [
+                    {
+                        "node": "Aviso Telegram",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
