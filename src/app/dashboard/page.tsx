@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import {
     BarChart3,
     Clock,
@@ -103,7 +103,7 @@ const StatCard = ({ title, value, icon: Icon, unit, color }: StatCardProps) => (
     </div>
 );
 
-export default function DashboardPage() {
+function DashboardContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [loading, setLoading] = useState(true);
@@ -936,5 +936,20 @@ export default function DashboardPage() {
                 </div>
             )}
         </main>
+    );
+}
+
+export default function DashboardPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+                <div className="text-center">
+                    <Loader2 className="w-12 h-12 text-[#00FF94] animate-spin mx-auto mb-4" />
+                    <p className="text-gray-400">Cargando dashboard...</p>
+                </div>
+            </div>
+        }>
+            <DashboardContent />
+        </Suspense>
     );
 }
