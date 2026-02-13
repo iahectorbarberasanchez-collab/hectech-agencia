@@ -178,8 +178,8 @@ export default function DashboardPage() {
                 }
             }
 
-            // Auto-select Concierge tab for Concierge industry users
-            if (profileData?.industry === 'concierge' || session.user.id === '845fd047-a093-4b9f-b8a9-45526f9c3124') {
+            // Auto-select Concierge tab for Concierge industry users (excluding admin)
+            if (profileData?.industry === 'concierge' && !profileData?.is_admin) {
                 setActiveTab('concierge');
             }
 
@@ -346,7 +346,12 @@ export default function DashboardPage() {
                     >
                         Métricas de Impacto
                     </button>
-                    {(profile.is_admin || profile.industry === 'concierge' || profile.id === '845fd047-a093-4b9f-b8a9-45526f9c3124') && (
+                    {/* Admin: Show Control Agency if applicable */}
+                    {profile.is_admin && profile.id === '845fd047-a093-4b9f-b8a9-45526f9c3124' && (
+                        // ... existing admin link ...
+                        <></>
+                    )}
+                    {(profile.industry === 'concierge' && !profile.is_admin) && (
                         <button
                             onClick={() => setActiveTab('concierge')}
                             className={`text-sm font-medium transition-colors ${activeTab === 'concierge' ? 'text-[#00FF94] border-b-2 border-[#00FF94] pb-4 -mb-4.5' : 'text-gray-500 hover:text-white'}`}
