@@ -353,14 +353,46 @@ export default function DashboardPage() {
                         </div>
                     ) : (
                         <div className="space-y-10">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
-                                <StatCard title="Margen Operativo Ganado" value={roiEuros} icon={BarChart3} unit="€ ahorrados" color="#00FF94" />
-                                <StatCard title="Pipeline de Negocio" value={totalLeadsGenerated} icon={UserCheck} unit="oportunidades" color="#F472B6" />
-                                <StatCard title="Días de Vida Recuperados" value={daysSaved} icon={Clock} unit="días libres" color="#00C2FF" />
-                                <StatCard title="Atención 24/7 (Always ON)" value={afterHours} icon={Moon} unit="fuera de horario" color="#A855F7" />
-                                <StatCard title="Decisiones IA Tomadas" value={totalAutomations} icon={Activity} unit="ejecuciones" color="#00FF94" />
-                                <StatCard title="Velocidad de Respuesta" value="< 5" icon={Zap} unit="segundos" color="#FACC15" />
-                            </div>
+                            {/* Industry-specific Metrics Section */}
+                            {profile.industry === 'real_estate' ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+                                    <StatCard title="Leads de Captación" value={totalLeadsGenerated} icon={Target} unit="propietarios" color="#00FF94" />
+                                    <StatCard title="Pipeline Estimado" value={potentialRevenue} icon={TrendingUp} unit="€ en comisiones" color="#F472B6" />
+                                    <StatCard title="Velocidad de Respuesta" value="< 2" icon={Zap} unit="minutos avg" color="#FACC15" />
+                                    <StatCard title="Citas de Valoración" value="12" icon={Calendar} unit="este mes" color="#00C2FF" />
+                                    <StatCard title="Ahorro Operativo" value={roiEuros} icon={BarChart3} unit="€ mensuales" color="#A855F7" />
+                                    <StatCard title="Disponibilidad 24/7" value="100%" icon={Moon} unit="Always ON" color="#00FF94" />
+                                </div>
+                            ) : profile.industry === 'medical' ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+                                    <StatCard title="Citas Agendadas" value="48" icon={Calendar} unit="este mes" color="#00C2FF" />
+                                    <StatCard title="Pacientes Atendidos" value="124" icon={Users2} unit="consultas IA" color="#00FF94" />
+                                    <StatCard title="Tiempo de Recepción" value="12h" icon={Clock} unit="ahorradas/semana" color="#F472B6" />
+                                    <StatCard title="Resolución Automática" value="85%" icon={ShieldCheck} unit="sin humano" color="#A855F7" />
+                                    <StatCard title="Ahorro en Personal" value={roiEuros} icon={BarChart3} unit="€/mes" color="#FACC15" />
+                                    <StatCard title="Estado del Agente" value="Activo" icon={HeartPulse} unit="24/7 Operativo" color="#00FF94" />
+                                </div>
+                            ) : profile.industry === 'restaurant' ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+                                    <StatCard title="Reservas Confirmadas" value="86" icon={Utensils} unit="vía WhatsApp" color="#00C2FF" />
+                                    <StatCard title="Cubiertos IA" value="340" icon={Users2} unit="comensales" color="#00FF94" />
+                                    <StatCard title="Horas de Pico Cubiertas" value="100%" icon={Zap} unit="automatizado" color="#FACC15" />
+                                    <StatCard title="Ahorro de Gestión" value={roiEuros} icon={BarChart3} unit="€ estimados" color="#F472B6" />
+                                    <StatCard title="Feedback Positivo" value="94%" icon={Activity} unit="sentiment" color="#00FF94" />
+                                    <StatCard title="Atención Fuera Horas" value={afterHours} icon={Moon} unit="pedidos/dudas" color="#A855F7" />
+                                </div>
+                            ) : (
+                                // Default / Generic Metrics View
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+                                    <StatCard title="Margen Operativo Ganado" value={roiEuros} icon={BarChart3} unit="€ ahorrados" color="#00FF94" />
+                                    <StatCard title="Pipeline de Negocio" value={totalLeadsGenerated} icon={UserCheck} unit="oportunidades" color="#F472B6" />
+                                    <StatCard title="Días de Vida Recuperados" value={daysSaved} icon={Clock} unit="días libres" color="#00C2FF" />
+                                    <StatCard title="Atención 24/7 (Always ON)" value={afterHours} icon={Moon} unit="fuera de horario" color="#A855F7" />
+                                    <StatCard title="Decisiones IA Tomadas" value={totalAutomations} icon={Activity} unit="ejecuciones" color="#00FF94" />
+                                    <StatCard title="Velocidad de Respuesta" value="< 5" icon={Zap} unit="segundos" color="#FACC15" />
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
                                 <div className="glass-card p-8 rounded-3xl bg-white/5 border border-white/10 border-l-[#00FF94] border-l-4">
                                     <h3 className="text-xl font-bold mb-4">Análisis de Valor HecTechAi</h3>
@@ -368,7 +400,13 @@ export default function DashboardPage() {
                                         <div className="space-y-2">
                                             <p className="text-[#00FF94] font-bold text-lg">Paz Mental y Libertad</p>
                                             <p className="text-gray-400 text-sm leading-relaxed">
-                                                Tu sistema está delegando tareas críticas a la IA, permitiéndote recuperar tiempo para lo que realmente importa. No solo ahorras dinero, compras tranquilidad sabiendo que tu negocio nunca duerme.
+                                                {profile.industry === 'real_estate'
+                                                    ? 'Tu agente inmobiliario de IA captura y filtra leads mientras tú cierras visitas presenciales. No pierdas ni un solo propietario por no contestar a tiempo.'
+                                                    : profile.industry === 'medical'
+                                                        ? 'Tus pacientes reciben atención inmediata para dudas frecuentes y gestión de citas, reduciendo la saturación de tu recepción física.'
+                                                        : profile.industry === 'restaurant'
+                                                            ? 'Llenamos tus mesas de forma automática. El sistema gestiona las reservas y dudas de la carta sin que el personal de sala tenga que tocar el teléfono.'
+                                                            : 'Tu sistema está delegando tareas críticas a la IA, permitiéndote recuperar tiempo para lo que realmente importa. No solo ahorras dinero, compras tranquilidad.'}
                                             </p>
                                         </div>
                                         <div className="pt-4 border-t border-white/10 flex items-center justify-between">
@@ -388,7 +426,9 @@ export default function DashboardPage() {
                                     <h3 className="text-xl font-bold mb-4">Impacto en Facturación</h3>
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-baseline">
-                                            <p className="text-gray-400 text-sm">Valor de Oportunidad Detectado</p>
+                                            <p className="text-gray-400 text-sm">
+                                                {profile.industry === 'real_estate' ? 'Valor Proyectado de Comisiones' : 'Valor de Oportunidad Detectado'}
+                                            </p>
                                             <p className="text-2xl font-bold text-white">{potentialRevenue}€</p>
                                         </div>
                                         <p className="text-gray-400 text-xs leading-relaxed">
