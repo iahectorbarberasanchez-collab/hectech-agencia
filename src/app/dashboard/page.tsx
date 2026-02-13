@@ -217,7 +217,7 @@ export default function DashboardPage() {
 
         setIsSubmittingTicket(true);
         try {
-            const response = await fetch('https://n8n.hectechai.com/webhook/formulario-web', {
+            const response = await fetch('https://n8n.hectechai.com/webhook/formulario-soporte-web', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
