@@ -267,8 +267,8 @@ export default function AdminPage() {
                                         </td>
                                         <td className="px-8 py-6">
                                             <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter ${(client.status === 'live' || client.status === 'active')
-                                                    ? 'bg-[#00FF94]/10 text-[#00FF94] border border-[#00FF94]/20'
-                                                    : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
+                                                ? 'bg-[#00FF94]/10 text-[#00FF94] border border-[#00FF94]/20'
+                                                : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
                                                 }`}>
                                                 {client.status === 'building' ? 'BUILDING' : 'LIVE'}
                                             </span>
@@ -293,9 +293,13 @@ export default function AdminPage() {
                                             </div>
                                         </td>
                                         <td className="px-8 py-6">
-                                            <button className="p-2 text-gray-500 hover:text-white transition-colors" title="Ver Dashboard Cliente (Próximamente)">
+                                            <Link
+                                                href={`/dashboard?view_as=${client.id}`}
+                                                className="p-2 text-gray-500 hover:text-[#00FF94] transition-colors inline-block"
+                                                title={`Ver Dashboard de ${client.company_name}`}
+                                            >
                                                 <ExternalLink size={16} />
-                                            </button>
+                                            </Link>
                                         </td>
                                     </tr>
                                 ))}
