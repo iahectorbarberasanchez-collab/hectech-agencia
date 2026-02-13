@@ -103,6 +103,13 @@ const StatCard = ({ title, value, icon: Icon, unit, color }: StatCardProps) => (
     </div>
 );
 
+interface CumulativeMetrics {
+    total_actions: number;
+    total_time_saved: number;
+    client_name?: string;
+    status?: string;
+}
+
 function DashboardContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -110,6 +117,7 @@ function DashboardContent() {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [activeTab, setActiveTab] = useState<'metrics' | 'support' | 'leads' | 'concierge'>('metrics');
     const [metrics, setMetrics] = useState<DailyMetrics[]>([]);
+    const [cumulativeMetrics, setCumulativeMetrics] = useState<CumulativeMetrics | null>(null);
     const [leads, setLeads] = useState<Lead[]>([]);
     const [conciergeLogs, setConciergeLogs] = useState<ConciergeLog[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -177,6 +185,7 @@ function DashboardContent() {
 
             // 4. Load Data for Target User
             if (profileData?.status === 'active' || profileData?.status === 'live' || profileData?.is_admin) {
+                // Fetch daily metrics for historical trends
                 const { data: metricsData, error: metricsError } = await supabase
                     .from('v_daily_metrics')
                     .select('*')
@@ -186,29 +195,23 @@ function DashboardContent() {
                     setMetrics(metricsData);
                 }
 
-                // Fetch Leads if admin (Viewer is admin, target dictates what to show, 
-                // but "Leads" tab logic below relies on profile.is_admin. 
-                // If impersonating a non-admin, profile.is_admin is false, so leads tab helps if we are admin viewing admin? 
-                // Wait, if I view as a client, I want to see THEIR data. 
-                // Clients usually don't have access to global 'marketing_leads' unless they are admin.
-                // So if viewing as client, we skip 'marketing_leads' usually.
+                // Fetch cumulative metrics for hero stats
+                const { data: { user } } = await supabase.auth.getUser();
+                const userEmail = user?.email;
 
-                // However, logic says if profileData.is_admin -> fetch leads.
-                // If I impersonate a normal client, profileData.is_admin is false.
-                // So creating leads won't happen here. Correct.
+                if (userEmail) {
+                    const { data: cumulativeData, error: cumulativeError } = await supabase
+                        .from('automation_metrics')
+                        .select('total_actions, total_time_saved, client_name, status')
+                        .eq('client_email', userEmail)
+                        .single();
 
-                // Fetch Concierge Logs (Filtered by target user if possible, or global if not filtered?)
-                // Note: Concierge logs might not have client_id column in this code version, let's check.
-                // Looking at logs query: .from('concierge_logs').select('*') ... no filter?
-                // If no filter, it shows ALL logs. 
-                // We should probably filter by user phone if we could, but let's stick to current logic:
-                // It fetches limit 50 ordered by timestamp.
-                // If we want to be strict, we'd need to filter by client's phone number, but we don't have it linked easily here.
-                // For now, leaving as is (shows all recent logs), which is what the client sees currently (if they have access).
-                // Actually, standard clients seeing ALL logs is a security risk if RLS doesn't block it. 
-                // Assuming RLS handles visibility or it's a demo.
+                    if (!cumulativeError && cumulativeData) {
+                        setCumulativeMetrics(cumulativeData);
+                    }
+                }
 
-                // Let's keep existing logic but fetch.
+                // Fetch Concierge Logs
                 const { data: conciergeData, error: conciergeError } = await supabase
                     .from('concierge_logs')
                     .select('*')
@@ -301,8 +304,9 @@ function DashboardContent() {
         );
     }
 
-    const totalAutomations = metrics.reduce((acc, curr) => acc + (curr.automations_run || 0), 0);
-    const totalMinutesSaved = metrics.reduce((acc, curr) => acc + (curr.time_saved_minutes || 0), 0);
+    // Use cumulative metrics if available, otherwise fallback to daily metrics sum
+    const totalAutomations = cumulativeMetrics?.total_actions || metrics.reduce((acc, curr) => acc + (curr.automations_run || 0), 0);
+    const totalMinutesSaved = cumulativeMetrics?.total_time_saved || metrics.reduce((acc, curr) => acc + (curr.time_saved_minutes || 0), 0);
     const totalLeadsGenerated = metrics.reduce((acc, curr) => acc + (curr.leads_generated || 0), 0);
 
     // Cálculo de Días de Vida Recuperados (Basado en jornada laboral de 8h)
@@ -349,22 +353,23 @@ function DashboardContent() {
     return (
         <main className="min-h-screen bg-[#050505] text-white p-4 md:p-8">
             <div className="max-w-6xl mx-auto space-y-10">
-                <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative">
-                    {/* Impersonation Banner */}
-                    {isImpersonating && (
-                        <div className="absolute -top-12 left-0 right-0 bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 px-4 py-2 rounded-lg flex justify-between items-center text-sm animate-in slide-in-from-top-4">
-                            <span className="flex items-center gap-2">
-                                <ShieldCheck size={16} />
-                                <strong>VISTA DE ADMINISTRADOR:</strong> Estás viendo el dashboard de {profile.company_name}
-                            </span>
-                            <button
-                                onClick={() => router.push('/admin')}
-                                className="underline hover:text-white transition-colors"
-                            >
-                                Salir a Admin
-                            </button>
-                        </div>
-                    )}
+                {/* Impersonation Banner */}
+                {isImpersonating && (
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 px-4 py-3 rounded-lg flex justify-between items-center text-sm animate-in slide-in-from-top-4">
+                        <span className="flex items-center gap-2">
+                            <ShieldCheck size={16} />
+                            <strong>VISTA DE ADMINISTRADOR:</strong> Estás viendo el dashboard de {profile.company_name}
+                        </span>
+                        <button
+                            onClick={() => router.push('/admin')}
+                            className="underline hover:text-white transition-colors"
+                        >
+                            Salir a Admin
+                        </button>
+                    </div>
+                )}
+
+                <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
 
                     <div className="animate-in slide-in-from-left duration-700">
                         <h1 className="text-3xl font-bold tracking-tight mb-1">
@@ -885,56 +890,58 @@ function DashboardContent() {
             </div>
 
             {/* Modal de Propuesta IA */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="glass-card w-full max-w-2xl bg-[#0a0a0a] border border-white/10 rounded-3xl overflow-hidden animate-in zoom-in-95 duration-300">
-                        <div className="p-6 border-b border-white/10 flex justify-between items-center">
-                            <h3 className="text-xl font-bold flex items-center gap-2">
-                                <Zap className="text-yellow-400" size={20} />
-                                Propuesta Estratégica HecTechAi
-                            </h3>
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="p-2 hover:bg-white/5 rounded-full transition-colors"
-                            >
-                                <X size={20} className="text-gray-400" />
-                            </button>
-                        </div>
-                        <div className="p-8 max-h-[70vh] overflow-y-auto">
-                            {isGenerating ? (
-                                <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                                    <Loader2 className="animate-spin text-[#00FF94]" size={40} />
-                                    <p className="text-gray-400 animate-pulse">Analizando lead y generando estrategia...</p>
-                                </div>
-                            ) : (
-                                <div className="prose prose-invert max-w-none">
-                                    <pre className="whitespace-pre-wrap font-sans text-gray-300 leading-relaxed text-sm">
-                                        {draftContent}
-                                    </pre>
-                                </div>
-                            )}
-                        </div>
-                        <div className="p-6 border-t border-white/10 bg-white/5 flex justify-end gap-3">
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="px-6 py-2 rounded-xl text-sm font-medium text-gray-400 hover:text-white transition-colors"
-                            >
-                                Cerrar
-                            </button>
-                            <button
-                                onClick={() => {
-                                    navigator.clipboard.writeText(draftContent);
-                                    alert('Copiado al portapapeles');
-                                }}
-                                disabled={isGenerating || !draftContent}
-                                className="px-6 py-2 bg-[#00FF94] text-black font-bold rounded-xl hover:bg-[#00e685] transition-all disabled:opacity-50"
-                            >
-                                Copiar Propuesta
-                            </button>
+            {
+                isModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+                        <div className="glass-card w-full max-w-2xl bg-[#0a0a0a] border border-white/10 rounded-3xl overflow-hidden animate-in zoom-in-95 duration-300">
+                            <div className="p-6 border-b border-white/10 flex justify-between items-center">
+                                <h3 className="text-xl font-bold flex items-center gap-2">
+                                    <Zap className="text-yellow-400" size={20} />
+                                    Propuesta Estratégica HecTechAi
+                                </h3>
+                                <button
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="p-2 hover:bg-white/5 rounded-full transition-colors"
+                                >
+                                    <X size={20} className="text-gray-400" />
+                                </button>
+                            </div>
+                            <div className="p-8 max-h-[70vh] overflow-y-auto">
+                                {isGenerating ? (
+                                    <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                                        <Loader2 className="animate-spin text-[#00FF94]" size={40} />
+                                        <p className="text-gray-400 animate-pulse">Analizando lead y generando estrategia...</p>
+                                    </div>
+                                ) : (
+                                    <div className="prose prose-invert max-w-none">
+                                        <pre className="whitespace-pre-wrap font-sans text-gray-300 leading-relaxed text-sm">
+                                            {draftContent}
+                                        </pre>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="p-6 border-t border-white/10 bg-white/5 flex justify-end gap-3">
+                                <button
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="px-6 py-2 rounded-xl text-sm font-medium text-gray-400 hover:text-white transition-colors"
+                                >
+                                    Cerrar
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(draftContent);
+                                        alert('Copiado al portapapeles');
+                                    }}
+                                    disabled={isGenerating || !draftContent}
+                                    className="px-6 py-2 bg-[#00FF94] text-black font-bold rounded-xl hover:bg-[#00e685] transition-all disabled:opacity-50"
+                                >
+                                    Copiar Propuesta
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
         </main>
     );
 }
