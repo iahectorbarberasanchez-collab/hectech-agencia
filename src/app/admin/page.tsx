@@ -29,6 +29,8 @@ interface ClientProfile {
     status: 'building' | 'active' | 'live';
     created_at: string;
     is_admin: boolean;
+    email?: string;
+    phone?: string;
 }
 
 export default function AdminPage() {
@@ -95,19 +97,38 @@ export default function AdminPage() {
     };
 
     const fetchData = async () => {
-        // Obtener todos los clientes (perfiles)
-        const { data: profilesData } = await supabase
-            .from('profiles')
-            .select('*')
-            .order('created_at', { ascending: false });
+        // Obtener todos los clientes (perfiles) usando la función segura que incluye emails
+        const { data: profilesData, error } = await supabase
+            .rpc('get_admin_profiles');
+
+        if (error) {
+            console.error('Error fetching profiles:', error);
+            // Fallback por si la función RPC no existiera o fallara
+            const { data: fallbackData } = await supabase
+                .from('profiles')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (fallbackData) {
+                const clientsOnly = fallbackData.filter(p => !p.is_admin);
+                setClients(clientsOnly as any);
+                setStats({
+                    totalClients: clientsOnly.length,
+                    activeDeployments: clientsOnly.filter(c => c.status === 'live').length,
+                    pendingSetup: clientsOnly.filter(c => c.status === 'building').length
+                });
+            }
+            return;
+        }
 
         if (profilesData) {
-            const clientsOnly = profilesData.filter(p => !p.is_admin);
+            // La función RPC ya filtra por permisos de admin internamente, pero filtramos por si acaso
+            const clientsOnly = profilesData.filter((p: any) => !p.is_admin);
             setClients(clientsOnly);
             setStats({
                 totalClients: clientsOnly.length,
-                activeDeployments: clientsOnly.filter(c => c.status === 'live').length,
-                pendingSetup: clientsOnly.filter(c => c.status === 'building').length
+                activeDeployments: clientsOnly.filter((c: any) => c.status === 'live').length,
+                pendingSetup: clientsOnly.filter((c: any) => c.status === 'building').length
             });
         }
     };
@@ -227,6 +248,7 @@ export default function AdminPage() {
                             <thead>
                                 <tr className="bg-white/5 text-gray-400 text-xs uppercase tracking-wider">
                                     <th className="px-8 py-4">Empresa</th>
+                                    <th className="px-8 py-4">Contacto</th>
                                     <th className="px-8 py-4">Estado Actual</th>
                                     <th className="px-8 py-4">Acciones de Despliegue</th>
                                     <th className="px-8 py-4">Dash</th>
@@ -235,7 +257,14 @@ export default function AdminPage() {
                             <tbody className="divide-y divide-white/5">
                                 {clients.map((client) => (
                                     <tr key={client.id} className="hover:bg-white/5 transition-colors group">
-                                        <td className="px-8 py-6 font-medium text-white">{client.company_name}</td>
+                                        <td className="px-8 py-6">
+                                            <div className="font-medium text-white">{client.company_name}</div>
+                                            <div className="text-xs text-gray-500 mt-1 font-mono">{client.id.split('-')[0]}...</div>
+                                        </td>
+                                        <td className="px-8 py-6">
+                                            <div className="text-sm text-gray-300">{client.email || 'No email'}</div>
+                                            {client.phone && <div className="text-xs text-gray-500 mt-0.5">{client.phone}</div>}
+                                        </td>
                                         <td className="px-8 py-6">
                                             <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter ${client.status === 'live' ? 'bg-[#00FF94]/10 text-[#00FF94] border border-[#00FF94]/20' :
                                                 client.status === 'active' ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' :
