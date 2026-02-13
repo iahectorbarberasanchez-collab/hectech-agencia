@@ -24,11 +24,11 @@ import {
     Target,
     TreePalm,
     Building2,
-    Stethoscope,
     Utensils,
     HeartPulse,
     Calendar,
-    Users2
+    Users2,
+    X
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -254,12 +254,12 @@ export default function DashboardPage() {
     });
 
     // Peak Activity Logic
-    const peakHours = conciergeLogs.reduce((acc: any, log) => {
+    const peakHours = conciergeLogs.reduce((acc: Record<number, number>, log) => {
         const hour = new Date(log.timestamp).getHours();
         acc[hour] = (acc[hour] || 0) + 1;
         return acc;
     }, {});
-    const topHour = Object.entries(peakHours).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || '--';
+    const topHour = Object.entries(peakHours).sort((a: [string, number], b: [string, number]) => b[1] - a[1])[0]?.[0] || '--';
 
     if (!profile) return null;
 
@@ -648,7 +648,7 @@ export default function DashboardPage() {
                                                     </td>
                                                     <td className="px-6 py-4 max-w-xs">
                                                         <p className="text-sm text-gray-300 line-clamp-2 italic">
-                                                            "{log.user_message}"
+                                                            &quot;{log.user_message}&quot;
                                                         </p>
                                                     </td>
                                                     <td className="px-6 py-4 max-w-md">
@@ -733,6 +733,58 @@ export default function DashboardPage() {
                     </div>
                 )}
             </div>
+
+            {/* Modal de Propuesta IA */}
+            {isModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="glass-card w-full max-w-2xl bg-[#0a0a0a] border border-white/10 rounded-3xl overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="p-6 border-b border-white/10 flex justify-between items-center">
+                            <h3 className="text-xl font-bold flex items-center gap-2">
+                                <Zap className="text-yellow-400" size={20} />
+                                Propuesta Estratégica HecTechAi
+                            </h3>
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                className="p-2 hover:bg-white/5 rounded-full transition-colors"
+                            >
+                                <X size={20} className="text-gray-400" />
+                            </button>
+                        </div>
+                        <div className="p-8 max-h-[70vh] overflow-y-auto">
+                            {isGenerating ? (
+                                <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                                    <Loader2 className="animate-spin text-[#00FF94]" size={40} />
+                                    <p className="text-gray-400 animate-pulse">Analizando lead y generando estrategia...</p>
+                                </div>
+                            ) : (
+                                <div className="prose prose-invert max-w-none">
+                                    <pre className="whitespace-pre-wrap font-sans text-gray-300 leading-relaxed text-sm">
+                                        {draftContent}
+                                    </pre>
+                                </div>
+                            )}
+                        </div>
+                        <div className="p-6 border-t border-white/10 bg-white/5 flex justify-end gap-3">
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                className="px-6 py-2 rounded-xl text-sm font-medium text-gray-400 hover:text-white transition-colors"
+                            >
+                                Cerrar
+                            </button>
+                            <button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(draftContent);
+                                    alert('Copiado al portapapeles');
+                                }}
+                                disabled={isGenerating || !draftContent}
+                                className="px-6 py-2 bg-[#00FF94] text-black font-bold rounded-xl hover:bg-[#00e685] transition-all disabled:opacity-50"
+                            >
+                                Copiar Propuesta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </main>
     );
 }
