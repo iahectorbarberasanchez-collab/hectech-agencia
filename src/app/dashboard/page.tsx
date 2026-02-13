@@ -37,6 +37,7 @@ interface Profile {
     status: 'building' | 'active' | 'live';
     is_admin?: boolean;
     company_name?: string;
+    industry?: 'concierge' | 'real_estate' | 'medical' | 'restaurant' | 'other';
 }
 
 interface DailyMetrics {
@@ -161,8 +162,8 @@ export default function DashboardPage() {
                 }
             }
 
-            // Auto-select Concierge tab for Sitges Demo users
-            if (profileData?.company_name === 'Sitges Group Demo' || session.user.id === '845fd047-a093-4b9f-b8a9-45526f9c3124' || session.user.id === '5c6a02b0-0116-46ab-9b3e-d4247e101dde') {
+            // Auto-select Concierge tab for Concierge industry users
+            if (profileData?.industry === 'concierge' || session.user.id === '845fd047-a093-4b9f-b8a9-45526f9c3124') {
                 setActiveTab('concierge');
             }
 
@@ -260,7 +261,7 @@ export default function DashboardPage() {
                 <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div className="animate-in slide-in-from-left duration-700">
                         <h1 className="text-3xl font-bold tracking-tight mb-1">
-                            Bienvenido a <span className="text-[#00FF94]">HecTechAi</span>
+                            Bienvenido, <span className="text-[#00FF94]">{profile.company_name || 'a HecTechAi'}</span>
                         </h1>
                         <p className="text-gray-400">Dashboard de Impacto HecTechAi</p>
                     </div>
@@ -296,7 +297,7 @@ export default function DashboardPage() {
                     >
                         Métricas de Impacto
                     </button>
-                    {(profile.is_admin || profile.company_name === 'Sitges Group Demo' || profile.id === '845fd047-a093-4b9f-b8a9-45526f9c3124' || profile.id === '5c6a02b0-0116-46ab-9b3e-d4247e101dde') && (
+                    {(profile.is_admin || profile.industry === 'concierge' || profile.id === '845fd047-a093-4b9f-b8a9-45526f9c3124') && (
                         <button
                             onClick={() => setActiveTab('concierge')}
                             className={`text-sm font-medium transition-colors ${activeTab === 'concierge' ? 'text-[#00FF94] border-b-2 border-[#00FF94] pb-4 -mb-4.5' : 'text-gray-500 hover:text-white'}`}
