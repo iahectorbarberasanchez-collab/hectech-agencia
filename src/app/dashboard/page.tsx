@@ -20,7 +20,15 @@ import {
     Settings,
     MessageSquare,
     Phone,
-    Globe
+    Globe,
+    Target,
+    TreePalm,
+    Building2,
+    Stethoscope,
+    Utensils,
+    HeartPulse,
+    Calendar,
+    Users2
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
