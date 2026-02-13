@@ -266,37 +266,34 @@ export default function AdminPage() {
                                             {client.phone && <div className="text-xs text-gray-500 mt-0.5">{client.phone}</div>}
                                         </td>
                                         <td className="px-8 py-6">
-                                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter ${client.status === 'live' ? 'bg-[#00FF94]/10 text-[#00FF94] border border-[#00FF94]/20' :
-                                                client.status === 'active' ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' :
-                                                    'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
+                                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter ${(client.status === 'live' || client.status === 'active')
+                                                    ? 'bg-[#00FF94]/10 text-[#00FF94] border border-[#00FF94]/20'
+                                                    : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
                                                 }`}>
-                                                {client.status}
+                                                {client.status === 'building' ? 'BUILDING' : 'LIVE'}
                                             </span>
                                         </td>
                                         <td className="px-8 py-6">
                                             <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => updateClientStatus(client.id, 'building')}
-                                                    className={`px-3 py-1 text-[10px] rounded border ${client.status === 'building' ? 'bg-white/10 border-white/30 text-white' : 'border-white/10 text-gray-500 hover:text-white'}`}
-                                                >
-                                                    Set Building
-                                                </button>
-                                                <button
-                                                    onClick={() => updateClientStatus(client.id, 'active')}
-                                                    className={`px-3 py-1 text-[10px] rounded border ${client.status === 'active' ? 'bg-blue-500/20 border-blue-500/40 text-blue-500' : 'border-white/10 text-gray-500 hover:text-blue-500'}`}
-                                                >
-                                                    Set Active
-                                                </button>
-                                                <button
-                                                    onClick={() => updateClientStatus(client.id, 'live')}
-                                                    className={`px-3 py-1 text-[10px] rounded border ${client.status === 'live' ? 'bg-[#00FF94]/20 border-[#00FF94]/40 text-[#00FF94]' : 'border-white/10 text-gray-500 hover:text-[#00FF94]'}`}
-                                                >
-                                                    Set Live
-                                                </button>
+                                                {client.status === 'building' ? (
+                                                    <button
+                                                        onClick={() => updateClientStatus(client.id, 'live')}
+                                                        className="px-3 py-1 text-[10px] rounded border bg-[#00FF94]/20 border-[#00FF94]/40 text-[#00FF94] hover:bg-[#00FF94]/30 transition-colors"
+                                                    >
+                                                        Set Live
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => updateClientStatus(client.id, 'building')}
+                                                        className="px-3 py-1 text-[10px] rounded border bg-yellow-500/10 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/20 transition-colors"
+                                                    >
+                                                        Set Building
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                         <td className="px-8 py-6">
-                                            <button className="p-2 text-gray-500 hover:text-white transition-colors">
+                                            <button className="p-2 text-gray-500 hover:text-white transition-colors" title="Ver Dashboard Cliente (Próximamente)">
                                                 <ExternalLink size={16} />
                                             </button>
                                         </td>
