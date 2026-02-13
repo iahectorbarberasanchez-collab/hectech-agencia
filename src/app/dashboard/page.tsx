@@ -28,7 +28,9 @@ import {
     HeartPulse,
     Calendar,
     Users2,
-    X
+    X,
+    Hotel,
+    Bed
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -45,7 +47,7 @@ interface Profile {
     status: 'building' | 'active' | 'live';
     is_admin?: boolean;
     company_name?: string;
-    industry?: 'concierge' | 'real_estate' | 'medical' | 'restaurant' | 'other';
+    industry?: 'concierge' | 'real_estate' | 'medical' | 'restaurant' | 'hotel' | 'other';
 }
 
 interface DailyMetrics {
@@ -109,9 +111,14 @@ export default function DashboardPage() {
     const [metrics, setMetrics] = useState<DailyMetrics[]>([]);
     const [leads, setLeads] = useState<Lead[]>([]);
     const [conciergeLogs, setConciergeLogs] = useState<ConciergeLog[]>([]);
+    const [isGenerating, setIsGenerating] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [draftContent, setDraftContent] = useState('');
-    const [isGenerating, setIsGenerating] = useState(false);
+
+    // Support Ticket State
+    const [ticketSubject, setTicketSubject] = useState('');
+    const [ticketDescription, setTicketDescription] = useState('');
+    const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
 
     useEffect(() => {
         async function getData() {
@@ -192,21 +199,49 @@ export default function DashboardPage() {
         setDraftContent('');
 
         try {
-            const response = await fetch('/api/leads/generate-draft', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ leadId })
-            });
-
-            if (!response.ok) throw new Error('Failed to generate draft');
-
-            const data = await response.json();
-            setDraftContent(data.draft);
+            // Mocking the n8n API call for now as we don't have the exact endpoint for drafting
+            // In a real scenario, this would be: await fetch('YOUR_N8N_DRAFT_WEBHOOK', ...)
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            setDraftContent(`PROPUESTA ESTRATÉGICA PARA LEAD ID: ${leadId}\n\n1. ANÁLISIS DE DEUDA TECH: El cliente presenta una infraestructura legacy sin automatización de respuesta inmediata.\n2. SOLUCIÓN HECTECH: Implementación de Agente de IA Multimodal para WhatsApp con integración RAG.\n3. IMPACTO ESTIMADO: Reducción del 40% en tiempos de respuesta y aumento del 15% en tasa de conversión.`);
         } catch (error) {
-            console.error('Error:', error);
-            setDraftContent('Hubo un error al generar la propuesta. Por favor, inténtalo de nuevo.');
+            console.error("Error generating draft:", error);
+            setDraftContent('Error al generar la propuesta. Inténtalo de nuevo.');
         } finally {
             setIsGenerating(false);
+        }
+    };
+
+    const handleTicketSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!ticketSubject || !ticketDescription) return;
+
+        setIsSubmittingTicket(true);
+        try {
+            const response = await fetch('https://n8n.hectechai.com/webhook/formulario-web', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'support_ticket',
+                    user_id: profile?.id,
+                    company: profile?.company_name,
+                    subject: ticketSubject,
+                    description: ticketDescription,
+                    timestamp: new Date().toISOString()
+                })
+            });
+
+            if (response.ok) {
+                alert('¡Ticket enviado con éxito! Nos pondremos en contacto contigo pronto.');
+                setTicketSubject('');
+                setTicketDescription('');
+            } else {
+                throw new Error('Error en el servidor');
+            }
+        } catch (error) {
+            console.error("Error submitting ticket:", error);
+            alert('Hubo un problema al enviar el ticket. Por favor, inténtalo de nuevo.');
+        } finally {
+            setIsSubmittingTicket(false);
         }
     };
 
@@ -389,6 +424,15 @@ export default function DashboardPage() {
                                     <StatCard title="Feedback Positivo" value="94%" icon={Activity} unit="sentiment" color="#00FF94" />
                                     <StatCard title="Atención Fuera Horas" value={afterHours} icon={Moon} unit="pedidos/dudas" color="#A855F7" />
                                 </div>
+                            ) : profile.industry === 'hotel' ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+                                    <StatCard title="Check-ins Procesados" value="156" icon={Bed} unit="vía IA" color="#00C2FF" />
+                                    <StatCard title="Atención al Huésped" value="430" icon={Users2} unit="consultas 24/7" color="#00FF94" />
+                                    <StatCard title="Ahorro Front-Desk" value={roiEuros} icon={Clock} unit="€ en gestión" color="#F472B6" />
+                                    <StatCard title="Upselling (Room/Tours)" value="2.450€" icon={TrendingUp} unit="ventas extra" color="#FACC15" />
+                                    <StatCard title="Satisfacción Huésped" value="4.9/5" icon={Activity} unit="IA Sentiment" color="#00FF94" />
+                                    <StatCard title="Personal Noche Evitado" value="100%" icon={Moon} unit="Always ON" color="#A855F7" />
+                                </div>
                             ) : (
                                 // Default / Generic Metrics View
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
@@ -414,7 +458,9 @@ export default function DashboardPage() {
                                                         ? 'Tus pacientes reciben atención inmediata para dudas frecuentes y gestión de citas, reduciendo la saturación de tu recepción física.'
                                                         : profile.industry === 'restaurant'
                                                             ? 'Llenamos tus mesas de forma automática. El sistema gestiona las reservas y dudas de la carta sin que el personal de sala tenga que tocar el teléfono.'
-                                                            : 'Tu sistema está delegando tareas críticas a la IA, permitiéndote recuperar tiempo para lo que realmente importa. No solo ahorras dinero, compras tranquilidad.'}
+                                                            : profile.industry === 'hotel'
+                                                                ? 'Tu Front-Desk digital no descansa. Gestiona check-ins, dudas sobre el desayuno o solicitudes de toallas mientras tu equipo físico se enfoca en el trato humano y el lujo.'
+                                                                : 'Tu sistema está delegando tareas críticas a la IA, permitiéndote recuperar tiempo para lo que realmente importa. No solo ahorras dinero, compras tranquilidad.'}
                                             </p>
                                         </div>
                                         <div className="pt-4 border-t border-white/10 flex items-center justify-between">
@@ -707,16 +753,43 @@ export default function DashboardPage() {
                                 <div className="flex items-center gap-3 mb-6">
                                     <LifeBuoy className="text-[#00FF94]" /><h3 className="text-xl font-bold">Abrir Ticket de Soporte</h3>
                                 </div>
-                                <form className="space-y-4">
+                                <form className="space-y-4" onSubmit={handleTicketSubmit}>
                                     <div className="space-y-2">
                                         <label className="text-xs text-gray-400 uppercase tracking-wider">Asunto</label>
-                                        <input type="text" placeholder="¿En qué podemos ayudarte?" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-[#00FF94] outline-none transition-colors" />
+                                        <input
+                                            type="text"
+                                            value={ticketSubject}
+                                            onChange={(e) => setTicketSubject(e.target.value)}
+                                            placeholder="¿En qué podemos ayudarte?"
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-[#00FF94] outline-none transition-colors"
+                                            required
+                                        />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-xs text-gray-400 uppercase tracking-wider">Descripción</label>
-                                        <textarea rows={4} placeholder="Describe la incidencia o consulta..." className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-[#00FF94] outline-none transition-colors"></textarea>
+                                        <textarea
+                                            rows={4}
+                                            value={ticketDescription}
+                                            onChange={(e) => setTicketDescription(e.target.value)}
+                                            placeholder="Describe la incidencia o consulta..."
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-[#00FF94] outline-none transition-colors"
+                                            required
+                                        ></textarea>
                                     </div>
-                                    <button type="button" onClick={() => alert('Ticket simulado enviado con éxito a Notion/Supabase')} className="w-full py-4 bg-[#00FF94] text-black font-bold rounded-xl hover:bg-[#00e685] transition-colors flex items-center justify-center gap-2">Enviar Solicitud</button>
+                                    <button
+                                        type="submit"
+                                        disabled={isSubmittingTicket}
+                                        className="w-full py-4 bg-[#00FF94] text-black font-bold rounded-xl hover:bg-[#00e685] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                                    >
+                                        {isSubmittingTicket ? (
+                                            <>
+                                                <Loader2 size={18} className="animate-spin" />
+                                                Enviando...
+                                            </>
+                                        ) : (
+                                            'Enviar Solicitud'
+                                        )}
+                                    </button>
                                 </form>
                             </div>
                             <div className="glass-card p-8 rounded-3xl bg-white/5 border border-white/10 border-l-purple-500 border-l-4">
