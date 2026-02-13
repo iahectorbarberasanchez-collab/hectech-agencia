@@ -36,6 +36,7 @@ interface Profile {
     id: string;
     status: 'building' | 'active' | 'live';
     is_admin?: boolean;
+    company_name?: string;
 }
 
 interface DailyMetrics {
@@ -111,6 +112,8 @@ export default function DashboardPage() {
                 return;
             }
 
+            console.log('Session User ID:', session.user.id);
+
             const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
                 .select('*')
@@ -120,6 +123,7 @@ export default function DashboardPage() {
             if (profileError) {
                 console.error("Error fetching profile:", profileError);
             } else {
+                console.log('Profile Data Loaded:', profileData);
                 setProfile(profileData);
             }
 
@@ -157,8 +161,8 @@ export default function DashboardPage() {
                 }
             }
 
-            // Auto-select Concierge tab for Sitges Demo user
-            if (session.user.id === '845fd047-a093-4b9f-b8a9-45526f9c3124') {
+            // Auto-select Concierge tab for Sitges Demo users
+            if (profileData?.company_name === 'Sitges Group Demo' || session.user.id === '845fd047-a093-4b9f-b8a9-45526f9c3124' || session.user.id === '5c6a02b0-0116-46ab-9b3e-d4247e101dde') {
                 setActiveTab('concierge');
             }
 
@@ -292,7 +296,7 @@ export default function DashboardPage() {
                     >
                         Métricas de Impacto
                     </button>
-                    {(profile.is_admin || profile.id === '845fd047-a093-4b9f-b8a9-45526f9c3124') && (
+                    {(profile.is_admin || profile.company_name === 'Sitges Group Demo' || profile.id === '845fd047-a093-4b9f-b8a9-45526f9c3124' || profile.id === '5c6a02b0-0116-46ab-9b3e-d4247e101dde') && (
                         <button
                             onClick={() => setActiveTab('concierge')}
                             className={`text-sm font-medium transition-colors ${activeTab === 'concierge' ? 'text-[#00FF94] border-b-2 border-[#00FF94] pb-4 -mb-4.5' : 'text-gray-500 hover:text-white'}`}
