@@ -230,16 +230,6 @@ const Hero = () => {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="text-left space-y-6"
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#00FF94]/40 bg-[#00FF94]/10 text-[#00FF94] text-xs font-bold tracking-wide uppercase badge-pulse"
-          >
-            <span className="w-2 h-2 rounded-full bg-[#00FF94] animate-pulse"></span>
-            Agencia IA · Solo 3 proyectos en marzo
-          </motion.div>
-
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tight text-white font-display">
             Elimina el <span className="text-gradient">trabajo invisible</span>.<br className="hidden sm:block" />
             Tu negocio en piloto automático.
