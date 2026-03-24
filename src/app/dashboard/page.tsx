@@ -47,13 +47,14 @@ interface Profile {
     status: 'building' | 'active' | 'live';
     is_admin?: boolean;
     company_name?: string;
-    industry?: 'concierge' | 'real_estate' | 'medical' | 'restaurant' | 'hotel' | 'other';
+    industry?: 'chatbot_pisos_turisticos' | 'real_estate' | 'medical' | 'restaurant' | 'hotel' | 'other';
 }
 
 interface DailyMetrics {
     automations_run: number;
     time_saved_minutes: number;
     leads_generated: number;
+    industry_metrics?: Record<string, any>;
 }
 
 interface Lead {
@@ -108,6 +109,7 @@ interface CumulativeMetrics {
     total_time_saved: number;
     client_name?: string;
     status?: string;
+    industry_metrics?: Record<string, any>;
 }
 
 function DashboardContent() {
@@ -115,7 +117,7 @@ function DashboardContent() {
     const searchParams = useSearchParams();
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<Profile | null>(null);
-    const [activeTab, setActiveTab] = useState<'metrics' | 'support' | 'leads' | 'concierge'>('metrics');
+    const [activeTab, setActiveTab] = useState<'metrics' | 'support' | 'leads' | 'chatbot_pisos_turisticos'>('metrics');
     const [metrics, setMetrics] = useState<DailyMetrics[]>([]);
     const [cumulativeMetrics, setCumulativeMetrics] = useState<CumulativeMetrics | null>(null);
     const [leads, setLeads] = useState<Lead[]>([]);
@@ -202,7 +204,7 @@ function DashboardContent() {
                 if (userEmail) {
                     const { data: cumulativeData, error: cumulativeError } = await supabase
                         .from('automation_metrics')
-                        .select('total_actions, total_time_saved, client_name, status')
+                        .select('total_actions, total_time_saved, client_name, status, industry_metrics')
                         .eq('client_email', userEmail)
                         .single();
 
@@ -223,9 +225,9 @@ function DashboardContent() {
                 }
             }
 
-            // Auto-select Concierge tab for Concierge industry users (excluding admin)
-            if (profileData?.industry === 'concierge' && !profileData?.is_admin) {
-                setActiveTab('concierge');
+            // Auto-select Chatbot Pisos Turísticos tab for that industry users (excluding admin)
+            if (profileData?.industry === 'chatbot_pisos_turisticos' && !profileData?.is_admin) {
+                setActiveTab('chatbot_pisos_turisticos');
             }
 
             setLoading(false);
@@ -303,6 +305,17 @@ function DashboardContent() {
             </main>
         );
     }
+
+    // Helper functions to extract industry-specific metrics
+    const getIndustryMetric = (metrics: DailyMetrics[], key: string, defaultValue: number = 0): number => {
+        if (!metrics || metrics.length === 0) return defaultValue;
+        const latestMetric = metrics[metrics.length - 1];
+        return latestMetric?.industry_metrics?.[key] ?? defaultValue;
+    };
+
+    const getCumulativeIndustryMetric = (cumulativeMetrics: CumulativeMetrics | null, key: string, defaultValue: number = 0): number => {
+        return cumulativeMetrics?.industry_metrics?.[key] ?? defaultValue;
+    };
 
     // Use cumulative metrics if available, otherwise fallback to daily metrics sum
     const totalAutomations = cumulativeMetrics?.total_actions || metrics.reduce((acc, curr) => acc + (curr.automations_run || 0), 0);
@@ -415,12 +428,12 @@ function DashboardContent() {
                         // ... existing admin link ...
                         <></>
                     )}
-                    {(profile.industry === 'concierge' && !profile.is_admin) && (
+                    {(profile.industry === 'chatbot_pisos_turisticos' && !profile.is_admin) && (
                         <button
-                            onClick={() => setActiveTab('concierge')}
-                            className={`text-sm font-medium transition-colors ${activeTab === 'concierge' ? 'text-[#00FF94] border-b-2 border-[#00FF94] pb-4 -mb-4.5' : 'text-gray-500 hover:text-white'}`}
+                            onClick={() => setActiveTab('chatbot_pisos_turisticos')}
+                            className={`text-sm font-medium transition-colors ${activeTab === 'chatbot_pisos_turisticos' ? 'text-[#00FF94] border-b-2 border-[#00FF94] pb-4 -mb-4.5' : 'text-gray-500 hover:text-white'}`}
                         >
-                            Sitges Concierge (Live)
+                            Chatbot Pisos Turísticos (Live)
                         </button>
                     )}
                     {profile.is_admin && (
@@ -474,38 +487,134 @@ function DashboardContent() {
                             {/* Industry-specific Metrics Section */}
                             {profile.industry === 'real_estate' ? (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
-                                    <StatCard title="Leads de Captación" value={totalLeadsGenerated} icon={Target} unit="propietarios" color="#00FF94" />
-                                    <StatCard title="Pipeline Estimado" value={potentialRevenue} icon={TrendingUp} unit="€ en comisiones" color="#F472B6" />
-                                    <StatCard title="Velocidad de Respuesta" value="< 2" icon={Zap} unit="minutos avg" color="#FACC15" />
-                                    <StatCard title="Citas de Valoración" value="12" icon={Calendar} unit="este mes" color="#00C2FF" />
+                                    <StatCard
+                                        title="Leads de Captación"
+                                        value={getCumulativeIndustryMetric(cumulativeMetrics, 'leads_captured', totalLeadsGenerated)}
+                                        icon={Target}
+                                        unit="propietarios"
+                                        color="#00FF94"
+                                    />
+                                    <StatCard
+                                        title="Pipeline Estimado"
+                                        value={getCumulativeIndustryMetric(cumulativeMetrics, 'pipeline_value_euros', 0).toLocaleString('es-ES')}
+                                        icon={TrendingUp}
+                                        unit="€ en comisiones"
+                                        color="#F472B6"
+                                    />
+                                    <StatCard
+                                        title="Velocidad de Respuesta"
+                                        value={getIndustryMetric(metrics, 'avg_response_time_minutes', 2).toFixed(1)}
+                                        icon={Zap}
+                                        unit="minutos avg"
+                                        color="#FACC15"
+                                    />
+                                    <StatCard
+                                        title="Citas de Valoración"
+                                        value={getCumulativeIndustryMetric(cumulativeMetrics, 'appointments_scheduled', 0)}
+                                        icon={Calendar}
+                                        unit="este mes"
+                                        color="#00C2FF"
+                                    />
                                     <StatCard title="Ahorro Operativo" value={roiEuros} icon={BarChart3} unit="€ mensuales" color="#A855F7" />
                                     <StatCard title="Disponibilidad 24/7" value="100%" icon={Moon} unit="Always ON" color="#00FF94" />
                                 </div>
                             ) : profile.industry === 'medical' ? (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
-                                    <StatCard title="Citas Agendadas" value="48" icon={Calendar} unit="este mes" color="#00C2FF" />
-                                    <StatCard title="Pacientes Atendidos" value="124" icon={Users2} unit="consultas IA" color="#00FF94" />
-                                    <StatCard title="Tiempo de Recepción" value="12h" icon={Clock} unit="ahorradas/semana" color="#F472B6" />
-                                    <StatCard title="Resolución Automática" value="85%" icon={ShieldCheck} unit="sin humano" color="#A855F7" />
+                                    <StatCard
+                                        title="Citas Agendadas"
+                                        value={getCumulativeIndustryMetric(cumulativeMetrics, 'appointments_scheduled', 0)}
+                                        icon={Calendar}
+                                        unit="este mes"
+                                        color="#00C2FF"
+                                    />
+                                    <StatCard
+                                        title="Pacientes Atendidos"
+                                        value={getCumulativeIndustryMetric(cumulativeMetrics, 'patients_attended', 0)}
+                                        icon={Users2}
+                                        unit="consultas IA"
+                                        color="#00FF94"
+                                    />
+                                    <StatCard
+                                        title="Tiempo de Recepción"
+                                        value={`${getCumulativeIndustryMetric(cumulativeMetrics, 'reception_hours_saved', 0)}h`}
+                                        icon={Clock}
+                                        unit="ahorradas/semana"
+                                        color="#F472B6"
+                                    />
+                                    <StatCard
+                                        title="Resolución Automática"
+                                        value={`${Math.round(getIndustryMetric(metrics, 'auto_resolution_rate', 0.85) * 100)}%`}
+                                        icon={ShieldCheck}
+                                        unit="sin humano"
+                                        color="#A855F7"
+                                    />
                                     <StatCard title="Ahorro en Personal" value={roiEuros} icon={BarChart3} unit="€/mes" color="#FACC15" />
                                     <StatCard title="Estado del Agente" value="Activo" icon={HeartPulse} unit="24/7 Operativo" color="#00FF94" />
                                 </div>
                             ) : profile.industry === 'restaurant' ? (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
-                                    <StatCard title="Reservas Confirmadas" value="86" icon={Utensils} unit="vía WhatsApp" color="#00C2FF" />
-                                    <StatCard title="Cubiertos IA" value="340" icon={Users2} unit="comensales" color="#00FF94" />
-                                    <StatCard title="Horas de Pico Cubiertas" value="100%" icon={Zap} unit="automatizado" color="#FACC15" />
+                                    <StatCard
+                                        title="Reservas Confirmadas"
+                                        value={getCumulativeIndustryMetric(cumulativeMetrics, 'reservations_confirmed', 0)}
+                                        icon={Utensils}
+                                        unit="vía WhatsApp"
+                                        color="#00C2FF"
+                                    />
+                                    <StatCard
+                                        title="Cubiertos IA"
+                                        value={getCumulativeIndustryMetric(cumulativeMetrics, 'covers_booked', 0)}
+                                        icon={Users2}
+                                        unit="comensales"
+                                        color="#00FF94"
+                                    />
+                                    <StatCard
+                                        title="Horas de Pico Cubiertas"
+                                        value={`${Math.round(getIndustryMetric(metrics, 'peak_hours_covered', 1.0) * 100)}%`}
+                                        icon={Zap}
+                                        unit="automatizado"
+                                        color="#FACC15"
+                                    />
                                     <StatCard title="Ahorro de Gestión" value={roiEuros} icon={BarChart3} unit="€ estimados" color="#F472B6" />
-                                    <StatCard title="Feedback Positivo" value="94%" icon={Activity} unit="sentiment" color="#00FF94" />
+                                    <StatCard
+                                        title="Feedback Positivo"
+                                        value={`${Math.round(getIndustryMetric(metrics, 'positive_feedback_rate', 0.94) * 100)}%`}
+                                        icon={Activity}
+                                        unit="sentiment"
+                                        color="#00FF94"
+                                    />
                                     <StatCard title="Atención Fuera Horas" value={afterHours} icon={Moon} unit="pedidos/dudas" color="#A855F7" />
                                 </div>
                             ) : profile.industry === 'hotel' ? (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
-                                    <StatCard title="Check-ins Procesados" value="156" icon={Bed} unit="vía IA" color="#00C2FF" />
-                                    <StatCard title="Atención al Huésped" value="430" icon={Users2} unit="consultas 24/7" color="#00FF94" />
+                                    <StatCard
+                                        title="Check-ins Procesados"
+                                        value={getCumulativeIndustryMetric(cumulativeMetrics, 'checkins_processed', 0)}
+                                        icon={Bed}
+                                        unit="vía IA"
+                                        color="#00C2FF"
+                                    />
+                                    <StatCard
+                                        title="Atención al Huésped"
+                                        value={getCumulativeIndustryMetric(cumulativeMetrics, 'guest_queries', 0)}
+                                        icon={Users2}
+                                        unit="consultas 24/7"
+                                        color="#00FF94"
+                                    />
                                     <StatCard title="Ahorro Front-Desk" value={roiEuros} icon={Clock} unit="€ en gestión" color="#F472B6" />
-                                    <StatCard title="Upselling (Room/Tours)" value="2.450€" icon={TrendingUp} unit="ventas extra" color="#FACC15" />
-                                    <StatCard title="Satisfacción Huésped" value="4.9/5" icon={Activity} unit="IA Sentiment" color="#00FF94" />
+                                    <StatCard
+                                        title="Upselling (Room/Tours)"
+                                        value={`${getCumulativeIndustryMetric(cumulativeMetrics, 'upsell_revenue_euros', 0).toLocaleString('es-ES')}€`}
+                                        icon={TrendingUp}
+                                        unit="ventas extra"
+                                        color="#FACC15"
+                                    />
+                                    <StatCard
+                                        title="Satisfacción Huésped"
+                                        value={`${getIndustryMetric(metrics, 'guest_satisfaction_score', 4.9).toFixed(1)}/5`}
+                                        icon={Activity}
+                                        unit="IA Sentiment"
+                                        color="#00FF94"
+                                    />
                                     <StatCard title="Personal Noche Evitado" value="100%" icon={Moon} unit="Always ON" color="#A855F7" />
                                 </div>
                             ) : (
@@ -644,7 +753,7 @@ function DashboardContent() {
                             </div>
                         </div>
                     </div>
-                ) : activeTab === 'concierge' ? (
+                ) : activeTab === 'chatbot_pisos_turisticos' ? (
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                         {/* ROI Header for Sitges Concierge */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

@@ -37,6 +37,7 @@ import { ContactForm } from './ContactForm';
 import { generateAuditAction } from './actions';
 import { VisualAudit } from '../components/VisualAudit';
 import { HeroChatbot } from '../components/HeroChatbot';
+import { Testimonials } from '../components/Testimonials';
 
 // --- ANIMATION HELPER ---
 const Reveal = ({ children, width = "fit-content" }: { children: React.ReactNode, width?: "fit-content" | "100%" }) => {
@@ -63,6 +64,35 @@ const Reveal = ({ children, width = "fit-content" }: { children: React.ReactNode
       >
         {children}
       </motion.div>
+    </div>
+  );
+};
+
+// --- FLOATING CTA ---
+const CALENDAR_URL = 'https://calendar.app.google/iSajQABW249gqbvB9';
+
+const FloatingCTA = () => {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 350);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  if (!visible) return null;
+
+  return (
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 floating-cta">
+      <a
+        href={CALENDAR_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 bg-[#00FF94] text-black px-6 py-3.5 rounded-full font-bold text-sm shadow-[0_0_30px_rgba(0,255,148,0.5)] hover:scale-105 transition-transform whitespace-nowrap"
+      >
+        <Calendar size={16} />
+        Reservar charla de 15 min
+      </a>
     </div>
   );
 };
@@ -113,13 +143,19 @@ const Navbar = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             href="/dashboard"
-            className="flex items-center gap-2 bg-[#00FF94] text-black px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-[#00cc76] transition-all glow-effect"
+            className="flex items-center gap-2 bg-white/5 border border-white/10 text-white px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-white/10 transition-all"
           >
             <Users size={16} />
             Acceso Clientes
           </motion.a>
-          <a href="#contacto" className="bg-[#00FF94] text-black px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-[#00cc76] transition-all glow-effect">
-            Agendar Consultoría
+          <a
+            href={CALENDAR_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 bg-[#00FF94] text-black px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-[#00cc76] transition-all glow-effect badge-pulse"
+          >
+            <Calendar size={16} />
+            Charla 15 min
           </a>
         </div>
 
@@ -143,13 +179,20 @@ const Navbar = () => {
           <a
             href="/dashboard"
             onClick={() => setIsOpen(false)}
-            className="flex items-center justify-center gap-2 bg-[#00FF94] text-black w-full py-4 rounded-xl font-bold shadow-[0_0_20px_rgba(0,255,148,0.2)]"
+            className="flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white w-full py-4 rounded-xl font-bold"
           >
             <Users size={20} />
             Acceso Clientes
           </a>
-          <a href="#contacto" onClick={() => setIsOpen(false)} className="bg-[#00FF94] text-center text-black w-full py-4 rounded-xl font-bold mt-2 shadow-[0_0_20px_rgba(0,255,148,0.2)]">
-            Agendar Consultoría
+          <a
+            href={CALENDAR_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setIsOpen(false)}
+            className="flex items-center justify-center gap-2 bg-[#00FF94] text-center text-black w-full py-4 rounded-xl font-bold mt-2 shadow-[0_0_20px_rgba(0,255,148,0.2)]"
+          >
+            <Calendar size={18} />
+            Reservar charla de 15 min
           </a>
         </motion.div>
       )}
@@ -191,30 +234,32 @@ const Hero = () => {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#00FF94]/30 bg-[#00FF94]/5 text-[#00FF94] text-xs font-bold tracking-wide uppercase"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#00FF94]/40 bg-[#00FF94]/10 text-[#00FF94] text-xs font-bold tracking-wide uppercase badge-pulse"
           >
             <span className="w-2 h-2 rounded-full bg-[#00FF94] animate-pulse"></span>
-            El futuro de tu negocio
+            Agencia IA · Solo 3 proyectos en marzo
           </motion.div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tight text-white font-display">
-            Tu negocio, funcionando en <br className="hidden sm:block" />
-            <span className="text-gradient">piloto automático</span>.
+            Elimina el <span className="text-gradient">trabajo invisible</span>.<br className="hidden sm:block" />
+            Tu negocio en piloto automático.
           </h1>
 
           <p className="text-gray-400 text-lg lg:text-xl max-w-lg leading-relaxed">
-            Ayudamos a pequeños negocios a ahorrar horas de trabajo y vender 24/7 mediante Chatbots inteligentes y Automatización de procesos.
+            Auditamos tu operativa e implementamos IA que elimina las horas perdidas en tareas que deberían hacerse solas — para que te centres en lo que realmente mueve el negocio.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <motion.a
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              href="#contacto"
+              href={CALENDAR_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="bg-[#00FF94] text-black px-8 py-4 rounded-xl font-bold text-lg transition-all glow-effect flex items-center justify-center gap-2"
             >
-              Agendar Consultoría Gratis
-              <ArrowRight size={20} />
+              <Calendar size={20} />
+              Pedir mi charla de 15 min
             </motion.a>
             <motion.a
               whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
@@ -222,16 +267,17 @@ const Hero = () => {
               className="px-8 py-4 rounded-xl font-bold text-white border border-white/20 transition-all flex items-center justify-center gap-2 group"
             >
               <Sparkles size={18} className="group-hover:text-[#00FF94] transition-colors" />
-              Ver Demos en vivo
+              Ver demos en vivo
             </motion.a>
           </div>
 
           {/* Métricas de Impacto */}
-          <div className="grid grid-cols-3 gap-4 pt-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6">
             {[
               { val: "+15h", label: "Ahorradas/sem", color: "#00FF94" },
-              { val: "40%", label: "Más ventas", color: "#00C2FF" },
-              { val: "24/7", label: "Disponibilidad", color: "#8B5CF6" }
+              { val: "40%", label: "Más conversiones", color: "#00C2FF" },
+              { val: "24/7", label: "Disponibilidad", color: "#8B5CF6" },
+              { val: "< 3 sem", label: "ROI positivo", color: "#FFE600" }
             ].map((metric, i) => (
               <motion.div
                 key={i}
@@ -240,8 +286,8 @@ const Hero = () => {
                 transition={{ delay: 0.5 + (i * 0.1) }}
                 className="glass-card p-4 rounded-xl text-center hover:border-primary/50 transition-colors"
               >
-                <div className="text-2xl font-bold mb-1" style={{ color: metric.color }}>{metric.val}</div>
-                <div className="text-[10px] text-gray-500 uppercase tracking-wider">{metric.label}</div>
+                <div className="text-xl font-bold mb-1" style={{ color: metric.color }}>{metric.val}</div>
+                <div className="text-[9px] text-gray-500 uppercase tracking-wider">{metric.label}</div>
               </motion.div>
             ))}
           </div>
@@ -734,9 +780,9 @@ const Services = () => {
 
 const Process = () => {
   const steps = [
-    { title: "Auditoría", desc: "Analizamos tu negocio para identificar oportunidades.", icon: <CheckCircle2 /> },
-    { title: "Implementación", desc: "Configuramos los bots y automatizaciones a medida.", icon: <Cpu /> },
-    { title: "Optimización", desc: "Monitoreamos resultados y ajustamos para maximizar conversiones.", icon: <TrendingUp /> },
+    { title: "Auditoría", desc: "Analizamos tu negocio en profundidad para identificar dónde pierdes más tiempo y dinero. En 48h tienes tu diagnóstico y plan de acción.", icon: <CheckCircle2 /> },
+    { title: "Implementación", desc: "Configuramos los agentes IA y automatizaciones a medida de tu sector, sin tecnicismos y con resultados desde el día 1.", icon: <Cpu /> },
+    { title: "Optimización", desc: "Monitoreamos resultados y ajustamos para maximizar conversiones. Si en las primeras 4 semanas no ves resultados, lo revisamos juntos sin coste adicional.", icon: <TrendingUp /> },
   ];
 
   return (
@@ -744,7 +790,7 @@ const Process = () => {
       <div className="max-w-7xl mx-auto px-6">
         <Reveal width="100%">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">Tu transformación digital en <span className="text-[#00FF94]">3 pasos</span></h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">Así funciona nuestra metodología<br /><span className="text-[#00FF94]">sin tecnicismos</span></h2>
           </div>
         </Reveal>
 
@@ -932,12 +978,18 @@ const ROICalculator = () => {
 
                   <div className="bg-[#00FF94]/10 p-6 rounded-2xl border border-[#00FF94]/20">
                     <p className="text-sm text-[#00FF94] leading-relaxed">
-                      <strong>💡 Impacto Directo:</strong> Estás perdiendo aproximadamente el <strong>30% de tu productividad</strong> en tareas que HecTechAi puede automatizar hoy mismo.
+                      <strong>💡 Impacto Directo:</strong> Estás perdiendo aproximadamente el <strong>30% de tu productividad</strong> en tareas que una IA puede hacer por una fracción de ese coste. <strong>Eso es lo que cuesta no hacer nada.</strong>
                     </p>
                   </div>
 
-                  <a href="#contacto" className="block w-full text-center bg-[#00FF94] text-black font-bold py-4 rounded-xl hover:scale-[1.02] transition-transform">
-                    Detener esta fuga de capital ahora
+                  <a
+                    href={CALENDAR_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full text-center bg-[#00FF94] text-black font-bold py-4 rounded-xl hover:scale-[1.02] transition-transform"
+                  >
+                    <Calendar size={18} />
+                    Pedir mi diagnóstico gratuito de 15 min
                   </a>
                 </div>
               </div>
@@ -1104,6 +1156,7 @@ export default function Home() {
       <Navbar />
       <Hero />
       <Benefits />
+      <Testimonials />
       <DemoShowcase />
       <SmartAudit />
       <Services />
@@ -1111,16 +1164,40 @@ export default function Home() {
       <ROICalculator />
       <FAQ />
 
-      {/* Contact Section reused from previous implementation but styled to match new theme */}
+      {/* Contact Section */}
       <section id="contacto" className="w-full py-24 px-6 md:px-24 bg-[#0A0A0A]">
         <div className="max-w-4xl mx-auto glass-card p-12 rounded-3xl border border-white/10">
           <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">¿Listo para automatizar tu negocio?</h2>
-            <p className="text-gray-400">Hablemos de tu proyecto. Te contactaremos en menos de 24 horas.</p>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">¿Hablamos 15 minutos?<br /><span className="text-gradient">Sin pitch de ventas.</span></h2>
+            <p className="text-gray-400 max-w-xl mx-auto mt-4">
+              Cuéntanos cómo funciona tu empresa hoy. Te diremos honestamente si la IA tiene sentido para vosotros — y si no es el caso, también te lo decimos.
+            </p>
           </div>
+
+          {/* Opción rápida: ir directo al calendario */}
+          <div className="flex flex-col items-center mb-10">
+            <a
+              href={CALENDAR_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 bg-[#00FF94] text-black px-8 py-4 rounded-xl font-bold text-lg glow-effect hover:scale-105 transition-transform"
+            >
+              <Calendar size={22} />
+              Reservar en Google Calendar
+            </a>
+            <p className="text-gray-600 text-xs mt-3">Elige el hueco que más te convenga · Gratuito · Sin compromiso</p>
+          </div>
+
+          <div className="flex items-center gap-4 mb-8">
+            <div className="flex-1 h-[1px] bg-white/10"></div>
+            <span className="text-gray-600 text-xs uppercase tracking-widest font-bold">O si prefieres, escríbenos</span>
+            <div className="flex-1 h-[1px] bg-white/10"></div>
+          </div>
+
           <ContactForm />
         </div>
       </section>
+      <FloatingCTA />
 
       <Footer />
     </div>
