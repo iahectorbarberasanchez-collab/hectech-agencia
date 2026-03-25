@@ -71,28 +71,67 @@ const Reveal = ({ children, width = "fit-content" }: { children: React.ReactNode
 // --- FLOATING CTA ---
 const CALENDAR_URL = 'https://calendar.app.google/iSajQABW249gqbvB9';
 
-const FloatingCTA = () => {
-  const [visible, setVisible] = useState(false);
+const MagneticButton = ({ children, className }: { children: React.ReactNode, className?: string }) => {
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [mounted, setMounted] = useState(false);
+  const ref = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const handleMouse = (e: React.MouseEvent) => {
+    const { clientX, clientY } = e;
+    const { left, top, width, height } = ref.current?.getBoundingClientRect() || { left: 0, top: 0, width: 0, height: 0 };
+    const x = clientX - (left + width / 2);
+    const y = clientY - (top + height / 2);
+    setPosition({ x: x * 0.3, y: y * 0.3 });
+  };
+
+  const reset = () => setPosition({ x: 0, y: 0 });
+
+  if (!mounted) return <div className={className}>{children}</div>;
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={handleMouse}
+      onMouseLeave={reset}
+      animate={{ x: position.x, y: position.y }}
+      transition={{ type: "spring", stiffness: 150, damping: 15, mass: 0.1 }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+const FloatingCTA = () => {
+  const [visible, setVisible] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
     const onScroll = () => setVisible(window.scrollY > 350);
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  if (!visible) return null;
+  if (!mounted || !visible) return null;
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 floating-cta">
-      <a
-        href={CALENDAR_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-3 bg-[#00FF94] text-black px-6 py-3.5 rounded-full font-bold text-sm shadow-[0_0_30px_rgba(0,255,148,0.5)] hover:scale-105 transition-transform whitespace-nowrap"
-      >
-        <Calendar size={16} />
-        Reservar charla de 15 min
-      </a>
+    <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 floating-cta">
+      <MagneticButton>
+        <a
+          href={CALENDAR_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 bg-[#00FF94] text-black px-8 py-4 rounded-full font-black text-lg shadow-[0_10px_40px_rgba(0,255,148,0.5)] hover:scale-105 transition-transform whitespace-nowrap badge-pulse"
+        >
+          <Calendar size={20} />
+          Reservar mi auditoría gratuita
+        </a>
+      </MagneticButton>
     </div>
   );
 };
@@ -205,23 +244,29 @@ const Hero = () => {
     <section className="relative min-h-screen flex items-center justify-center pt-24 pb-12 overflow-hidden">
       <div className="absolute inset-0 circuit-bg z-0 pointer-events-none opacity-40"></div>
 
-      {/* Luces de ambiente */}
+      {/* Luces de ambiente Premium */}
       <motion.div
         animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.1, 0.15, 0.1]
+          scale: [1, 1.4, 1],
+          opacity: [0.15, 0.25, 0.15],
+          x: [0, 50, 0],
+          y: [0, -50, 0]
         }}
-        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-        className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#00FF94] rounded-full blur-[150px] pointer-events-none"
+        transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+        className="absolute top-0 -left-1/4 w-[600px] h-[600px] bg-[#00FF94]/30 rounded-full blur-[180px] pointer-events-none"
       ></motion.div>
       <motion.div
         animate={{
-          scale: [1.2, 1, 1.2],
-          opacity: [0.1, 0.15, 0.1]
+          scale: [1.4, 1, 1.4],
+          opacity: [0.15, 0.25, 0.15],
+          x: [0, -70, 0],
+          y: [0, 60, 0]
         }}
-        transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-        className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00C2FF] rounded-full blur-[150px] pointer-events-none"
+        transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+        className="absolute bottom-0 -right-1/4 w-[700px] h-[700px] bg-[#00C2FF]/20 rounded-full blur-[200px] pointer-events-none"
       ></motion.div>
+
+      <div className="absolute inset-0 noise-bg opacity-20 pointer-events-none"></div>
 
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
         <motion.div
@@ -230,27 +275,29 @@ const Hero = () => {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="text-left space-y-6"
         >
-          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tight text-white font-display">
-            Elimina el <span className="text-gradient">trabajo invisible</span>.<br className="hidden sm:block" />
-            Tu negocio en piloto automático.
+          <h1 className="text-4xl sm:text-5xl lg:text-8xl font-black leading-[1.0] tracking-tighter text-white font-display mb-8">
+            No más <span className="text-gradient">ventas perdidas</span>.<br className="hidden sm:block" />
+            Tu Agente de IA cierra clientes mientras escalas.
           </h1>
 
-          <p className="text-gray-400 text-lg lg:text-xl max-w-lg leading-relaxed">
-            Auditamos tu operativa e implementamos IA que elimina las horas perdidas en tareas que deberían hacerse solas — para que te centres en lo que realmente mueve el negocio.
+          <p className="text-gray-400 text-lg lg:text-2xl max-w-xl leading-relaxed mb-10">
+            Auditamos tu operativa e implementamos IA de élite que elimina las horas perdidas y asegura que <span className="text-white font-bold">ningún lead se quede sin respuesta</span>.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <motion.a
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              href={CALENDAR_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-[#00FF94] text-black px-8 py-4 rounded-xl font-bold text-lg transition-all glow-effect flex items-center justify-center gap-2"
-            >
-              <Calendar size={20} />
-              Pedir mi charla de 15 min
-            </motion.a>
+            <MagneticButton>
+              <motion.a
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                href={CALENDAR_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-[#00FF94] text-black px-10 py-5 rounded-2xl font-black text-xl transition-all glow-effect flex items-center justify-center gap-3 shadow-[0_20px_50px_rgba(0,255,148,0.3)]"
+              >
+                <Calendar size={24} />
+                Agendar Auditoría Gratis
+              </motion.a>
+            </MagneticButton>
             <motion.a
               whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
               href="#demos"
@@ -343,12 +390,13 @@ const Benefits = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {benefits.map((item, index) => (
             <Reveal key={index} width="100%">
-              <div className="glass-card p-8 rounded-2xl group hover:-translate-y-2 transition-transform duration-300 h-full">
-                <div className="w-16 h-16 bg-white/5 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <div className="premium-glass p-10 rounded-3xl group hover:-translate-y-2 transition-transform duration-500 h-full relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-[#00FF94]/10 transition-colors"></div>
+                <div className="w-20 h-20 bg-white/5 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
                   {item.icon}
                 </div>
-                <h3 className="text-2xl font-bold mb-3 text-white">{item.title}</h3>
-                <p className="text-gray-400 leading-relaxed">{item.desc}</p>
+                <h3 className="text-3xl font-black mb-4 text-white font-display tracking-tight">{item.title}</h3>
+                <p className="text-gray-400 text-lg leading-relaxed">{item.desc}</p>
               </div>
             </Reveal>
           ))}
@@ -651,116 +699,86 @@ const Services = () => {
           </div>
         </Reveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-          <div className="md:col-span-2 glass-card rounded-3xl p-8 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:opacity-40 transition-opacity">
-              <MessageSquare size={120} className="text-[#00FF94]" />
+        <div className="bento-grid">
+          {/* Item 1: Large - Chatbots */}
+          <div className="bento-item-large premium-glass rounded-3xl p-10 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-30 transition-opacity">
+              <MessageSquare size={180} className="text-[#00FF94]" />
             </div>
-            <div className="relative z-10 h-full flex flex-col justify-end">
-              <div className="w-12 h-12 bg-[#00FF94] rounded-lg flex items-center justify-center mb-6 text-black">
-                <Bot size={24} />
-              </div>
-              <h3 className="text-3xl font-bold mb-2 text-white">Chatbots Inteligentes</h3>
-              <p className="text-gray-400 max-w-2xl mb-4">
-                Desarrollamos asistentes virtuales con lenguaje natural que entienden el contexto de tu negocio. No son simples árboles de decisión; son agentes que venden por ti.
-              </p>
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 inline-block">
-                <p className="text-xs text-[#00FF94] font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
-                <p className="text-sm text-gray-300">Agente inmobiliario que califica leads, responde dudas sobre la zona y reserva visitas en tu Calendar 24/7 sin intervención humana.</p>
-              </div>
-              <a href="#contacto" className="mt-6 inline-flex items-center gap-2 text-[#00FF94] font-bold text-sm hover:gap-3 transition-all">
-                Configurar mi Agente <ArrowRight size={16} />
-              </a>
-            </div>
-          </div>
-
-          <div className="glass-card rounded-3xl p-8 relative overflow-hidden group">
-            <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-[#00C2FF] rounded-full blur-[60px] opacity-20"></div>
             <div className="relative z-10 h-full flex flex-col">
-              <div className="w-12 h-12 bg-[#00C2FF] rounded-lg flex items-center justify-center mb-6 text-white">
-                <Zap size={24} />
+              <div className="w-16 h-16 bg-[#00FF94] rounded-2xl flex items-center justify-center mb-8 text-black shadow-[0_0_30px_rgba(0,255,148,0.5)]">
+                <Bot size={32} />
               </div>
-              <h3 className="text-2xl font-bold mb-2 text-white">Automatización</h3>
-              <p className="text-gray-400 text-sm mb-4">
-                Conectamos tus herramientas (n8n, Make) para eliminar tareas repetitivas y silos de información.
+              <h3 className="text-4xl font-black mb-4 text-white font-display">Agentes de Ventas 24/7</h3>
+              <p className="text-gray-400 text-lg max-w-xl mb-8 leading-relaxed">
+                Desarrollamos asistentes con lenguaje natural que no solo responden; <span className="text-white font-bold">persuaden y cierran citas</span>. Sistemas que aprenden de cada interacción para convertir más.
               </p>
-              <div className="mt-auto bg-white/5 border border-white/10 rounded-xl p-3">
-                <p className="text-[10px] text-[#00C2FF] font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
-                <p className="text-xs text-gray-300">Sincronización de pedidos con tu CRM y software contable, notificando al equipo por Slack al instante.</p>
+              <div className="mt-auto">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                  <p className="text-sm text-[#00FF94] font-bold uppercase tracking-widest mb-2">Caso de Éxito:</p>
+                  <p className="text-gray-300">Inmobiliaria que triplicó sus visitas agendadas en 30 días delegando la calificación de leads a nuestra IA.</p>
+                </div>
+                <a href="#contacto" className="mt-8 inline-flex items-center gap-3 text-[#00FF94] font-bold text-lg hover:gap-5 transition-all group/link">
+                  Quiero mi Agente <ArrowRight size={20} className="group-hover/link:translate-x-2 transition-transform" />
+                </a>
               </div>
-              <a href="#contacto" className="mt-4 inline-flex items-center gap-2 text-[#00C2FF] font-bold text-xs hover:gap-3 transition-all">
-                Conectar mis apps <ArrowRight size={14} />
+            </div>
+          </div>
+
+          {/* Item 2: Wide - Automatización */}
+          <div className="bento-item-wide premium-glass rounded-3xl p-8 relative overflow-hidden group">
+            <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center h-full">
+              <div className="w-20 h-20 bg-[#00C2FF] rounded-2xl flex items-center justify-center text-white shrink-0">
+                <Zap size={36} />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold mb-2 text-white">Full Automation Stack</h3>
+                <p className="text-gray-400 text-sm max-w-md">
+                  Conectamos n8n, Make y tus CRMs para que las tareas repetitivas mueran definitivamente. Zero fricción operativa.
+                </p>
+              </div>
+              <a href="#contacto" className="md:ml-auto bg-white/5 border border-white/10 p-4 rounded-full text-white hover:bg-[#00C2FF] hover:text-white transition-colors">
+                <ArrowRight size={24} />
               </a>
             </div>
           </div>
 
-          <div className="glass-card rounded-3xl p-8 flex flex-col justify-between group border-white/5 hover:border-[#00FF94]/30 transition-colors">
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-white/5 rounded-lg flex items-center justify-center mb-6 text-[#00FF94] group-hover:scale-110 transition-transform">
-                <Database size={24} />
+          {/* Item 3: Tall - CRM */}
+          <div className="bento-item-tall premium-glass rounded-3xl p-8 flex flex-col justify-between group border-white/5 hover:border-[#00FF94]/30 transition-colors">
+            <div>
+              <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center mb-6 text-[#00FF94]">
+                <Database size={28} />
               </div>
-              <h3 className="text-2xl font-bold mb-2 text-white">Sistemas CRM</h3>
-              <p className="text-gray-400 text-sm mb-4">Centralizamos tus datos para que cada interacción sea personalizada.</p>
+              <h3 className="text-2xl font-bold mb-3 text-white">Cerebros de Datos (RAG)</h3>
+              <p className="text-gray-400 text-sm">Convertimos tus PDFs y base de conocimientos en un oráculo privado para tu equipo y clientes.</p>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-              <p className="text-[10px] text-[#00FF94] font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
-              <p className="text-xs text-gray-300">Segmentación de clientes para campañas de WhatsApp según historial de compra.</p>
+            <div className="mt-8 bg-black/40 rounded-xl p-4 border border-white/5">
+              <div className="flex gap-2 mb-2">
+                <div className="w-2 h-2 rounded-full bg-red-400"></div>
+                <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
+                <div className="w-2 h-2 rounded-full bg-green-400"></div>
+              </div>
+              <div className="text-[10px] font-mono text-gray-500">indexing doc_342.pdf...</div>
+              <div className="text-[10px] font-mono text-[#00FF94]">knowledge base updated!</div>
             </div>
-            <a href="#contacto" className="mt-4 inline-flex items-center gap-2 text-[#00FF94] font-bold text-xs hover:gap-3 transition-all">
-              Organizar mis datos <ArrowRight size={14} />
-            </a>
           </div>
 
-          <div className="glass-card rounded-3xl p-8 flex flex-col justify-between group border-white/5 hover:border-purple-500/30 transition-colors">
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-white/5 rounded-lg flex items-center justify-center mb-6 text-purple-400 group-hover:scale-110 transition-transform">
-                <BarChart3 size={24} />
-              </div>
-              <h3 className="text-2xl font-bold mb-2 text-white">Dashboards de Datos</h3>
-              <p className="text-gray-400 text-sm mb-4">Visualiza el rendimiento de tu negocio y el ROI de tus automatizaciones en tiempo real.</p>
+          {/* Item 4: Small - Dashboards */}
+          <div className="premium-glass rounded-3xl p-8 flex flex-col justify-between group">
+            <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center mb-4 text-purple-400">
+              <BarChart3 size={24} />
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-              <p className="text-[10px] text-purple-400 font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
-              <p className="text-xs text-gray-300">Panel interactivo que muestra leads diarios, tasa de conversión y tiempo humano ahorrado al mes.</p>
-            </div>
-            <a href="#contacto" className="mt-4 inline-flex items-center gap-2 text-purple-400 font-bold text-xs hover:gap-3 transition-all">
-              Ver mis métricas <ArrowRight size={14} />
-            </a>
+            <h3 className="text-xl font-bold text-white">Metrics Hub</h3>
+            <p className="text-gray-400 text-xs">ROI en tiempo real de cada euro ahorrado.</p>
           </div>
 
-          <div className="glass-card rounded-3xl p-8 flex flex-col justify-between group border-white/5 hover:border-orange-400/30 transition-colors">
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-white/5 rounded-lg flex items-center justify-center mb-6 text-orange-400 group-hover:scale-110 transition-transform">
-                <PenTool size={24} />
-              </div>
-              <h3 className="text-2xl font-bold mb-2 text-white">Contenido con IA</h3>
-              <p className="text-gray-400 text-sm mb-4">Sistemas de generación de contenido multicanal manteniendo tu tono de marca.</p>
+          {/* Item 5: Small - Content */}
+          <div className="premium-glass rounded-3xl p-8 flex flex-col justify-between group">
+            <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center mb-4 text-orange-400">
+              <PenTool size={24} />
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-              <p className="text-[10px] text-orange-400 font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
-              <p className="text-xs text-gray-300">Generación automática de descripciones para inmuebles o anuncios de apartamentos vacacionales a partir de una simple lista de características.</p>
-            </div>
-            <a href="#contacto" className="mt-4 inline-flex items-center gap-2 text-orange-400 font-bold text-xs hover:gap-3 transition-all">
-              Generar contenido <ArrowRight size={14} />
-            </a>
-          </div>
-
-          <div className="glass-card rounded-3xl p-8 flex flex-col justify-between group border-white/5 hover:border-[#FFE600]/30 transition-colors">
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-white/5 rounded-lg flex items-center justify-center mb-6 text-[#FFE600] group-hover:scale-110 transition-transform">
-                <Search size={24} />
-              </div>
-              <h3 className="text-2xl font-bold mb-2 text-white">Auditoría de Procesos IA</h3>
-              <p className="text-gray-400 text-sm mb-4">Analizamos tu operativa actual para identificar cuellos de botella y detectar dónde la IA tendrá el mayor impacto financiero inmediato.</p>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-3">
-              <p className="text-[10px] text-[#FFE600] font-bold uppercase tracking-wider mb-1">Ejemplo:</p>
-              <p className="text-xs text-gray-300">Mapeo de flujos de trabajo actuales y proyección de ahorro en costes operativos tras la implementación de agentes IA.</p>
-            </div>
-            <a href="#contacto" className="mt-4 inline-flex items-center gap-2 text-[#FFE600] font-bold text-xs hover:gap-3 transition-all">
-              Optimizar mi negocio <ArrowRight size={14} />
-            </a>
+            <h3 className="text-xl font-bold text-white">Media AI</h3>
+            <p className="text-gray-400 text-xs">Contenido masivo con voz de marca.</p>
           </div>
         </div>
       </div>
