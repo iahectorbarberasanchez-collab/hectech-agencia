@@ -1164,11 +1164,11 @@ export default function Home() {
       <Navbar />
       <Hero />
       <Benefits />
+      <Process />
       <Testimonials />
       <DemoShowcase />
       <SmartAudit />
       <Services />
-      <Process />
       <ROICalculator />
       <FAQ />
 
