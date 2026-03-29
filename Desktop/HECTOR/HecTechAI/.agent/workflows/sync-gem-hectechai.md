@@ -92,7 +92,6 @@ Los siguientes archivos son críticos para el funcionamiento de tu agencia y deb
 ### Documentos Estratégicos
 
 - `HECTECH_AI_BRAIN.md` - Cerebro principal de la agencia
-- `HECTECH_LEGAL_SHIELD.md` - Manual de blindaje legal (RGPD, IA, IP)
 - `HECOTECH_STRATEGIC_DNA.md` - ADN estratégico
 - `HECTECH_TECH_STACK_DETAILED.md` - Stack tecnológico
 - `HECTECH_OPERATIONAL_PROTOCOLS.md` - Protocolos operacionales
