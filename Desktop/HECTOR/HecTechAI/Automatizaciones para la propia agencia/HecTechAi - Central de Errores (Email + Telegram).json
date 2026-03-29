@@ -3,13 +3,13 @@
   "nodes": [
     {
       "parameters": {},
-      "id": "77451b2d-80b2-4f37-a9ce-a4807f90a8d8",
+      "id": "625134a6-0b6f-42fa-9e6a-5099be2eed3b",
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
       "position": [
-        -400,
-        208
+        -224,
+        112
       ]
     },
     {
@@ -19,44 +19,44 @@
         "message": "=<div style=\"font-family: Arial, sans-serif; border: 1px solid #ff4444; border-radius: 8px; padding: 20px;\"><h2 style=\"color: #ff4444; margin-top: 0;\">🚨 Alerta de Fallo en n8n</h2><p>Se ha detectado un error en uno de tus flujos de trabajo.</p><hr><p><strong>🔹 Workflow:</strong>  {{ $json.workflow.name }}</p><p><strong>🔹 Error:</strong> {{ $json.execution.error.message }} </p><br><a href=\"{{ $json.execution.url }} \" style=\"background-color: #00FF94; color: black; padding: 10px 15px; text-decoration: none; border-radius: 5px;\">VER EN N8N</a></div>'",
         "options": {}
       },
-      "id": "7da677ae-368d-4529-8448-888f7116b0f2",
+      "id": "4ec6fdb3-c827-49a6-8f9b-b9f17d788618",
       "name": "Gmail Alert",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2,
       "position": [
-        -176,
-        96
+        0,
+        0
       ],
       "webhookId": "d6c536d9-8b7c-44cd-8fd0-c550032e3578",
       "credentials": {
         "gmailOAuth2": {
-          "id": "lr8yGqgpTLMrMV98",
-          "name": "Gmail - HecTech"
+          "id": "JcGICqM95bZyFxsh",
+          "name": "HecTechAi - Gmail account"
         }
       }
     },
     {
       "parameters": {
-        "chatId": "5163668316",
+        "chatId": "=5163668316",
         "text": "=🚨 *HecTechAi: Alerta de Error*\n\n❌ *Fallo en: {{ $json.workflow.name }}* \n\n💬 *Error:* {{ $json.execution.error.message }} \n\n🔗 [Ver Ejecución en n8n](<{{ $json.execution.url }}>)",
         "additionalFields": {
           "appendAttribution": false,
           "parse_mode": "Markdown"
         }
       },
-      "id": "8f486ca4-720e-4a0f-ad3f-a8cae64a38be",
+      "id": "39d78609-ac18-4d57-a56d-8a62f4d005ab",
       "name": "Telegram Alert",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.1,
       "position": [
-        -176,
-        304
+        0,
+        208
       ],
       "webhookId": "d9735564-6be6-468c-a0aa-06f82f167706",
       "credentials": {
         "telegramApi": {
-          "id": "3RQAq4MaqHkAS0rn",
-          "name": "Telegram Hector B"
+          "id": "knuYx2unWPxl8RfX",
+          "name": "HecTechAi - Telegram account"
         }
       }
     }
@@ -80,16 +80,24 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
+    "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "6dec495f-3fdc-4cb7-9951-ec9f45b1f24c",
+  "versionId": "9c4335fa-717a-408b-9bb6-fe6ad7a66281",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "9791a699843b5d5c3ab4a59b3d0465c1b31046881bb530937830bb8171d41568"
+    "instanceId": "0a01f3d139f9728d44850786c93deca6a578587c6d6ad93f1d6cd8e28956d51c"
   },
-  "id": "ntX9KiVUa3cfFmoS",
-  "tags": []
+  "id": "UdHbXIBX-3IMdMgrM3ctS",
+  "tags": [
+    {
+      "updatedAt": "2026-02-10T14:48:51.853Z",
+      "createdAt": "2026-02-10T14:48:51.853Z",
+      "id": "2SCEsbosPD3wjqXC",
+      "name": "HecTechAi"
+    }
+  ]
 }
