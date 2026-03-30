@@ -129,7 +129,7 @@ export default function TransaccionesPage() {
   const pieData = Object.entries(categoryTotals).map(([name, value]) => ({
     name,
     value
-  })).sort((a, b) => b.value - a.value);
+  })).sort((a, b) => (b.value as number) - (a.value as number));
 
   return (
     <div className="min-h-screen bg-background flex overflow-hidden">

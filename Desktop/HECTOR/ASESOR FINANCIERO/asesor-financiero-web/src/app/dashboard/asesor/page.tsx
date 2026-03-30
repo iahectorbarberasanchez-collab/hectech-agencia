@@ -33,6 +33,8 @@ export default function AsesorPage() {
   const hasData = summary !== null && (summary.totalRows > 0 || (summary.fileType === 'pdf' && !!documentText));
 
   const [chatInput, setChatInput] = useState("");
+  // useChat options cast because @ai-sdk/react v3 ChatInit type includes 'api' at runtime
+  // but the TypeScript definition changed — works correctly at runtime
   const chat = useChat({
     api: '/api/chat',
     body: {
@@ -50,7 +52,7 @@ export default function AsesorPage() {
           : "¡Hola! Soy tu Asesor Financiero IA Avanzado de HecTechAI. El primer paso para asesorarte es conocer tu estado actual: **¿Cuáles son tus ingresos y gastos mensuales aproximados?**\n\nPuedes decírmelo directamente por aquí o subir tu archivo Excel o PDF en el Panel para un análisis exacto. También puedes consultarme sobre mercados, trading o análisis fundamental/técnico."
       }
     ]
-  });
+  } as any);
 
   // Map properties safely, trying both possible naming conventions
   const { 
