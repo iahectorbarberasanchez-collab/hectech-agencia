@@ -64,7 +64,7 @@ export const HeroChatbot = () => {
         {
             id: 9,
             type: 'bot',
-            text: 'Lo mejor: La mayoría de nuestros clientes recuperan la inversión en menos de 2 meses gracias al tiempo ahorrado y los leads que ya no se pierden.',
+            text: 'Lo mejor: El tiempo ahorrado y los leads que dejan de perderse suelen cubrir la inversión en los primeros meses. Por eso ofrecemos una auditoría gratuita antes de comprometerte a nada.',
             options: ['¿Cuánto cuesta?', 'Quiero una demo', '¿Funciona para mi sector?'],
         },
         {
@@ -239,15 +239,15 @@ export const HeroChatbot = () => {
             <div className="mt-6 grid grid-cols-3 gap-2 opacity-50">
                 <div className="flex flex-col items-center gap-1">
                     <Clock size={14} className="text-[#00FF94]" />
-                    <span className="text-[8px] uppercase font-bold tracking-tighter">Instalación 24h</span>
+                    <span className="text-[8px] uppercase font-bold tracking-tighter">Auditoría Gratis</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                     <Target size={14} className="text-[#00C2FF]" />
-                    <span className="text-[8px] uppercase font-bold tracking-tighter">Precisión 99%</span>
+                    <span className="text-[8px] uppercase font-bold tracking-tighter">Sin permanencia</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                     <Zap size={14} className="text-purple-400" />
-                    <span className="text-[8px] uppercase font-bold tracking-tighter">ROI Inmediato</span>
+                    <span className="text-[8px] uppercase font-bold tracking-tighter">Demo antes de pagar</span>
                 </div>
             </div>
         </div>

@@ -37,7 +37,6 @@ import { ContactForm } from './ContactForm';
 import { generateAuditAction } from './actions';
 import { VisualAudit } from '../components/VisualAudit';
 import { HeroChatbot } from '../components/HeroChatbot';
-import { Testimonials } from '../components/Testimonials';
 
 // --- ANIMATION HELPER ---
 const Reveal = ({ children, width = "fit-content" }: { children: React.ReactNode, width?: "fit-content" | "100%" }) => {
@@ -311,10 +310,10 @@ const Hero = () => {
           {/* Métricas de Impacto */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6">
             {[
-              { val: "+15h", label: "Ahorradas/sem", color: "#00FF94" },
-              { val: "40%", label: "Más conversiones", color: "#00C2FF" },
-              { val: "24/7", label: "Disponibilidad", color: "#8B5CF6" },
-              { val: "< 3 sem", label: "ROI positivo", color: "#FFE600" }
+              { val: "24/7", label: "Sin descanso", color: "#00FF94" },
+              { val: "< 5 min", label: "Respuesta media", color: "#00C2FF" },
+              { val: "0€", label: "Auditoría inicial", color: "#8B5CF6" },
+              { val: "Sin permanencia", label: "Cancela cuando quieras", color: "#FFE600" }
             ].map((metric, i) => (
               <motion.div
                 key={i}
@@ -539,6 +538,105 @@ const SmartAudit = () => {
   );
 };
 
+// --- TRUST BLOCK (reemplaza testimonios falsos) ---
+const TrustBlock = () => {
+  const guarantees = [
+    {
+      icon: <ShieldCheck size={32} className="text-[#00FF94]" />,
+      title: "Garantía de las 5 horas",
+      desc: "Si no identificamos al menos 5 horas semanales de ahorro real en tu operativa durante la auditoría gratuita, no cobramos la implementación. Punto.",
+      tag: "Sin riesgo",
+      tagColor: "#00FF94",
+    },
+    {
+      icon: <Rocket size={32} className="text-[#00C2FF]" />,
+      title: "Demo antes de firmar",
+      desc: "Construimos un prototipo funcional de tu automatización antes de cualquier contrato. Ves el sistema en marcha con tus propios datos antes de comprometerte.",
+      tag: "Prueba primero",
+      tagColor: "#00C2FF",
+    },
+    {
+      icon: <Zap size={32} className="text-purple-400" />,
+      title: "Sin permanencia",
+      desc: "El retainer es mensual y cancelable en cualquier momento. Si el sistema no te está generando valor, no tiene sentido que sigas pagando. Así de simple.",
+      tag: "Sin ataduras",
+      tagColor: "#a78bfa",
+    },
+    {
+      icon: <Users size={32} className="text-[#FFE600]" />,
+      title: "Acceso directo al fundador",
+      desc: "No hay intermediarios ni cuentas gestionadas por juniors. Hector trabaja contigo personalmente en cada proyecto desde el día 1 hasta la entrega.",
+      tag: "Trato directo",
+      tagColor: "#FFE600",
+    },
+  ];
+
+  return (
+    <section className="py-24 bg-black relative overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-[#00FF94]/5 rounded-full blur-[150px]"></div>
+      </div>
+      <div className="max-w-7xl mx-auto px-6 relative z-10">
+        <Reveal width="100%">
+          <div className="text-center mb-16">
+            <span className="inline-block text-[#00FF94] text-xs font-black uppercase tracking-[0.3em] mb-4 px-4 py-2 rounded-full border border-[#00FF94]/20 bg-[#00FF94]/5">
+              Por qué elegirnos
+            </span>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white font-display">
+              Resultados, no <span className="text-gradient">promesas vacías</span>
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              Somos una agencia nueva con una filosofía muy clara: si no generamos valor real y medible, no cobramos. Estos son nuestros compromisos contigo.
+            </p>
+          </div>
+        </Reveal>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {guarantees.map((g, i) => (
+            <Reveal key={i} width="100%">
+              <motion.div
+                whileHover={{ y: -4 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                className="glass-card p-8 rounded-3xl border border-white/10 flex flex-col h-full group premium-border"
+              >
+                <div className="flex items-start justify-between mb-6">
+                  <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    {g.icon}
+                  </div>
+                  <span
+                    className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border"
+                    style={{ color: g.tagColor, borderColor: `${g.tagColor}40`, backgroundColor: `${g.tagColor}10` }}
+                  >
+                    {g.tag}
+                  </span>
+                </div>
+                <h3 className="text-2xl font-black text-white mb-3 font-display">{g.title}</h3>
+                <p className="text-gray-400 leading-relaxed flex-grow">{g.desc}</p>
+              </motion.div>
+            </Reveal>
+          ))}
+        </div>
+
+        {/* CTA inline */}
+        <Reveal width="100%">
+          <div className="mt-16 text-center">
+            <p className="text-gray-500 text-sm mb-6">¿Todo esto suena bien en papel? Compruébalo en persona.</p>
+            <a
+              href={CALENDAR_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 bg-[#00FF94] text-black px-10 py-5 rounded-2xl font-black text-lg hover:bg-[#00cc76] transition-all glow-effect shadow-[0_20px_50px_rgba(0,255,148,0.2)]"
+            >
+              <Calendar size={22} />
+              Agenda tu auditoría gratuita
+            </a>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+};
+
 const DemoShowcase = () => {
   const [activeTab, setActiveTab] = useState<'realestate' | 'health' | 'resto' | 'hotels' | 'vacation'>('realestate');
 
@@ -715,8 +813,8 @@ const Services = () => {
               </p>
               <div className="mt-auto">
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                  <p className="text-sm text-[#00FF94] font-bold uppercase tracking-widest mb-2">Caso de Éxito:</p>
-                  <p className="text-gray-300">Inmobiliaria que triplicó sus visitas agendadas en 30 días delegando la calificación de leads a nuestra IA.</p>
+                  <p className="text-sm text-[#00FF94] font-bold uppercase tracking-widest mb-2">¿Cómo funciona?</p>
+                  <p className="text-gray-300">El agente responde al instante, califica leads según tus criterios y agenda citas en tu calendario. Sin que muevas un dedo, a cualquier hora del día.</p>
                 </div>
                 <a href="#contacto" className="mt-8 inline-flex items-center gap-3 text-[#00FF94] font-bold text-lg hover:gap-5 transition-all group/link">
                   Quiero mi Agente <ArrowRight size={20} className="group-hover/link:translate-x-2 transition-transform" />
@@ -1015,7 +1113,7 @@ const FAQ = () => {
   const faqs = [
     {
       q: "¿Qué es exactamente la automatización con IA?",
-      a: "Es el uso de modelos de lenguaje inteligentes (como GPT-4) e integraciones de software para realizar tareas repetitivas de forma autónoma. Desde responder clientes por WhatsApp hasta gestionar facturas y agendar citas sin intervención humana."
+      a: "Es el uso de modelos de lenguaje avanzados (como Claude de Anthropic y Gemini de Google) e integraciones de software para realizar tareas repetitivas de forma autónoma. Desde responder clientes por WhatsApp hasta gestionar facturas y agendar citas sin intervención humana."
     },
     {
       q: "¿Es compatible con las herramientas que ya utilizo?",
@@ -1100,7 +1198,7 @@ const Footer = () => {
             <p className="text-gray-400 text-lg mb-8 max-w-xl mx-auto">
               Deja de perder tiempo en tareas repetitivas. Empieza a escalar tu negocio hoy mismo.
             </p>
-            <a href="#contacto" className="bg-[#00FF94] text-black text-xl font-bold px-12 py-5 rounded-lg hover:scale-105 transition-transform duration-200 shadow-[0_0_40px_rgba(0,255,148,0.4)] inline-block">
+            <a href={CALENDAR_URL} target="_blank" rel="noopener noreferrer" className="bg-[#00FF94] text-black text-xl font-bold px-12 py-5 rounded-lg hover:scale-105 transition-transform duration-200 shadow-[0_0_40px_rgba(0,255,148,0.4)] inline-block">
               Reserva tu Auditoría Gratis Ahora
             </a>
           </div>
@@ -1165,7 +1263,8 @@ export default function Home() {
       <Hero />
       <Benefits />
       <Process />
-      <Testimonials />
+      <TrustBlock />
+      <AboutUs />
       <DemoShowcase />
       <SmartAudit />
       <Services />
