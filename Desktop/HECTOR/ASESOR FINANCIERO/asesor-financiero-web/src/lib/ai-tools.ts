@@ -5,6 +5,8 @@ import { getMacroMarketData, formatMacroForAI } from './macro-data';
 import { MACRO_SNAPSHOT, getMacroSummaryText } from './macro-snapshot';
 import { runOptimization } from './tax-calculator';
 import { extractAssetsFromSummary } from './asset-extractor';
+import { simulateWhatIf, WhatIfEvent } from './what-if-simulator';
+import { projectCashFlow, IncomeRecord, Transaction } from './cash-flow-projector';
 
 /**
  * Definición de todas las Tools del Asesor Financiero.
@@ -24,8 +26,11 @@ export function buildAITools(params: {
   financialSummary: Record<string, unknown> | null;
   documentText: string | null;
   portfolio: Record<string, unknown>[] | null;
+  profile: Record<string, unknown> | null;
+  incomeHistory: Record<string, unknown>[] | null;
+  transactions: Record<string, unknown>[] | null;
 }) {
-  const { supabase, userId, financialData, financialSummary, documentText, portfolio } = params;
+  const { supabase, userId, financialData, financialSummary, documentText, portfolio, profile, incomeHistory, transactions } = params;
 
   return {
     update_user_memory: {
@@ -284,6 +289,281 @@ export function buildAITools(params: {
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
           return { success: false, error: `Error obteniendo datos macro: ${message}` };
+        }
+      },
+    },
+
+    simulate_what_if: {
+      description:
+        'Simula escenarios hipotéticos "¿qué pasaría si...?" proyectando el patrimonio neto y flujo de caja con y sin los eventos indicados. Úsalo cuando el usuario quiera saber el impacto de comprar una casa, cambiar de trabajo, tener un hijo, pedir una hipoteca, etc.',
+      inputSchema: z.object({
+        monthly_income: z.number().describe('Ingresos mensuales actuales del usuario'),
+        monthly_expenses: z.number().describe('Gastos mensuales actuales del usuario'),
+        current_net_worth: z.number().optional().describe('Patrimonio neto actual estimado (default: 0)'),
+        events: z.array(z.object({
+          description: z.string().describe('Descripción del evento hipotético'),
+          one_time_cost: z.number().optional().describe('Coste o ingreso único (negativo = gasto, positivo = ingreso). Ej: -20000 para entrada piso'),
+          monthly_cost_change: z.number().optional().describe('Cambio mensual recurrente (negativo = más gastos, positivo = más ingresos). Ej: -800 para hipoteca nueva'),
+          months_from_now: z.number().describe('En cuántos meses ocurre el evento'),
+          duration_months: z.number().optional().describe('Cuántos meses dura el cambio mensual (undefined = indefinido)'),
+        })).describe('Lista de eventos hipotéticos a simular'),
+        months: z.number().optional().describe('Horizonte de proyección en meses (default: 24)'),
+      }),
+      execute: async (args: {
+        monthly_income: number;
+        monthly_expenses: number;
+        current_net_worth?: number;
+        events: { description: string; one_time_cost?: number; monthly_cost_change?: number; months_from_now: number; duration_months?: number }[];
+        months?: number;
+      }) => {
+        const events: WhatIfEvent[] = args.events.map(e => ({
+          description: e.description,
+          oneTimeCost: e.one_time_cost,
+          monthlyCostChange: e.monthly_cost_change,
+          monthsFromNow: e.months_from_now,
+          durationMonths: e.duration_months,
+        }));
+        const result = simulateWhatIf({
+          monthlyIncome: args.monthly_income,
+          monthlyExpenses: args.monthly_expenses,
+          currentNetWorth: args.current_net_worth ?? 0,
+          events,
+          months: args.months ?? 24,
+        });
+        return { success: true, data: result };
+      },
+    },
+
+    project_cash_flow: {
+      description:
+        'Proyecta el flujo de caja predictivo para los próximos meses basándose en el historial de ingresos y transacciones del usuario. Detecta meses de riesgo (flujo negativo) y calcula la tasa de ahorro proyectada. Úsalo cuando el usuario pregunte por su situación futura, si podrá ahorrar, o si tiene riesgo financiero.',
+      inputSchema: z.object({
+        current_balance: z.number().optional().describe('Saldo disponible actual (para calcular cuándo se agotaría si hay tendencia negativa)'),
+        months: z.number().optional().describe('Horizonte de proyección en meses (default: 12)'),
+      }),
+      execute: async ({ current_balance, months }: { current_balance?: number; months?: number }) => {
+        const income: IncomeRecord[] = (incomeHistory || []).map(r => ({
+          month: Number(r.month),
+          year: Number(r.year),
+          amount: Number(r.amount),
+          source: String(r.source || ''),
+          description: String(r.description || ''),
+        }));
+        const txns: Transaction[] = (transactions || []).map(t => ({
+          date: String(t.date || ''),
+          description: String(t.description || ''),
+          type: String(t.type || ''),
+          amount: Number(t.amount),
+          category: String(t.category || ''),
+        }));
+
+        if (income.length === 0 && txns.length === 0) {
+          return {
+            success: false,
+            error: 'No hay historial de ingresos ni transacciones disponibles. Pide al usuario que proporcione sus datos o suba su Excel.',
+          };
+        }
+
+        const result = projectCashFlow({ incomeHistory: income, transactions: txns, currentBalance: current_balance, months });
+        return { success: true, data: result };
+      },
+    },
+
+    analyze_tax_loss_harvesting: {
+      description:
+        'Analiza la cartera para identificar oportunidades de Tax-Loss Harvesting: activos en pérdidas que se pueden vender para compensar ganancias fiscales en España (IRPF base del ahorro 19-28%). Úsalo cuando el usuario pregunte por optimización fiscal de cartera o quiera reducir su factura fiscal.',
+      inputSchema: z.object({
+        annual_gains: z.number().optional().describe('Ganancias patrimoniales realizadas este año (para calcular compensación)'),
+      }),
+      execute: async ({ annual_gains = 0 }: { annual_gains?: number }) => {
+        if (!portfolio || portfolio.length === 0) {
+          return { success: false, error: 'No hay cartera guardada para analizar.' };
+        }
+
+        const tickers = (portfolio as Record<string, unknown>[])
+          .map(a => String(a.ticker || '').trim().toUpperCase())
+          .filter(t => t !== '' && t !== 'UNDEFINED');
+
+        const quotes = tickers.length > 0 ? await getMarketData(tickers) : [];
+        const quoteMap = new Map(quotes.map(q => [q.symbol.toUpperCase(), q]));
+
+        const harvestCandidates: {
+          asset_name: string; ticker: string;
+          current_price: number; purchase_price: number; quantity: number;
+          unrealized_loss: number; tax_saving_estimate: number;
+        }[] = [];
+        let totalHarvestable = 0;
+
+        for (const asset of portfolio as Record<string, unknown>[]) {
+          const ticker = String(asset.ticker || '').toUpperCase();
+          const qty = Number(asset.quantity) || 0;
+          const avgPrice = Number(asset.purchase_price) || 0;
+          const quote = quoteMap.get(ticker);
+          if (!quote || !avgPrice || !qty) continue;
+
+          const unrealizedPnl = (quote.price - avgPrice) * qty;
+          if (unrealizedPnl < 0) {
+            const loss = Math.abs(unrealizedPnl);
+            // Spanish IRPF savings rate on losses: ~19% for first 6k, 21% up to 50k, 23% up to 200k, 27% up to 300k, 28% above 300k (simplified: 21%)
+            const taxRate = annual_gains > 200000 ? 0.27 : annual_gains > 50000 ? 0.23 : 0.21;
+            const taxSaving = Math.min(loss, annual_gains) * taxRate;
+            harvestCandidates.push({
+              asset_name: String(asset.asset_name || ''),
+              ticker,
+              current_price: quote.price,
+              purchase_price: avgPrice,
+              quantity: qty,
+              unrealized_loss: Number((-unrealizedPnl).toFixed(2)),
+              tax_saving_estimate: Number(taxSaving.toFixed(2)),
+            });
+            totalHarvestable += loss;
+          }
+        }
+
+        harvestCandidates.sort((a, b) => b.unrealized_loss - a.unrealized_loss);
+
+        const maxTaxSaving = Math.min(totalHarvestable, annual_gains) * 0.21;
+
+        return {
+          success: true,
+          data: {
+            candidates: harvestCandidates,
+            total_harvestable_losses: Number(totalHarvestable.toFixed(2)),
+            max_tax_saving_estimate: Number(maxTaxSaving.toFixed(2)),
+            annual_gains_context: annual_gains,
+            note: 'Recuerda la regla de los 2 meses en España: no puedes recomprar el mismo activo en 2 meses o se pierde la ventaja fiscal. Consulta con un asesor fiscal antes de actuar.',
+          },
+        };
+      },
+    },
+
+    suggest_rebalancing: {
+      description:
+        'Analiza la cartera actual y sugiere operaciones de rebalanceo para volver a los porcentajes objetivo. Calcula cuánto comprar/vender de cada activo. Úsalo cuando el usuario pregunte si su cartera está equilibrada o qué ajustes hacer.',
+      inputSchema: z.object({
+        total_portfolio_value: z.number().optional().describe('Valor total actual de la cartera en EUR. Si no se provee, se calcula de la cartera guardada.'),
+      }),
+      execute: async ({ total_portfolio_value }: { total_portfolio_value?: number }) => {
+        if (!portfolio || portfolio.length === 0) {
+          return { success: false, error: 'No hay cartera guardada. Sube tu Excel primero.' };
+        }
+
+        // Get current market values
+        const tickers = (portfolio as Record<string, unknown>[])
+          .map(a => String(a.ticker || '').trim().toUpperCase())
+          .filter(t => t !== '' && t !== 'UNDEFINED');
+        const quotes = tickers.length > 0 ? await getMarketData(tickers) : [];
+        const quoteMap = new Map(quotes.map(q => [q.symbol.toUpperCase(), q]));
+
+        const positions = (portfolio as Record<string, unknown>[]).map(asset => {
+          const ticker = String(asset.ticker || '').toUpperCase();
+          const qty = Number(asset.quantity) || 0;
+          const valueEur = Number(asset.value_eur) || 0;
+          const quote = quoteMap.get(ticker);
+          const currentValue = (qty > 0 && quote) ? qty * quote.price : valueEur;
+          return {
+            asset_name: String(asset.asset_name || ''),
+            ticker,
+            current_value: currentValue,
+            target_percent: Number(asset.target_percent) || 0,
+          };
+        });
+
+        const totalValue = total_portfolio_value ?? positions.reduce((s, p) => s + p.current_value, 0);
+        if (totalValue === 0) return { success: false, error: 'No se pudo calcular el valor total de la cartera.' };
+
+        const suggestions = positions.map(p => {
+          const currentPct = totalValue > 0 ? (p.current_value / totalValue) * 100 : 0;
+          const targetValue = (p.target_percent / 100) * totalValue;
+          const delta = targetValue - p.current_value;
+          const action = delta > 50 ? 'COMPRAR' : delta < -50 ? 'VENDER' : 'MANTENER';
+          return {
+            asset_name: p.asset_name,
+            ticker: p.ticker,
+            current_value_eur: Number(p.current_value.toFixed(2)),
+            current_percent: Number(currentPct.toFixed(1)),
+            target_percent: p.target_percent,
+            delta_eur: Number(delta.toFixed(2)),
+            action,
+          };
+        }).filter(s => s.action !== 'MANTENER' || Math.abs(s.delta_eur) > 10);
+
+        const needsRebalancing = suggestions.some(s => s.action !== 'MANTENER');
+
+        return {
+          success: true,
+          data: {
+            total_portfolio_value_eur: Number(totalValue.toFixed(2)),
+            suggestions,
+            needs_rebalancing: needsRebalancing,
+            summary: needsRebalancing
+              ? `Tu cartera necesita ajuste. Las principales operaciones: ${suggestions.slice(0, 3).map(s => `${s.action} ${s.asset_name} (${s.delta_eur > 0 ? '+' : ''}${s.delta_eur}€)`).join(', ')}.`
+              : 'Tu cartera está bien equilibrada. No se necesitan ajustes significativos.',
+          },
+        };
+      },
+    },
+
+    get_market_sentiment: {
+      description:
+        'Obtiene el sentimiento actual del mercado basado en VIX, Fear & Greed index equivalente, y datos de los índices principales. Úsalo cuando el usuario pregunte si el mercado está en pánico, si es buen momento para invertir, o cuál es el mood general del mercado.',
+      inputSchema: z.object({}),
+      execute: async () => {
+        try {
+          const liveData = await getMacroMarketData();
+          const vix = liveData.vix?.price || 0;
+          const sp500Change = liveData.indices.sp500?.changePercent || 0;
+          const nasdaqChange = liveData.indices.nasdaq?.changePercent || 0;
+
+          // Simple Fear & Greed proxy from VIX + market momentum
+          let fearGreedScore = 50; // neutral
+          if (vix > 30) fearGreedScore -= 30;
+          else if (vix > 20) fearGreedScore -= 15;
+          else if (vix < 15) fearGreedScore += 20;
+
+          if (sp500Change < -2) fearGreedScore -= 15;
+          else if (sp500Change > 2) fearGreedScore += 15;
+          if (nasdaqChange < -3) fearGreedScore -= 10;
+          else if (nasdaqChange > 3) fearGreedScore += 10;
+
+          fearGreedScore = Math.max(0, Math.min(100, fearGreedScore));
+
+          let label: string;
+          let recommendation: string;
+          if (fearGreedScore < 20) {
+            label = 'MIEDO EXTREMO';
+            recommendation = 'Históricamente el miedo extremo es momento de compra para inversores a largo plazo. Pero analiza si hay razones fundamentales detrás del miedo.';
+          } else if (fearGreedScore < 40) {
+            label = 'MIEDO';
+            recommendation = 'Mercado en modo defensivo. Buena oportunidad para DCA (Dollar Cost Averaging) si tienes horizonte largo.';
+          } else if (fearGreedScore < 60) {
+            label = 'NEUTRAL';
+            recommendation = 'Mercado equilibrado. Sigue tu estrategia habitual sin cambios bruscos.';
+          } else if (fearGreedScore < 80) {
+            label = 'CODICIA';
+            recommendation = 'Mercado optimista. Cuidado con comprar en máximos. Considera reducir posiciones si llevas mucha ganancia.';
+          } else {
+            label = 'CODICIA EXTREMA';
+            recommendation = 'Alerta: euforia de mercado. Alto riesgo de corrección. Warren Buffett: "Sé codicioso cuando otros tienen miedo, y temeroso cuando otros son codiciosos."';
+          }
+
+          return {
+            success: true,
+            data: {
+              fearGreedScore,
+              label,
+              sentiment: liveData.marketSentiment,
+              vix,
+              vixInterpretation: vix > 30 ? 'Alta volatilidad (miedo)' : vix > 20 ? 'Volatilidad moderada' : 'Baja volatilidad (complacencia)',
+              sp500DayChange: sp500Change,
+              nasdaqDayChange: nasdaqChange,
+              recommendation,
+              timestamp: liveData.timestamp,
+            },
+          };
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          return { success: false, error: `Error obteniendo sentimiento de mercado: ${message}` };
         }
       },
     },

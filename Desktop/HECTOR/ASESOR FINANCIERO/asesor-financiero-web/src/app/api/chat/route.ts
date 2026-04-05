@@ -55,7 +55,7 @@ export async function POST(req: Request) {
         .maybeSingle(),
       supabase
         .from('user_portfolio')
-        .select('asset_name,asset_type,value_eur,target_percent')
+        .select('asset_name,asset_type,value_eur,target_percent,ticker,quantity,purchase_price')
         .eq('user_id', userId),
       supabase
         .from('user_income_history')
@@ -106,6 +106,9 @@ export async function POST(req: Request) {
       financialSummary: financialSummary as Record<string, unknown> | null,
       documentText: documentText as string | null,
       portfolio: portfolio as Record<string, unknown>[] | null,
+      profile: profile as Record<string, unknown> | null,
+      incomeHistory: incomeHistory as Record<string, unknown>[] | null,
+      transactions: transactions as Record<string, unknown>[] | null,
     });
 
     // Convert UIMessages (from client) to ModelMessages for streamText

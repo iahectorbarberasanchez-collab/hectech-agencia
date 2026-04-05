@@ -1,16 +1,16 @@
 "use client";
 
-import { useRef, useEffect, useState, useMemo } from "react";
+import { useRef, useEffect, useState, useMemo, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, Send, Sparkles, User, RefreshCw, FileSpreadsheet, AlertTriangle, ArrowRight } from "lucide-react";
+import { Bot, Send, Sparkles, User, RefreshCw, FileSpreadsheet, AlertTriangle, ArrowRight, TrendingDown, TrendingUp, Trophy, Star } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import Sidebar from "@/components/Sidebar";
 import { useFinancial } from "@/context/FinancialContext";
-import { MarketQuoteCard, PortfolioDistribution, AssetComparison, TaxOptimizationCard, MacroPanel } from "@/components/GenerativeUI";
+import { MarketQuoteCard, PortfolioDistribution, AssetComparison, TaxOptimizationCard, MacroPanel, WhatIfPanel, CashFlowPanel } from "@/components/GenerativeUI";
 
 const BASE_SUGGESTIONS = [
   "Haz un resumen de mis datos",
@@ -33,6 +33,31 @@ const NO_DATA_SUGGESTIONS = [
   "¿Qué es el análisis fundamental?",
 ];
 
+// --- Panic / Euphoria keyword detection ---
+const PANIC_KEYWORDS = [
+  /vender? todo/i, /pánico/i, /panico/i, /crash/i, /colapso/i, /hundir/i, /se hunde/i,
+  /perder? todo/i, /se acaba/i, /crisis total/i, /catástrofe/i, /catastrofe/i,
+  /debo vender/i, /salir del mercado/i,
+];
+const EUPHORIA_KEYWORDS = [
+  /todo a/i, /meter todo/i, /all.in/i, /hipotecar/i, /a la luna/i, /voy a forrarme/i,
+  /no puede bajar/i, /siempre sube/i, /mil[xX]/i, /x1000/i, /10000%/i,
+  /double?r? en/i,
+];
+
+function detectPanicEuphoria(text: string): 'panic' | 'euphoria' | null {
+  if (PANIC_KEYWORDS.some(r => r.test(text))) return 'panic';
+  if (EUPHORIA_KEYWORDS.some(r => r.test(text))) return 'euphoria';
+  return null;
+}
+
+// --- Gamification milestones ---
+const SAVINGS_MILESTONES = [
+  { key: 'messages_3', label: '¡3 preguntas respondidas!', icon: '💬', threshold: 3, type: 'messages' },
+  { key: 'messages_10', label: '¡Conversación activa! 10 mensajes', icon: '🔥', threshold: 10, type: 'messages' },
+  { key: 'messages_25', label: '¡Inversor comprometido! 25 mensajes', icon: '🏆', threshold: 25, type: 'messages' },
+];
+
 export default function AsesorPage() {
   const router = useRouter();
   const { user, userId, isLoading: isUserLoading } = useUser();
@@ -41,6 +66,13 @@ export default function AsesorPage() {
   const hasData = summary !== null && (summary.totalRows > 0 || (summary.fileType === 'pdf' && !!documentText));
 
   const [chatInput, setChatInput] = useState("");
+  // Panic/Euphoria modal
+  const [warningModal, setWarningModal] = useState<{ type: 'panic' | 'euphoria'; message: string } | null>(null);
+  const pendingMessageRef = useRef<string | null>(null);
+  // Gamification
+  const [milestone, setMilestone] = useState<{ label: string; icon: string } | null>(null);
+  const [userMessageCount, setUserMessageCount] = useState(0);
+  const triggeredMilestones = useRef<Set<string>>(new Set());
 
   // Ref to hold current body values — read fresh on every API call
   const bodyRef = useRef<Record<string, unknown>>({});
@@ -85,17 +117,60 @@ export default function AsesorPage() {
 
   const currentMessages = messages || [];
   const isLoading = status === 'submitted' || status === 'streaming';
-  
+
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setChatInput(e.target.value);
   };
 
+  // Check gamification milestones
+  const checkMilestones = useCallback((count: number) => {
+    for (const m of SAVINGS_MILESTONES) {
+      if (!triggeredMilestones.current.has(m.key) && count >= m.threshold) {
+        triggeredMilestones.current.add(m.key);
+        setMilestone({ label: m.label, icon: m.icon });
+        setTimeout(() => setMilestone(null), 3500);
+        break;
+      }
+    }
+  }, []);
+
+  const doSendMessage = useCallback(async (text: string) => {
+    const newCount = userMessageCount + 1;
+    setUserMessageCount(newCount);
+    checkMilestones(newCount);
+    await sendMessage({ text });
+  }, [userMessageCount, checkMilestones, sendMessage]);
+
   const onFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatInput?.trim() || isLoading) return;
-    const msg = chatInput;
+    const msg = chatInput.trim();
     setChatInput("");
-    await sendMessage({ text: msg });
+
+    // Panic/Euphoria detection
+    const detected = detectPanicEuphoria(msg);
+    if (detected) {
+      pendingMessageRef.current = msg;
+      const warningText = detected === 'panic'
+        ? "He detectado que podrías estar tomando una decisión impulsiva por pánico. Las emociones son el mayor enemigo del inversor. ¿Estás seguro de que quieres proceder? Recuerda: vender en pánico suele ser el peor momento."
+        : "He detectado entusiasmo elevado. Las decisiones impulsivas por euforia pueden ser tan peligrosas como las del pánico. ¿Quieres continuar con esta consulta?";
+      setWarningModal({ type: detected, message: warningText });
+      return;
+    }
+
+    await doSendMessage(msg);
+  };
+
+  const handleWarningConfirm = async () => {
+    const msg = pendingMessageRef.current;
+    setWarningModal(null);
+    pendingMessageRef.current = null;
+    if (msg) await doSendMessage(msg);
+  };
+
+  const handleWarningCancel = () => {
+    setWarningModal(null);
+    pendingMessageRef.current = null;
   };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -164,6 +239,8 @@ export default function AsesorPage() {
         ]
       }
     ]);
+    setUserMessageCount(0);
+    triggeredMilestones.current.clear();
   };
 
   // Mix data-specific suggestions with macro suggestions
@@ -173,7 +250,7 @@ export default function AsesorPage() {
 
   const handleSuggestionClick = (suggestion: string) => {
     if (isLoading) return;
-    sendMessage({ text: suggestion });
+    doSendMessage(suggestion);
   };
 
   return (
@@ -292,6 +369,10 @@ export default function AsesorPage() {
                           return <TaxOptimizationCard key={toolCallId} data={output.data} />;
                         case 'get_macro_context':
                           return <MacroPanel key={toolCallId} data={output.data} />;
+                        case 'simulate_what_if':
+                          return <WhatIfPanel key={toolCallId} data={output.data} />;
+                        case 'project_cash_flow':
+                          return <CashFlowPanel key={toolCallId} data={output.data} />;
                         default:
                           return null;
                       }
@@ -363,6 +444,80 @@ export default function AsesorPage() {
           </form>
         </div>
       </main>
+
+      {/* Panic/Euphoria Warning Modal */}
+      <AnimatePresence>
+        {warningModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className={`glass-card rounded-2xl p-6 max-w-md w-full border ${
+                warningModal.type === 'panic'
+                  ? 'border-red-500/30 bg-red-500/5'
+                  : 'border-amber-500/30 bg-amber-500/5'
+              }`}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
+                  warningModal.type === 'panic' ? 'bg-red-500/20' : 'bg-amber-500/20'
+                }`}>
+                  {warningModal.type === 'panic' ? <TrendingDown className="w-6 h-6 text-red-400" /> : <TrendingUp className="w-6 h-6 text-amber-400" />}
+                </div>
+                <div>
+                  <p className={`font-bold text-sm uppercase tracking-wider ${warningModal.type === 'panic' ? 'text-red-400' : 'text-amber-400'}`}>
+                    {warningModal.type === 'panic' ? '⚠️ Alerta: Posible Decisión por Pánico' : '🔥 Alerta: Posible Decisión por Euforia'}
+                  </p>
+                </div>
+              </div>
+              <p className="text-white/80 text-sm leading-relaxed mb-6">{warningModal.message}</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleWarningCancel}
+                  className="flex-1 py-2.5 rounded-xl glass text-white/70 hover:text-white text-sm font-medium transition-colors"
+                >
+                  Pausar y reflexionar
+                </button>
+                <button
+                  onClick={handleWarningConfirm}
+                  className={`flex-1 py-2.5 rounded-xl text-white text-sm font-medium transition-colors ${
+                    warningModal.type === 'panic'
+                      ? 'bg-red-600/60 hover:bg-red-600'
+                      : 'bg-amber-600/60 hover:bg-amber-600'
+                  }`}
+                >
+                  Continuar de todas formas
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Gamification milestone toast */}
+      <AnimatePresence>
+        {milestone && (
+          <motion.div
+            initial={{ opacity: 0, y: 60, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 60, scale: 0.9 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-600/90 to-teal-600/90 backdrop-blur-sm border border-emerald-400/30 shadow-lg"
+          >
+            <span className="text-2xl">{milestone.icon}</span>
+            <div>
+              <p className="text-white font-bold text-sm">{milestone.label}</p>
+              <p className="text-emerald-200 text-xs">Sigue así, inversor comprometido</p>
+            </div>
+            <Trophy className="w-5 h-5 text-yellow-300 ml-1" />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

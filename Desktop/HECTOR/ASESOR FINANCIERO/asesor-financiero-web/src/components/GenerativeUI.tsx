@@ -1,8 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, DollarSign, Activity, PieChart, BarChart3, ArrowUpRight, ArrowDownRight, Globe, Sparkles, AlertTriangle, Zap, Landmark, BarChart2 } from "lucide-react";
-import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from "recharts";
+import { TrendingUp, TrendingDown, DollarSign, Activity, PieChart, BarChart3, ArrowUpRight, ArrowDownRight, Globe, Sparkles, AlertTriangle, Zap, Landmark, BarChart2, GitBranch, Waves, CheckCircle2, XCircle } from "lucide-react";
+import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, AreaChart, Area } from "recharts";
 
 // --- MARKET QUOTE CARD ---
 export function MarketQuoteCard({ data }: { data: any[] }) {
@@ -387,7 +387,7 @@ export function MacroPanel({ data }: { data: any }) {
               <YAxis tick={{ fill: '#ffffff40', fontSize: 10 }} axisLine={false} tickLine={false} domain={['auto', 'auto']} tickFormatter={(v) => `${v.toFixed(1)}%`} />
               <ReTooltip
                 contentStyle={{ backgroundColor: '#1e1e2d', border: '1px solid #ffffff10', borderRadius: '8px', fontSize: '11px' }}
-                formatter={(v: number) => [`${v.toFixed(2)}%`, 'Yield']}
+                formatter={(v: unknown) => [`${Number(v).toFixed(2)}%`, 'Yield']}
                 itemStyle={{ color: '#10b981' }}
               />
               <Line type="monotone" dataKey="yield" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981', r: 4 }} />
@@ -425,6 +425,265 @@ export function MacroPanel({ data }: { data: any }) {
       <p className="text-[9px] text-white/20 text-right">
         Datos de mercado en tiempo real · Snapshot macro actualizado: {snapshot?.lastUpdated ?? '—'}
       </p>
+    </motion.div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WHAT-IF SCENARIO PANEL
+// ─────────────────────────────────────────────────────────────────────────────
+export function WhatIfPanel({ data }: { data: any }) {
+  const { baseline, withEvents, summary } = data;
+  if (!baseline || !withEvents) return null;
+
+  // Build chart data (show every other month for readability)
+  const chartData = baseline.map((b: any, i: number) => ({
+    label: b.label,
+    baseline: b.netWorth,
+    scenario: withEvents[i]?.netWorth,
+  }));
+
+  const isPositive = summary.difference >= 0;
+  const diffColor = isPositive ? 'text-emerald-400' : 'text-red-400';
+  const diffBg = isPositive ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="w-full mt-2 space-y-4"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 rounded-2xl glass-card border border-white/5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center">
+            <GitBranch className="w-5 h-5 text-violet-400" />
+          </div>
+          <div>
+            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Simulador What-If</p>
+            <p className="text-sm font-bold text-white">Proyección de Escenarios ({baseline.length} meses)</p>
+          </div>
+        </div>
+        <div className={`px-3 py-1 rounded-full border text-xs font-bold ${diffBg} ${diffColor}`}>
+          {isPositive ? '+' : ''}{summary.difference.toLocaleString('es-ES')}€
+        </div>
+      </div>
+
+      {/* Events summary */}
+      {summary.events?.length > 0 && (
+        <div className="glass-card p-4 rounded-2xl border border-white/5 space-y-2">
+          <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-2">Eventos Simulados</p>
+          {summary.events.map((e: any, i: number) => (
+            <div key={i} className="flex items-start gap-2 text-xs">
+              <span className="text-violet-400 font-bold mt-0.5">→</span>
+              <span className="text-white/70">
+                <span className="font-semibold text-white">Mes {e.monthsFromNow}:</span> {e.description}
+                {e.oneTimeCost !== undefined && (
+                  <span className={`ml-1.5 font-bold ${e.oneTimeCost < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                    ({e.oneTimeCost > 0 ? '+' : ''}{e.oneTimeCost.toLocaleString('es-ES')}€ único)
+                  </span>
+                )}
+                {e.monthlyCostChange !== undefined && (
+                  <span className={`ml-1.5 font-bold ${e.monthlyCostChange < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                    ({e.monthlyCostChange > 0 ? '+' : ''}{e.monthlyCostChange.toLocaleString('es-ES')}€/mes)
+                  </span>
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Net worth comparison chart */}
+      <div className="glass-card p-4 rounded-2xl border border-white/5">
+        <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-3">Evolución Patrimonio Neto</p>
+        <ResponsiveContainer width="100%" height={180}>
+          <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+            <defs>
+              <linearGradient id="baselineGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#ffffff" stopOpacity={0.1} />
+                <stop offset="95%" stopColor="#ffffff" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="scenarioGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+            <XAxis dataKey="label" tick={{ fill: '#ffffff30', fontSize: 9 }} axisLine={false} tickLine={false} interval={3} />
+            <YAxis tick={{ fill: '#ffffff30', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k€`} />
+            <ReTooltip
+              contentStyle={{ backgroundColor: '#1e1e2d', border: '1px solid #ffffff10', borderRadius: '8px', fontSize: '11px' }}
+              formatter={(v: unknown, name: unknown) => [Number(v).toLocaleString('es-ES') + '€', name === 'baseline' ? 'Sin cambios' : 'Con eventos']}
+              itemStyle={{ color: '#fff' }}
+            />
+            <Area type="monotone" dataKey="baseline" stroke="#ffffff40" strokeWidth={1.5} fill="url(#baselineGrad)" strokeDasharray="4 2" />
+            <Area type="monotone" dataKey="scenario" stroke="#8b5cf6" strokeWidth={2} fill="url(#scenarioGrad)" />
+          </AreaChart>
+        </ResponsiveContainer>
+        <div className="flex items-center gap-4 mt-2 justify-end">
+          <div className="flex items-center gap-1.5 text-[10px] text-white/40"><div className="w-5 border-t-2 border-dashed border-white/30" /> Sin cambios</div>
+          <div className="flex items-center gap-1.5 text-[10px] text-white/40"><div className="w-5 border-t-2 border-violet-400" /> Con eventos</div>
+        </div>
+      </div>
+
+      {/* Summary stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="glass-card p-3 rounded-xl border border-white/5 space-y-1">
+          <p className="text-[9px] text-white/40 uppercase font-bold">Patrimonio Final (Base)</p>
+          <p className="text-sm font-black text-white">{summary.baselineFinalNetWorth.toLocaleString('es-ES')}€</p>
+        </div>
+        <div className="glass-card p-3 rounded-xl border border-white/5 space-y-1">
+          <p className="text-[9px] text-white/40 uppercase font-bold">Patrimonio Final (Escenario)</p>
+          <p className={`text-sm font-black ${diffColor}`}>{summary.withEventsFinalNetWorth.toLocaleString('es-ES')}€</p>
+        </div>
+        <div className="glass-card p-3 rounded-xl border border-white/5 space-y-1">
+          <p className="text-[9px] text-white/40 uppercase font-bold">Diferencia</p>
+          <p className={`text-sm font-black ${diffColor}`}>{isPositive ? '+' : ''}{summary.difference.toLocaleString('es-ES')}€ ({summary.differencePercent}%)</p>
+        </div>
+        <div className="glass-card p-3 rounded-xl border border-white/5 space-y-1">
+          <p className="text-[9px] text-white/40 uppercase font-bold">Mes más duro</p>
+          <p className="text-sm font-black text-amber-400">
+            {summary.worstMonth ? `${summary.worstMonth.label} (${summary.worstMonth.cashFlow.toLocaleString('es-ES')}€)` : '—'}
+          </p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CASH FLOW PROJECTION PANEL
+// ─────────────────────────────────────────────────────────────────────────────
+export function CashFlowPanel({ data }: { data: any }) {
+  const { months, summary } = data;
+  if (!months || months.length === 0) return null;
+
+  const chartData = months.map((m: any) => ({
+    label: m.label,
+    income: m.projectedIncome,
+    expenses: m.projectedExpenses,
+    net: m.projectedNetFlow,
+  }));
+
+  const hasWarnings = summary.warningMonths?.length > 0;
+  const hasCritical = summary.criticalMonths?.length > 0;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="w-full mt-2 space-y-4"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 rounded-2xl glass-card border border-white/5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
+            <Waves className="w-5 h-5 text-blue-400" />
+          </div>
+          <div>
+            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Proyección Flujo de Caja</p>
+            <p className="text-sm font-bold text-white">Próximos {months.length} meses</p>
+          </div>
+        </div>
+        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold ${hasCritical ? 'bg-red-500/10 border-red-500/30 text-red-400' : hasWarnings ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'}`}>
+          {hasCritical ? <XCircle className="w-3.5 h-3.5" /> : hasWarnings ? <AlertTriangle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+          {hasCritical ? 'RIESGO ALTO' : hasWarnings ? 'ATENCION' : 'SALUDABLE'}
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div className="glass-card p-4 rounded-2xl border border-white/5">
+        <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-3">Ingresos vs Gastos Proyectados</p>
+        <ResponsiveContainer width="100%" height={180}>
+          <BarChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }} barSize={10}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+            <XAxis dataKey="label" tick={{ fill: '#ffffff30', fontSize: 9 }} axisLine={false} tickLine={false} interval={1} />
+            <YAxis tick={{ fill: '#ffffff30', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k€`} />
+            <ReTooltip
+              contentStyle={{ backgroundColor: '#1e1e2d', border: '1px solid #ffffff10', borderRadius: '8px', fontSize: '11px' }}
+              formatter={(v: unknown, name: unknown) => [Number(v).toLocaleString('es-ES') + '€', name === 'income' ? 'Ingresos' : 'Gastos']}
+              itemStyle={{ color: '#fff' }}
+            />
+            <Bar dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="expenses" fill="#ef4444" radius={[4, 4, 0, 0]} opacity={0.7} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Net flow line */}
+      <div className="glass-card p-4 rounded-2xl border border-white/5">
+        <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mb-3">Flujo Neto Mensual</p>
+        <ResponsiveContainer width="100%" height={100}>
+          <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+            <defs>
+              <linearGradient id="netGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+            <XAxis dataKey="label" tick={{ fill: '#ffffff30', fontSize: 9 }} axisLine={false} tickLine={false} interval={1} />
+            <YAxis tick={{ fill: '#ffffff30', fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v.toLocaleString('es-ES')}€`} />
+            <ReTooltip
+              contentStyle={{ backgroundColor: '#1e1e2d', border: '1px solid #ffffff10', borderRadius: '8px', fontSize: '11px' }}
+              formatter={(v: unknown) => [Number(v).toLocaleString('es-ES') + '€', 'Flujo neto']}
+              itemStyle={{ color: '#3b82f6' }}
+            />
+            <Area type="monotone" dataKey="net" stroke="#3b82f6" strokeWidth={2} fill="url(#netGrad)" dot={{ fill: '#3b82f6', r: 2 }} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="glass-card p-3 rounded-xl border border-white/5 space-y-1">
+          <p className="text-[9px] text-white/40 uppercase font-bold">Ingreso Medio Mensual</p>
+          <p className="text-sm font-black text-emerald-400">{summary.avgMonthlyIncome.toLocaleString('es-ES')}€</p>
+        </div>
+        <div className="glass-card p-3 rounded-xl border border-white/5 space-y-1">
+          <p className="text-[9px] text-white/40 uppercase font-bold">Gasto Medio Mensual</p>
+          <p className="text-sm font-black text-red-400">{summary.avgMonthlyExpenses.toLocaleString('es-ES')}€</p>
+        </div>
+        <div className="glass-card p-3 rounded-xl border border-white/5 space-y-1">
+          <p className="text-[9px] text-white/40 uppercase font-bold">Tasa de Ahorro Proyectada</p>
+          <p className={`text-sm font-black ${summary.projectedSavingsRate > 20 ? 'text-emerald-400' : summary.projectedSavingsRate > 10 ? 'text-yellow-400' : 'text-red-400'}`}>
+            {summary.projectedSavingsRate}%
+          </p>
+        </div>
+        <div className="glass-card p-3 rounded-xl border border-white/5 space-y-1">
+          <p className="text-[9px] text-white/40 uppercase font-bold">Flujo Neto Medio</p>
+          <p className={`text-sm font-black ${summary.avgNetFlow >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            {summary.avgNetFlow >= 0 ? '+' : ''}{summary.avgNetFlow.toLocaleString('es-ES')}€
+          </p>
+        </div>
+      </div>
+
+      {/* Warnings */}
+      {(hasWarnings || hasCritical) && (
+        <div className="glass-card p-4 rounded-2xl border border-amber-500/20 space-y-2">
+          <p className="text-[10px] text-amber-400 font-bold uppercase tracking-widest flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5" /> Meses de Atención
+          </p>
+          {hasCritical && (
+            <p className="text-xs text-red-400">
+              <span className="font-bold">Saldo negativo en:</span> {summary.criticalMonths.join(', ')}
+            </p>
+          )}
+          {hasWarnings && (
+            <p className="text-xs text-amber-400">
+              <span className="font-bold">Flujo negativo en:</span> {summary.warningMonths.join(', ')}
+            </p>
+          )}
+          {summary.monthsUntilBroke !== null && (
+            <p className="text-xs text-red-400 font-bold">
+              Con la tendencia actual, el saldo se agotaría en ~{summary.monthsUntilBroke} meses.
+            </p>
+          )}
+        </div>
+      )}
+
+      <p className="text-[9px] text-white/20 text-right">Proyección basada en historial real · Confianza: {months[0]?.confidence ?? 'low'}</p>
     </motion.div>
   );
 }
