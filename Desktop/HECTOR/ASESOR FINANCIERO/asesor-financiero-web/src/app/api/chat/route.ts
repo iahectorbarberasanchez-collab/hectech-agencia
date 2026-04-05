@@ -25,13 +25,13 @@ const googleProvider = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '',
 });
 
-function getModel() {
+function getModel(fast = false) {
   if (process.env.GROQ_API_KEY) {
-    // llama-3.3-70b-versatile: best quality for complex financial analysis.
-    // Context has been trimmed to ~4k tokens base so it stays within 12k TPM free tier.
-    return groqProvider('llama-3.3-70b-versatile');
+    // fast=true → llama-3.1-8b-instant (20k TPM) used as fallback when 70b exceeds token limit
+    return fast
+      ? groqProvider('llama-3.1-8b-instant')
+      : groqProvider('llama-3.3-70b-versatile');
   }
-  // Fallback to Gemini if no Groq key
   return googleProvider('gemini-2.0-flash');
 }
 
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
         .select('asset_name,asset_type,value_eur,target_percent,ticker,quantity,purchase_price')
         .eq('user_id', userId)
         .order('value_eur', { ascending: false })
-        .limit(25), // Top 25 by value to keep context compact
+        .limit(15), // Top 15 by value to keep context compact
       supabase
         .from('user_income_history')
         .select('month,year,amount,source,description')
@@ -74,7 +74,7 @@ export async function POST(req: Request) {
         .select('date,description,type,amount,category')
         .eq('user_id', userId)
         .order('date', { ascending: false })
-        .limit(10), // Reduced from 20 to 10
+        .limit(5), // Reduced to 5 to stay within Groq 12k TPM
     ]);
 
     // Fetch macro context (cached 5 min) — injected as first system message.
@@ -132,13 +132,29 @@ export async function POST(req: Request) {
     // Prepend context system messages to conversation
     const enrichedMessages = [...macroMessage, ...contextMessages, ...modelMessages];
 
-    const result = await streamText({
-      model: getModel(),
-      system: SYSTEM_PROMPT,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      messages: enrichedMessages as any,
-      tools,
-    });
+    // Try quality model first; auto-fallback to fast model on TPM limit (413)
+    let result;
+    try {
+      result = await streamText({
+        model: getModel(false),
+        system: SYSTEM_PROMPT,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        messages: enrichedMessages as any,
+        tools,
+      });
+    } catch (tpmErr: unknown) {
+      const msg = tpmErr instanceof Error ? tpmErr.message : String(tpmErr);
+      const isTpmError = msg.includes('Request too large') || msg.includes('tokens per minute') || (tpmErr as any)?.statusCode === 413;
+      if (!isTpmError) throw tpmErr;
+      console.warn('[chat] TPM limit hit on 70b — retrying with 8b-instant');
+      result = await streamText({
+        model: getModel(true),
+        system: SYSTEM_PROMPT,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        messages: enrichedMessages as any,
+        tools,
+      });
+    }
 
     return result.toUIMessageStreamResponse();
   } catch (error) {

@@ -583,15 +583,15 @@ export function buildAITools(params: {
 
     // ─── MONTE CARLO ────────────────────────────────────────────────────────────
     run_monte_carlo: {
-      description: 'Simula el crecimiento futuro de la cartera con 1000 escenarios estocásticos (Monte Carlo). Muestra el rango de resultados probables (pesimista/mediano/optimista) para el horizonte indicado. Úsalo cuando el usuario pregunte "¿cuánto tendré en X años?", "¿llegaré a jubilación con X€?" o quiera saber el impacto de su tasa de ahorro a largo plazo.',
+      description: 'Simulación Monte Carlo del crecimiento futuro de la cartera (1000 escenarios, GBM).',
       inputSchema: z.object({
-        years: z.number().min(1).max(50).describe('Horizonte temporal en años'),
-        monthly_contribution: z.number().min(0).describe('Aportación mensual adicional en €'),
+        years: z.number().min(1).max(50),
+        monthly_contribution: z.number().min(0),
         custom_assets: z.array(z.object({
           name: z.string(),
           value_eur: z.number(),
-          asset_type: z.string().describe('accion | etf | crypto | bono | oro | cash'),
-        })).optional().describe('Si no se provee, se usa la cartera guardada del usuario'),
+          asset_type: z.string(),
+        })).optional(),
       }),
       execute: async ({ years, monthly_contribution, custom_assets }: {
         years: number; monthly_contribution: number;
@@ -614,20 +614,20 @@ export function buildAITools(params: {
 
     // ─── FIFO CAPITAL GAINS ─────────────────────────────────────────────────────
     calculate_capital_gains: {
-      description: 'Calcula la plusvalía o minusvalía con método FIFO y la factura fiscal estimada (IRPF base del ahorro España 2025) para una operación de venta. Úsalo cuando el usuario diga "vendo X acciones de Y a Z€" o pregunte cuánto pagará de impuestos.',
+      description: 'Calcula plusvalía FIFO e impuesto IRPF del ahorro España 2025 para una venta.',
       inputSchema: z.object({
-        ticker: z.string().describe('Ticker del activo vendido'),
-        asset_name: z.string().describe('Nombre del activo'),
-        sell_date: z.string().describe('Fecha de venta YYYY-MM-DD'),
-        sell_quantity: z.number().describe('Unidades vendidas'),
-        sell_price: z.number().describe('Precio de venta por unidad en €'),
-        sell_fees: z.number().optional().describe('Comisiones de venta en €'),
+        ticker: z.string(),
+        asset_name: z.string(),
+        sell_date: z.string(),
+        sell_quantity: z.number(),
+        sell_price: z.number(),
+        sell_fees: z.number().optional(),
         buy_lots: z.array(z.object({
-          date: z.string().describe('Fecha de compra YYYY-MM-DD'),
+          date: z.string(),
           quantity: z.number(),
-          price: z.number().describe('Precio de compra por unidad'),
+          price: z.number(),
           fees: z.number().optional(),
-        })).describe('Lotes de compra en orden cronológico (FIFO). Si no se proveen, se infieren de la cartera guardada.'),
+        })),
       }),
       execute: async (args: {
         ticker: string; asset_name: string; sell_date: string;
@@ -658,9 +658,9 @@ export function buildAITools(params: {
 
     // ─── PORTFOLIO CORRELATION ──────────────────────────────────────────────────
     analyze_portfolio_correlation: {
-      description: 'Analiza la correlación histórica entre los activos de la cartera del usuario. Identifica pares con alta correlación (baja diversificación real) y da un score de diversificación 0-100. Úsalo cuando el usuario pregunte si está bien diversificado o si sus activos se mueven juntos.',
+      description: 'Correlación de Pearson histórica entre activos de cartera. Score diversificación 0-100.',
       inputSchema: z.object({
-        tickers: z.array(z.string()).optional().describe('Lista de tickers a analizar. Si no se provee, se usa la cartera guardada.'),
+        tickers: z.array(z.string()).optional(),
       }),
       execute: async ({ tickers }: { tickers?: string[] }) => {
         const tickerList = tickers ?? (portfolio || [])
@@ -681,9 +681,9 @@ export function buildAITools(params: {
 
     // ─── ETF OVERLAP ────────────────────────────────────────────────────────────
     analyze_etf_overlap: {
-      description: 'Analiza el solapamiento de composición entre los ETFs de la cartera. Detecta si el usuario tiene múltiples ETFs que invierten en las mismas empresas (MSCI World + S&P500 tienen ~70% solapamiento). Úsalo cuando el usuario pregunte si sus ETFs se solapan o si diversifica de verdad.',
+      description: 'Solapamiento de composición entre ETFs de cartera (top holdings).',
       inputSchema: z.object({
-        etf_tickers: z.array(z.string()).optional().describe('Tickers de ETFs a comparar. Si no se provee, se infieren de la cartera.'),
+        etf_tickers: z.array(z.string()).optional(),
       }),
       execute: async ({ etf_tickers }: { etf_tickers?: string[] }) => {
         const etfs = etf_tickers ?? (portfolio || [])
@@ -706,16 +706,16 @@ export function buildAITools(params: {
 
     // ─── STOCK SCREENER ─────────────────────────────────────────────────────────
     screen_stocks: {
-      description: 'Filtra acciones por criterios fundamentales: P/E máximo, dividendo mínimo, ROE, deuda, sector y mercado. Devuelve las mejores candidatas ordenadas por score de calidad. Úsalo cuando el usuario busque ideas de inversión con criterios específicos.',
+      description: 'Screener de acciones por P/E, dividendo, ROE, deuda y mercado. Score de calidad.',
       inputSchema: z.object({
-        market: z.enum(['spain', 'usa', 'europe', 'global']).optional().describe('Mercado a filtrar (default: global)'),
-        max_pe: z.number().optional().describe('P/E ratio máximo'),
-        min_pe: z.number().optional().describe('P/E ratio mínimo'),
-        min_dividend_yield: z.number().optional().describe('Rentabilidad por dividendo mínima en %'),
-        max_debt_equity: z.number().optional().describe('Ratio deuda/patrimonio máximo'),
-        min_roe: z.number().optional().describe('ROE mínimo en %'),
-        sector: z.string().optional().describe('Sector en inglés: Technology, Financial, Healthcare, Consumer, Energy, etc.'),
-        max_results: z.number().optional().describe('Máximo de resultados (default: 8)'),
+        market: z.enum(['spain', 'usa', 'europe', 'global']).optional(),
+        max_pe: z.number().optional(),
+        min_pe: z.number().optional(),
+        min_dividend_yield: z.number().optional(),
+        max_debt_equity: z.number().optional(),
+        min_roe: z.number().optional(),
+        sector: z.string().optional(),
+        max_results: z.number().optional(),
       }),
       execute: async (args: ScreenerCriteria & { max_results?: number }) => {
         try {
@@ -733,14 +733,14 @@ export function buildAITools(params: {
 
     // ─── FINANCIAL GOALS ────────────────────────────────────────────────────────
     set_financial_goal: {
-      description: 'Crea o actualiza un objetivo financiero del usuario (ahorro para piso, viaje, jubilación, fondo emergencia, etc.). Guárdalo automáticamente cuando el usuario mencione una meta con importe y/o fecha.',
+      description: 'Guarda un objetivo financiero del usuario (ahorro, piso, jubilación, emergencia).',
       inputSchema: z.object({
-        title: z.string().describe('Nombre del objetivo (ej: "Fondo de emergencia", "Entrada piso", "Viaje Japón")'),
-        target_amount: z.number().describe('Importe objetivo en €'),
-        current_amount: z.number().optional().describe('Importe ya ahorrado para este objetivo (default: 0)'),
-        target_date: z.string().optional().describe('Fecha objetivo en formato YYYY-MM-DD'),
-        category: z.enum(['ahorro', 'vivienda', 'viaje', 'jubilacion', 'emergencia', 'otro']).optional().describe('Categoría del objetivo'),
-        description: z.string().optional().describe('Descripción adicional'),
+        title: z.string(),
+        target_amount: z.number(),
+        current_amount: z.number().optional(),
+        target_date: z.string().optional(),
+        category: z.enum(['ahorro', 'vivienda', 'viaje', 'jubilacion', 'emergencia', 'otro']).optional(),
+        description: z.string().optional(),
       }),
       execute: async (args: {
         title: string; target_amount: number; current_amount?: number;
@@ -762,7 +762,7 @@ export function buildAITools(params: {
     },
 
     get_financial_goals: {
-      description: 'Obtiene todos los objetivos financieros activos del usuario con su progreso actual. Úsalo cuando el usuario pregunte por sus metas, su progreso de ahorro o cuánto le falta para un objetivo.',
+      description: 'Obtiene los objetivos financieros activos del usuario con su progreso.',
       inputSchema: z.object({}),
       execute: async () => {
         const { data, error } = await supabase
@@ -785,10 +785,10 @@ export function buildAITools(params: {
     },
 
     update_goal_progress: {
-      description: 'Actualiza el importe ahorrado actualmente para un objetivo financiero. Úsalo cuando el usuario informe que ha ahorrado más dinero o quiera actualizar su progreso.',
+      description: 'Actualiza el importe ahorrado de un objetivo financiero existente.',
       inputSchema: z.object({
-        goal_title: z.string().describe('Título del objetivo a actualizar (debe coincidir con uno existente)'),
-        new_current_amount: z.number().describe('Nuevo importe total ahorrado para este objetivo en €'),
+        goal_title: z.string(),
+        new_current_amount: z.number(),
       }),
       execute: async ({ goal_title, new_current_amount }: { goal_title: string; new_current_amount: number }) => {
         const { data: goals } = await supabase
@@ -822,9 +822,9 @@ export function buildAITools(params: {
 
     // ─── EXPORT PORTFOLIO REPORT ────────────────────────────────────────────────
     prepare_portfolio_report: {
-      description: 'Prepara los datos para generar un informe PDF de la cartera. Obtiene precios actuales de todos los activos y calcula el rendimiento. El cliente descargará el PDF automáticamente. Úsalo cuando el usuario pida "generar informe", "exportar PDF" o "descargar resumen de cartera".',
+      description: 'Prepara datos para PDF de cartera con precios actuales. Activa descarga automática.',
       inputSchema: z.object({
-        include_insights: z.string().optional().describe('Texto de análisis del asesor para incluir en el PDF (2-3 frases clave)'),
+        include_insights: z.string().optional(),
       }),
       execute: async ({ include_insights }: { include_insights?: string }) => {
         if (!portfolio || portfolio.length === 0) {
