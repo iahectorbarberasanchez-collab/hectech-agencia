@@ -14,7 +14,8 @@ const MACRO_CACHE_TTL = 5 * 60 * 1000;
 // Allow responses of up to 60 seconds
 export const maxDuration = 60;
 
-// Primary: Groq (free tier — 14,400 req/day, 500K tokens/day with llama-3.3-70b)
+// Primary: Groq llama-3.1-8b-instant (20k TPM free — avoids the 12k limit of llama-3.3-70b)
+// Secondary: Groq llama-3.3-70b-versatile (better quality but only 12k TPM — used for short/simple queries)
 // Fallback: Google Gemini (if GOOGLE_GENERATIVE_AI_API_KEY is set and has quota)
 const groqProvider = createGroq({
   apiKey: process.env.GROQ_API_KEY || '',
@@ -26,7 +27,8 @@ const googleProvider = createGoogleGenerativeAI({
 
 function getModel() {
   if (process.env.GROQ_API_KEY) {
-    return groqProvider('llama-3.3-70b-versatile');
+    // llama-3.1-8b-instant: 20k TPM on free tier — handles large contexts without hitting limits
+    return groqProvider('llama-3.1-8b-instant');
   }
   // Fallback to Gemini if no Groq key
   return googleProvider('gemini-2.0-flash');
@@ -56,7 +58,9 @@ export async function POST(req: Request) {
       supabase
         .from('user_portfolio')
         .select('asset_name,asset_type,value_eur,target_percent,ticker,quantity,purchase_price')
-        .eq('user_id', userId),
+        .eq('user_id', userId)
+        .order('value_eur', { ascending: false })
+        .limit(25), // Top 25 by value to keep context compact
       supabase
         .from('user_income_history')
         .select('month,year,amount,source,description')
@@ -69,23 +73,28 @@ export async function POST(req: Request) {
         .select('date,description,type,amount,category')
         .eq('user_id', userId)
         .order('date', { ascending: false })
-        .limit(20),
+        .limit(10), // Reduced from 20 to 10
     ]);
 
-    // Fetch macro context (cached 5 min) — injected as first system message
+    // Fetch macro context (cached 5 min) — injected as first system message.
+    // Keep compact: only live prices + key snapshot lines to stay within Groq 12k TPM.
     let macroContextText = '';
     try {
       if (!macroCacheData || Date.now() - macroCacheData.ts > MACRO_CACHE_TTL) {
         const liveData = await getMacroMarketData();
-        macroContextText = `${formatMacroForAI(liveData)}\n\n${getMacroSummaryText()}`;
+        // Use live prices only (compact) — full snapshot available on demand via get_macro_context tool
+        const liveCompact = formatMacroForAI(liveData);
+        // Add a very short snapshot summary (key rates only, not the full notes)
+        const snap = getMacroSummaryText();
+        const snapLines = snap.split('\n').filter(l => l.startsWith('•')).slice(0, 8).join('\n');
+        macroContextText = `${liveCompact}\n\nCLAVES MACRO (resumen):\n${snapLines}`;
         macroCacheData = { text: macroContextText, ts: Date.now() };
       } else {
         macroContextText = macroCacheData.text;
       }
     } catch (macroErr) {
-      // Non-fatal: if macro fetch fails, AI still works with snapshot
-      try { macroContextText = getMacroSummaryText(); } catch { /* ignore */ }
-      console.warn('Macro market data fetch failed, using snapshot only:', macroErr);
+      // Non-fatal: if macro fetch fails, AI still works without macro context
+      console.warn('Macro market data fetch failed:', macroErr);
     }
 
     // Build context messages from user data (extracted to lib/ai-prompts.ts)

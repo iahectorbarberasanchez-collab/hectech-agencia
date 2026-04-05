@@ -169,9 +169,10 @@ Instrucciones adicionales de rebalanceo:
 
   if (financialData && Object.keys(financialData).length > 0) {
     const dataSheets = financialData as Record<string, Record<string, unknown>>;
-    // Send ALL rows — Gemini 2.5 Flash has a 1M token context, no need to truncate.
-    // Limit only applies as a safety cap for extremely large files (>500 rows per table).
-    const ROWS_HARD_CAP = 500;
+    // Keep context compact for Groq's 12 k TPM limit.
+    // Summary tables: up to 15 rows (enough to see the structure + totals).
+    // Detailed tables (raw transactions, 300+ rows): skip entirely — portfolio is already saved.
+    const ROWS_HARD_CAP = 15;
 
     /**
      * Converts any cell value to a clean string for the AI markdown table.
@@ -224,18 +225,19 @@ Instrucciones adicionales de rebalanceo:
         })
     ).join('\n\n');
 
+    // Detailed tables (raw transactions, buy history) are often hundreds of rows.
+    // Send only the first 10 rows as a structural sample; the portfolio is already saved.
+    const DETAIL_CAP = 10;
     const detailedSections = Object.entries(dataSheets).flatMap(([sheetName, sheet]) =>
       ((sheet.tables as Record<string, unknown>[]) || [])
         .filter((t) => t.type === 'detailed')
+        .slice(0, 2) // max 2 detailed tables per sheet to save tokens
         .map((table) => {
           const headers = table.columns as string[];
           const allRows = (table.data as Record<string, unknown>[]) || [];
-          const displayRows = allRows.slice(0, ROWS_HARD_CAP);
+          const displayRows = allRows.slice(0, DETAIL_CAP);
           const mdTable = buildMdTable(headers, displayRows);
-          const note = allRows.length > ROWS_HARD_CAP
-            ? `\n*(Tabla truncada: se muestran ${ROWS_HARD_CAP} de ${allRows.length} filas)*`
-            : '';
-          return `### DETALLE: ${table.name} (hoja: ${sheetName})\nMapeo de columnas: ${JSON.stringify(table.columnMap || {})}\n${mdTable}${note}`;
+          return `### DETALLE (muestra): ${table.name} (hoja: ${sheetName}) — ${allRows.length} filas totales\n${mdTable}\n*(Muestra de ${DETAIL_CAP} filas. Activos ya guardados en cartera.)*`;
         })
     ).join('\n\n');
 
@@ -261,9 +263,9 @@ REGLAS DE ANÁLISIS:
   }
 
   if (documentText) {
-    // Send the full document — Gemini 2.5 Flash handles up to 1M tokens.
-    // Hard cap at 80000 chars (~60K tokens) as a safety measure for extreme cases.
-    const MAX_PDF_CHARS = 80000;
+    // Groq free tier limit: ~12k TPM total (system + conversation).
+    // Cap PDF text at 15k chars (~3k tokens) so other context still fits.
+    const MAX_PDF_CHARS = 15000;
     const truncated = documentText.length > MAX_PDF_CHARS;
     const textToSend = truncated ? documentText.substring(0, MAX_PDF_CHARS) : documentText;
 
