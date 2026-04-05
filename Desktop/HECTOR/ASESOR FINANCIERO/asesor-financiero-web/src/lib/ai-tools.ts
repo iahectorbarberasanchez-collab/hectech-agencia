@@ -7,6 +7,10 @@ import { runOptimization } from './tax-calculator';
 import { extractAssetsFromSummary } from './asset-extractor';
 import { simulateWhatIf, WhatIfEvent } from './what-if-simulator';
 import { projectCashFlow, IncomeRecord, Transaction } from './cash-flow-projector';
+import { runMonteCarlo, MonteCarloAsset } from './monte-carlo';
+import { calculateFIFO, summarizeFIFO, BuyLot, SellOrder } from './fifo-calculator';
+import { analyzePortfolioCorrelation, analyzeETFOverlap } from './portfolio-correlation';
+import { screenStocks, ScreenerCriteria } from './stock-screener';
 
 /**
  * Definición de todas las Tools del Asesor Financiero.
@@ -574,6 +578,303 @@ export function buildAITools(params: {
           const message = err instanceof Error ? err.message : String(err);
           return { success: false, error: `Error obteniendo sentimiento de mercado: ${message}` };
         }
+      },
+    },
+
+    // ─── MONTE CARLO ────────────────────────────────────────────────────────────
+    run_monte_carlo: {
+      description: 'Simula el crecimiento futuro de la cartera con 1000 escenarios estocásticos (Monte Carlo). Muestra el rango de resultados probables (pesimista/mediano/optimista) para el horizonte indicado. Úsalo cuando el usuario pregunte "¿cuánto tendré en X años?", "¿llegaré a jubilación con X€?" o quiera saber el impacto de su tasa de ahorro a largo plazo.',
+      inputSchema: z.object({
+        years: z.number().min(1).max(50).describe('Horizonte temporal en años'),
+        monthly_contribution: z.number().min(0).describe('Aportación mensual adicional en €'),
+        custom_assets: z.array(z.object({
+          name: z.string(),
+          value_eur: z.number(),
+          asset_type: z.string().describe('accion | etf | crypto | bono | oro | cash'),
+        })).optional().describe('Si no se provee, se usa la cartera guardada del usuario'),
+      }),
+      execute: async ({ years, monthly_contribution, custom_assets }: {
+        years: number; monthly_contribution: number;
+        custom_assets?: { name: string; value_eur: number; asset_type: string }[];
+      }) => {
+        const assets: MonteCarloAsset[] = custom_assets
+          ? custom_assets.map(a => ({ name: a.name, value_eur: a.value_eur, asset_type: a.asset_type }))
+          : (portfolio || []).map(a => ({
+              name: String(a.asset_name || ''),
+              value_eur: Number(a.value_eur) || 0,
+              asset_type: String(a.asset_type || 'etf'),
+            }));
+        if (assets.length === 0 || assets.reduce((s, a) => s + a.value_eur, 0) === 0) {
+          return { success: false, error: 'No hay cartera guardada ni activos provistos para simular.' };
+        }
+        const result = runMonteCarlo({ assets, monthlyContribution: monthly_contribution, years, simulations: 1000 });
+        return { success: true, data: result };
+      },
+    },
+
+    // ─── FIFO CAPITAL GAINS ─────────────────────────────────────────────────────
+    calculate_capital_gains: {
+      description: 'Calcula la plusvalía o minusvalía con método FIFO y la factura fiscal estimada (IRPF base del ahorro España 2025) para una operación de venta. Úsalo cuando el usuario diga "vendo X acciones de Y a Z€" o pregunte cuánto pagará de impuestos.',
+      inputSchema: z.object({
+        ticker: z.string().describe('Ticker del activo vendido'),
+        asset_name: z.string().describe('Nombre del activo'),
+        sell_date: z.string().describe('Fecha de venta YYYY-MM-DD'),
+        sell_quantity: z.number().describe('Unidades vendidas'),
+        sell_price: z.number().describe('Precio de venta por unidad en €'),
+        sell_fees: z.number().optional().describe('Comisiones de venta en €'),
+        buy_lots: z.array(z.object({
+          date: z.string().describe('Fecha de compra YYYY-MM-DD'),
+          quantity: z.number(),
+          price: z.number().describe('Precio de compra por unidad'),
+          fees: z.number().optional(),
+        })).describe('Lotes de compra en orden cronológico (FIFO). Si no se proveen, se infieren de la cartera guardada.'),
+      }),
+      execute: async (args: {
+        ticker: string; asset_name: string; sell_date: string;
+        sell_quantity: number; sell_price: number; sell_fees?: number;
+        buy_lots: BuyLot[];
+      }) => {
+        let lots: BuyLot[] = args.buy_lots;
+        // If no lots provided, try to infer from saved portfolio
+        if ((!lots || lots.length === 0) && portfolio) {
+          const asset = (portfolio as Record<string, unknown>[]).find(
+            a => String(a.ticker || '').toUpperCase() === args.ticker.toUpperCase()
+          );
+          if (asset && Number(asset.quantity) > 0 && Number(asset.purchase_price) > 0) {
+            lots = [{ date: '2020-01-01', quantity: Number(asset.quantity), price: Number(asset.purchase_price) }];
+          }
+        }
+        if (!lots || lots.length === 0) {
+          return { success: false, error: 'No se encontraron lotes de compra para este activo. Provee los datos de compra.' };
+        }
+        const sell: SellOrder = {
+          date: args.sell_date, ticker: args.ticker, asset_name: args.asset_name,
+          quantity: args.sell_quantity, price: args.sell_price, fees: args.sell_fees,
+        };
+        const result = calculateFIFO(lots, sell);
+        return { success: true, data: result };
+      },
+    },
+
+    // ─── PORTFOLIO CORRELATION ──────────────────────────────────────────────────
+    analyze_portfolio_correlation: {
+      description: 'Analiza la correlación histórica entre los activos de la cartera del usuario. Identifica pares con alta correlación (baja diversificación real) y da un score de diversificación 0-100. Úsalo cuando el usuario pregunte si está bien diversificado o si sus activos se mueven juntos.',
+      inputSchema: z.object({
+        tickers: z.array(z.string()).optional().describe('Lista de tickers a analizar. Si no se provee, se usa la cartera guardada.'),
+      }),
+      execute: async ({ tickers }: { tickers?: string[] }) => {
+        const tickerList = tickers ?? (portfolio || [])
+          .map(a => String((a as Record<string, unknown>).ticker || '').trim().toUpperCase())
+          .filter(t => t && t !== '—' && t !== 'UNDEFINED')
+          .slice(0, 15); // limit to 15 to avoid too many API calls
+        if (tickerList.length < 2) {
+          return { success: false, error: 'Necesitas al menos 2 activos con ticker para analizar correlaciones.' };
+        }
+        try {
+          const result = await analyzePortfolioCorrelation(tickerList);
+          return { success: true, data: result };
+        } catch (err: unknown) {
+          return { success: false, error: err instanceof Error ? err.message : String(err) };
+        }
+      },
+    },
+
+    // ─── ETF OVERLAP ────────────────────────────────────────────────────────────
+    analyze_etf_overlap: {
+      description: 'Analiza el solapamiento de composición entre los ETFs de la cartera. Detecta si el usuario tiene múltiples ETFs que invierten en las mismas empresas (MSCI World + S&P500 tienen ~70% solapamiento). Úsalo cuando el usuario pregunte si sus ETFs se solapan o si diversifica de verdad.',
+      inputSchema: z.object({
+        etf_tickers: z.array(z.string()).optional().describe('Tickers de ETFs a comparar. Si no se provee, se infieren de la cartera.'),
+      }),
+      execute: async ({ etf_tickers }: { etf_tickers?: string[] }) => {
+        const etfs = etf_tickers ?? (portfolio || [])
+          .filter(a => {
+            const type = String((a as Record<string, unknown>).asset_type || '').toLowerCase();
+            return type.includes('etf') || type.includes('fondo') || type.includes('index');
+          })
+          .map(a => String((a as Record<string, unknown>).ticker || '').trim().toUpperCase())
+          .filter(t => t && t !== '—');
+        if (etfs.length < 2) {
+          return { success: false, error: 'Necesitas al menos 2 ETFs en cartera para analizar solapamiento. Puedes especificar los tickers manualmente.' };
+        }
+        const results = analyzeETFOverlap(etfs);
+        if (results.length === 0) {
+          return { success: true, data: { results: [], note: 'No se encontraron datos de composición para estos ETFs en la base de datos local. ETFs soportados: IWDA, SWRD, CSPX, VWCE, EUNL, QQQ, VOO, SPY, VEUR, EIMI y otros populares.' } };
+        }
+        return { success: true, data: { results, etfs_analyzed: etfs } };
+      },
+    },
+
+    // ─── STOCK SCREENER ─────────────────────────────────────────────────────────
+    screen_stocks: {
+      description: 'Filtra acciones por criterios fundamentales: P/E máximo, dividendo mínimo, ROE, deuda, sector y mercado. Devuelve las mejores candidatas ordenadas por score de calidad. Úsalo cuando el usuario busque ideas de inversión con criterios específicos.',
+      inputSchema: z.object({
+        market: z.enum(['spain', 'usa', 'europe', 'global']).optional().describe('Mercado a filtrar (default: global)'),
+        max_pe: z.number().optional().describe('P/E ratio máximo'),
+        min_pe: z.number().optional().describe('P/E ratio mínimo'),
+        min_dividend_yield: z.number().optional().describe('Rentabilidad por dividendo mínima en %'),
+        max_debt_equity: z.number().optional().describe('Ratio deuda/patrimonio máximo'),
+        min_roe: z.number().optional().describe('ROE mínimo en %'),
+        sector: z.string().optional().describe('Sector en inglés: Technology, Financial, Healthcare, Consumer, Energy, etc.'),
+        max_results: z.number().optional().describe('Máximo de resultados (default: 8)'),
+      }),
+      execute: async (args: ScreenerCriteria & { max_results?: number }) => {
+        try {
+          const { max_results = 8, ...criteria } = args;
+          const results = await screenStocks(criteria, max_results);
+          if (results.length === 0) {
+            return { success: false, error: 'Ninguna acción cumplió los criterios indicados. Prueba a relajar los filtros.' };
+          }
+          return { success: true, data: { results, criteria_applied: criteria, count: results.length } };
+        } catch (err: unknown) {
+          return { success: false, error: err instanceof Error ? err.message : String(err) };
+        }
+      },
+    },
+
+    // ─── FINANCIAL GOALS ────────────────────────────────────────────────────────
+    set_financial_goal: {
+      description: 'Crea o actualiza un objetivo financiero del usuario (ahorro para piso, viaje, jubilación, fondo emergencia, etc.). Guárdalo automáticamente cuando el usuario mencione una meta con importe y/o fecha.',
+      inputSchema: z.object({
+        title: z.string().describe('Nombre del objetivo (ej: "Fondo de emergencia", "Entrada piso", "Viaje Japón")'),
+        target_amount: z.number().describe('Importe objetivo en €'),
+        current_amount: z.number().optional().describe('Importe ya ahorrado para este objetivo (default: 0)'),
+        target_date: z.string().optional().describe('Fecha objetivo en formato YYYY-MM-DD'),
+        category: z.enum(['ahorro', 'vivienda', 'viaje', 'jubilacion', 'emergencia', 'otro']).optional().describe('Categoría del objetivo'),
+        description: z.string().optional().describe('Descripción adicional'),
+      }),
+      execute: async (args: {
+        title: string; target_amount: number; current_amount?: number;
+        target_date?: string; category?: string; description?: string;
+      }) => {
+        const { error } = await supabase.from('user_goals').insert({
+          user_id: userId,
+          title: args.title,
+          target_amount: args.target_amount,
+          current_amount: args.current_amount ?? 0,
+          target_date: args.target_date ?? null,
+          category: args.category ?? 'ahorro',
+          description: args.description ?? null,
+          status: 'active',
+        });
+        if (error) return { success: false, error: error.message };
+        return { success: true, message: `✓ Objetivo "${args.title}" guardado: ${args.target_amount}€${args.target_date ? ` para ${args.target_date}` : ''}.` };
+      },
+    },
+
+    get_financial_goals: {
+      description: 'Obtiene todos los objetivos financieros activos del usuario con su progreso actual. Úsalo cuando el usuario pregunte por sus metas, su progreso de ahorro o cuánto le falta para un objetivo.',
+      inputSchema: z.object({}),
+      execute: async () => {
+        const { data, error } = await supabase
+          .from('user_goals')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
+        if (error) return { success: false, error: error.message };
+        const goals = (data || []).map(g => ({
+          ...g,
+          progress_percent: g.target_amount > 0 ? Math.round((g.current_amount / g.target_amount) * 100) : 0,
+          remaining: g.target_amount - g.current_amount,
+          days_remaining: g.target_date
+            ? Math.ceil((new Date(g.target_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+            : null,
+        }));
+        return { success: true, data: { goals, count: goals.length } };
+      },
+    },
+
+    update_goal_progress: {
+      description: 'Actualiza el importe ahorrado actualmente para un objetivo financiero. Úsalo cuando el usuario informe que ha ahorrado más dinero o quiera actualizar su progreso.',
+      inputSchema: z.object({
+        goal_title: z.string().describe('Título del objetivo a actualizar (debe coincidir con uno existente)'),
+        new_current_amount: z.number().describe('Nuevo importe total ahorrado para este objetivo en €'),
+      }),
+      execute: async ({ goal_title, new_current_amount }: { goal_title: string; new_current_amount: number }) => {
+        const { data: goals } = await supabase
+          .from('user_goals').select('id, title, target_amount')
+          .eq('user_id', userId).eq('status', 'active');
+        const goal = (goals || []).find(g =>
+          g.title.toLowerCase().includes(goal_title.toLowerCase()) ||
+          goal_title.toLowerCase().includes(g.title.toLowerCase())
+        );
+        if (!goal) return { success: false, error: `No se encontró el objetivo "${goal_title}". Objetivos actuales: ${(goals || []).map(g => g.title).join(', ')}` };
+
+        const isCompleted = new_current_amount >= goal.target_amount;
+        const { error } = await supabase.from('user_goals').update({
+          current_amount: new_current_amount,
+          status: isCompleted ? 'completed' : 'active',
+          updated_at: new Date().toISOString(),
+        }).eq('id', goal.id);
+
+        if (error) return { success: false, error: error.message };
+        const progress = Math.round((new_current_amount / goal.target_amount) * 100);
+        return {
+          success: true,
+          message: isCompleted
+            ? `🎉 ¡Objetivo "${goal.title}" completado! Has alcanzado ${new_current_amount}€ de ${goal.target_amount}€.`
+            : `✓ Progreso actualizado: ${new_current_amount}€ / ${goal.target_amount}€ (${progress}%).`,
+          progress_percent: progress,
+          completed: isCompleted,
+        };
+      },
+    },
+
+    // ─── EXPORT PORTFOLIO REPORT ────────────────────────────────────────────────
+    prepare_portfolio_report: {
+      description: 'Prepara los datos para generar un informe PDF de la cartera. Obtiene precios actuales de todos los activos y calcula el rendimiento. El cliente descargará el PDF automáticamente. Úsalo cuando el usuario pida "generar informe", "exportar PDF" o "descargar resumen de cartera".',
+      inputSchema: z.object({
+        include_insights: z.string().optional().describe('Texto de análisis del asesor para incluir en el PDF (2-3 frases clave)'),
+      }),
+      execute: async ({ include_insights }: { include_insights?: string }) => {
+        if (!portfolio || portfolio.length === 0) {
+          return { success: false, error: 'No hay cartera guardada para generar el informe.' };
+        }
+        const tickers = (portfolio as Record<string, unknown>[])
+          .map(a => String(a.ticker || '').trim().toUpperCase())
+          .filter(t => t && t !== '—' && t !== 'UNDEFINED');
+        const quotes = tickers.length > 0 ? await getMarketData(tickers) : [];
+        const quoteMap = new Map(quotes.map(q => [q.symbol.toUpperCase(), q]));
+
+        let totalInvested = 0, totalCurrentValue = 0;
+        const assets = (portfolio as Record<string, unknown>[]).map(a => {
+          const ticker = String(a.ticker || '').trim().toUpperCase();
+          const qty = Number(a.quantity) || 0;
+          const avgPrice = Number(a.purchase_price) || 0;
+          const invested = qty > 0 && avgPrice > 0 ? qty * avgPrice : Number(a.value_eur) || 0;
+          const quote = quoteMap.get(ticker);
+          const currentValue = qty > 0 && quote ? qty * quote.price : (quote ? quote.price : invested);
+          const pnlEur = currentValue - invested;
+          totalInvested += invested;
+          totalCurrentValue += currentValue;
+          return {
+            asset_name: String(a.asset_name || ''),
+            ticker: ticker || '—',
+            asset_type: String(a.asset_type || ''),
+            quantity: qty || null,
+            purchase_price: avgPrice || null,
+            current_price: quote?.price ?? null,
+            invested_eur: Math.round(invested * 100) / 100,
+            current_value_eur: Math.round(currentValue * 100) / 100,
+            pnl_eur: Math.round(pnlEur * 100) / 100,
+            pnl_percent: invested > 0 ? Math.round((pnlEur / invested) * 10000) / 100 : 0,
+            target_percent: Number(a.target_percent) || 0,
+          };
+        });
+
+        return {
+          success: true,
+          action: 'generate_pdf',  // signal to GenerativeUI to trigger PDF download
+          data: {
+            assets,
+            totalInvested: Math.round(totalInvested * 100) / 100,
+            totalCurrentValue: Math.round(totalCurrentValue * 100) / 100,
+            totalPnl: Math.round((totalCurrentValue - totalInvested) * 100) / 100,
+            totalPnlPct: totalInvested > 0 ? Math.round(((totalCurrentValue - totalInvested) / totalInvested) * 10000) / 100 : 0,
+            aiInsights: include_insights ?? '',
+            generatedAt: new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+          },
+        };
       },
     },
 

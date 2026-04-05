@@ -687,3 +687,438 @@ export function CashFlowPanel({ data }: { data: any }) {
     </motion.div>
   );
 }
+
+// --- MONTE CARLO PANEL ---
+export function MonteCarloPanel({ data }: { data: any }) {
+  if (!data) return null;
+  const { initialCapital, years, p10, p25, p50, p75, p90, probPositive, probDoubling, probLosing50, medianPath } = data;
+
+  const pathData = (medianPath || []).map((v: number, i: number) => ({
+    year: i,
+    median: Math.round(v),
+    p10: data.p10Path ? Math.round(data.p10Path[i]) : undefined,
+    p90: data.p90Path ? Math.round(data.p90Path[i]) : undefined,
+  }));
+
+  const fmt = (v: number) => v >= 1_000_000
+    ? `${(v / 1_000_000).toFixed(2)}M€`
+    : `${v.toLocaleString('es-ES', { maximumFractionDigits: 0 })}€`;
+
+  const scenarios = [
+    { label: 'Pesimista (P10)', value: p10, color: '#ef4444' },
+    { label: 'Conservador (P25)', value: p25, color: '#f97316' },
+    { label: 'Base (P50)', value: p50, color: '#10b981' },
+    { label: 'Optimista (P75)', value: p75, color: '#3b82f6' },
+    { label: 'Excelente (P90)', value: p90, color: '#8b5cf6' },
+  ];
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+      className="glass-card p-6 rounded-2xl border border-purple-500/20 mt-2 w-full space-y-5">
+      <div className="absolute top-0 right-0 w-40 h-40 bg-purple-500/10 blur-3xl -z-10 pointer-events-none" />
+      <div className="flex items-center gap-2">
+        <Waves className="w-5 h-5 text-purple-400" />
+        <h3 className="font-bold text-white">Simulación Monte Carlo — {years} años</h3>
+        <span className="ml-auto text-[10px] text-white/30">1.000 trayectorias · GBM</span>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {scenarios.map(s => (
+          <div key={s.label} className="glass-card p-3 rounded-xl border border-white/5">
+            <p className="text-[9px] text-white/40 uppercase font-bold">{s.label}</p>
+            <p className="text-base font-black mt-1" style={{ color: s.color }}>{fmt(s.value)}</p>
+            <p className="text-[9px] text-white/30 mt-0.5">
+              {s.value >= initialCapital ? '+' : ''}{(((s.value - initialCapital) / initialCapital) * 100).toFixed(0)}%
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {pathData.length > 0 && (
+        <div className="h-[180px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={pathData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="mcGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+              <XAxis dataKey="year" tick={{ fill: '#ffffff40', fontSize: 9 }} tickFormatter={v => `Año ${v}`} />
+              <YAxis tick={{ fill: '#ffffff40', fontSize: 9 }} tickFormatter={v => v >= 1e6 ? `${(v/1e6).toFixed(1)}M` : `${(v/1000).toFixed(0)}k`} width={45} />
+              <ReTooltip contentStyle={{ backgroundColor: '#1e1e2d', border: '1px solid #ffffff10', borderRadius: '12px', fontSize: 11 }}
+                formatter={(v: any) => [fmt(v)]} />
+              {data.p10Path && <Area type="monotone" dataKey="p10" stroke="#ef4444" strokeWidth={1} fill="none" strokeDasharray="4 2" dot={false} name="P10" />}
+              {data.p90Path && <Area type="monotone" dataKey="p90" stroke="#8b5cf6" strokeWidth={1} fill="url(#mcGrad)" dot={false} name="P90" />}
+              <Area type="monotone" dataKey="median" stroke="#10b981" strokeWidth={2} fill="none" dot={false} name="Mediana" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      <div className="grid grid-cols-3 gap-3 pt-2 border-t border-white/5">
+        <div className="text-center">
+          <p className="text-[9px] text-white/40 uppercase font-bold">Prob. Positivo</p>
+          <p className="text-lg font-black text-emerald-400">{probPositive?.toFixed(0)}%</p>
+        </div>
+        <div className="text-center">
+          <p className="text-[9px] text-white/40 uppercase font-bold">Prob. Doblar</p>
+          <p className="text-lg font-black text-blue-400">{probDoubling?.toFixed(0)}%</p>
+        </div>
+        <div className="text-center">
+          <p className="text-[9px] text-white/40 uppercase font-bold">Prob. -50%</p>
+          <p className="text-lg font-black text-red-400">{probLosing50?.toFixed(0)}%</p>
+        </div>
+      </div>
+      <p className="text-[9px] text-white/20 text-right">Capital inicial: {fmt(initialCapital)} · Simulación estadística, no garantía de rentabilidad.</p>
+    </motion.div>
+  );
+}
+
+// --- CAPITAL GAINS / FIFO PANEL ---
+export function CapitalGainsPanel({ data }: { data: any }) {
+  if (!data) return null;
+  const { results, summary } = data;
+  const s = summary || {};
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+      className="glass-card p-6 rounded-2xl border border-amber-500/20 mt-2 w-full space-y-4">
+      <div className="flex items-center gap-2">
+        <Landmark className="w-5 h-5 text-amber-400" />
+        <h3 className="font-bold text-white">Plusvalías FIFO — IRPF España 2025</h3>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: 'Ganancia Neta', value: `${(s.totalNetGain ?? 0).toFixed(2)}€`, color: s.totalNetGain >= 0 ? 'text-emerald-400' : 'text-red-400' },
+          { label: 'Impuesto Est.', value: `${(s.totalEstimatedTax ?? 0).toFixed(2)}€`, color: 'text-amber-400' },
+          { label: 'Tipo Efectivo', value: `${(s.averageEffectiveTaxRate ?? 0).toFixed(1)}%`, color: 'text-white' },
+          { label: 'Neto Tras Imp.', value: `${(s.totalNetAfterTax ?? 0).toFixed(2)}€`, color: 'text-blue-400' },
+        ].map(k => (
+          <div key={k.label} className="glass-card p-3 rounded-xl border border-white/5">
+            <p className="text-[9px] text-white/40 uppercase font-bold">{k.label}</p>
+            <p className={`text-sm font-black mt-1 ${k.color}`}>{k.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {results && results.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-white/10">
+                {['Compra', 'Cantidad', 'Coste', 'Precio Venta', 'Ganancia', 'Impuesto'].map(h => (
+                  <th key={h} className="pb-2 pr-4 text-[9px] font-black uppercase text-white/30 tracking-widest">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {results.slice(0, 8).map((r: any, i: number) => (
+                <tr key={i} className="hover:bg-white/5 transition-colors">
+                  <td className="py-2 pr-4 text-white/60">{r.buy_date || '—'}</td>
+                  <td className="py-2 pr-4 text-white">{r.quantity_sold?.toFixed(4)}</td>
+                  <td className="py-2 pr-4 text-white/60">{r.cost_basis?.toFixed(2)}€</td>
+                  <td className="py-2 pr-4 text-white/60">{r.sell_value?.toFixed(2)}€</td>
+                  <td className={`py-2 pr-4 font-bold ${r.gain_loss >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {r.gain_loss >= 0 ? '+' : ''}{r.gain_loss?.toFixed(2)}€
+                  </td>
+                  <td className="py-2 pr-4 text-amber-400">{r.estimated_tax?.toFixed(2)}€</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {s.hasLosses && (
+        <div className="glass-card p-3 rounded-xl border border-emerald-500/20 text-xs text-emerald-300">
+          <span className="font-bold">💡 Compensación posible:</span> Tienes pérdidas que pueden compensar ganancias de otros activos este ejercicio fiscal. Consulta el análisis de tax-loss harvesting.
+        </div>
+      )}
+      <p className="text-[9px] text-white/20 text-right">Método FIFO · Tramos del ahorro 2025 · Estimación orientativa, no sustituye a un asesor fiscal.</p>
+    </motion.div>
+  );
+}
+
+// --- PORTFOLIO CORRELATION HEATMAP ---
+export function CorrelationHeatmapPanel({ data }: { data: any }) {
+  if (!data) return null;
+  const { tickers, matrix, highCorrelations, diversificationScore, concentrationRisk, suggestions } = data;
+
+  const getCorrelationColor = (v: number) => {
+    if (isNaN(v)) return '#ffffff10';
+    if (v >= 0.8) return '#ef4444';
+    if (v >= 0.6) return '#f97316';
+    if (v >= 0.3) return '#eab308';
+    if (v >= 0) return '#10b981';
+    if (v >= -0.5) return '#3b82f6';
+    return '#8b5cf6';
+  };
+
+  const scoreColor = diversificationScore >= 70 ? 'text-emerald-400' : diversificationScore >= 50 ? 'text-yellow-400' : 'text-red-400';
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+      className="glass-card p-6 rounded-2xl border border-blue-500/20 mt-2 w-full space-y-4">
+      <div className="flex items-center gap-2">
+        <GitBranch className="w-5 h-5 text-blue-400" />
+        <h3 className="font-bold text-white">Correlación de Cartera</h3>
+        <span className={`ml-auto text-lg font-black ${scoreColor}`}>{diversificationScore}/100</span>
+      </div>
+
+      <p className="text-sm text-white/70">{concentrationRisk}</p>
+
+      {tickers && tickers.length >= 2 && matrix && matrix.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="border-collapse text-[10px]">
+            <thead>
+              <tr>
+                <th className="w-16 h-8" />
+                {tickers.map((t: string) => (
+                  <th key={t} className="px-1 py-2 text-white/50 font-bold min-w-[52px] text-center">{t.replace('.MC','').replace('.AS','')}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {tickers.map((row: string, i: number) => (
+                <tr key={row}>
+                  <td className="px-2 py-1 text-white/50 font-bold text-right">{row.replace('.MC','').replace('.AS','')}</td>
+                  {tickers.map((_: string, j: number) => {
+                    const v = matrix[i]?.[j];
+                    return (
+                      <td key={j} className="text-center p-1">
+                        <div className="w-12 h-8 rounded flex items-center justify-center text-[10px] font-bold text-white"
+                          style={{ backgroundColor: getCorrelationColor(v) + '60', border: `1px solid ${getCorrelationColor(v)}40` }}>
+                          {isNaN(v) ? '—' : v?.toFixed(2)}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {highCorrelations && highCorrelations.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest">Alertas de Alta Correlación</p>
+          {highCorrelations.map((hc: any, i: number) => (
+            <div key={i} className="glass-card p-3 rounded-xl border border-red-500/20 text-xs text-red-300">{hc.warning}</div>
+          ))}
+        </div>
+      )}
+
+      {suggestions && suggestions.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest">Sugerencias</p>
+          {suggestions.map((s: string, i: number) => (
+            <div key={i} className="text-xs text-white/60 flex gap-2"><span className="text-emerald-400">→</span>{s}</div>
+          ))}
+        </div>
+      )}
+      <p className="text-[9px] text-white/20 text-right">Correlación de Pearson · 252 días de retornos diarios · Yahoo Finance</p>
+    </motion.div>
+  );
+}
+
+// --- ETF OVERLAP PANEL ---
+export function ETFOverlapPanel({ data }: { data: any[] }) {
+  if (!data || data.length === 0) return null;
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+      className="glass-card p-6 rounded-2xl border border-indigo-500/20 mt-2 w-full space-y-3">
+      <div className="flex items-center gap-2">
+        <BarChart2 className="w-5 h-5 text-indigo-400" />
+        <h3 className="font-bold text-white">Solapamiento de ETFs</h3>
+      </div>
+      {data.map((item: any, i: number) => {
+        const color = item.overlapPercent >= 70 ? 'border-red-500/30' : item.overlapPercent >= 40 ? 'border-amber-500/30' : 'border-emerald-500/30';
+        const barColor = item.overlapPercent >= 70 ? 'bg-red-500' : item.overlapPercent >= 40 ? 'bg-amber-500' : 'bg-emerald-500';
+        return (
+          <div key={i} className={`glass-card p-4 rounded-xl border ${color} space-y-2`}>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-bold text-white">{item.etf1} <span className="text-white/30">vs</span> {item.etf2}</p>
+              <p className="text-sm font-black text-white">{item.overlapPercent}%</p>
+            </div>
+            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+              <div className={`h-full ${barColor} rounded-full transition-all`} style={{ width: `${item.overlapPercent}%` }} />
+            </div>
+            <p className="text-xs text-white/50">{item.explanation}</p>
+            {item.commonHoldings?.length > 0 && (
+              <p className="text-[10px] text-white/30">Comunes: {item.commonHoldings.join(', ')}</p>
+            )}
+          </div>
+        );
+      })}
+    </motion.div>
+  );
+}
+
+// --- STOCK SCREENER PANEL ---
+export function StockScreenerPanel({ data }: { data: any[] }) {
+  if (!data || data.length === 0) return null;
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+      className="glass-card p-6 rounded-2xl border border-emerald-500/20 mt-2 w-full space-y-4">
+      <div className="flex items-center gap-2">
+        <Sparkles className="w-5 h-5 text-emerald-400" />
+        <h3 className="font-bold text-white">Screener — {data.length} resultados</h3>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr className="border-b border-white/10">
+              {['#', 'Empresa', 'Precio', 'P/E', 'Dividendo', 'ROE', 'Upside', 'Rating', 'Score'].map(h => (
+                <th key={h} className="pb-2 pr-3 text-[9px] font-black uppercase text-white/30 tracking-widest whitespace-nowrap">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {data.map((s: any, i: number) => (
+              <tr key={s.ticker} className="hover:bg-white/5 transition-colors">
+                <td className="py-2 pr-3 text-white/30 font-bold">#{i + 1}</td>
+                <td className="py-2 pr-3">
+                  <p className="font-bold text-white">{s.ticker}</p>
+                  <p className="text-[9px] text-white/40 truncate max-w-[100px]">{s.name}</p>
+                </td>
+                <td className="py-2 pr-3 text-white font-bold">{s.price?.toFixed(2)} {s.currency}</td>
+                <td className="py-2 pr-3 text-white/70">{s.pe_ratio ? s.pe_ratio.toFixed(1) : '—'}</td>
+                <td className="py-2 pr-3 text-emerald-400">{s.dividend_yield ? `${s.dividend_yield.toFixed(1)}%` : '—'}</td>
+                <td className="py-2 pr-3 text-blue-400">{s.roe ? `${s.roe.toFixed(1)}%` : '—'}</td>
+                <td className={`py-2 pr-3 font-bold ${s.upside_percent > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {s.upside_percent != null ? `${s.upside_percent > 0 ? '+' : ''}${s.upside_percent.toFixed(1)}%` : '—'}
+                </td>
+                <td className="py-2 pr-3">
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                    s.analyst_rating === 'buy' || s.analyst_rating === 'strongBuy' ? 'bg-emerald-500/20 text-emerald-400' :
+                    s.analyst_rating === 'sell' || s.analyst_rating === 'strongSell' ? 'bg-red-500/20 text-red-400' :
+                    'bg-white/10 text-white/50'}`}>
+                    {s.analyst_rating || 'N/A'}
+                  </span>
+                </td>
+                <td className="py-2">
+                  <div className="flex items-center gap-1">
+                    <div className="h-1.5 w-12 bg-white/10 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full ${s.score >= 70 ? 'bg-emerald-500' : s.score >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                        style={{ width: `${s.score}%` }} />
+                    </div>
+                    <span className="text-[10px] font-bold text-white/60">{s.score}</span>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[9px] text-white/20 text-right">Datos: Yahoo Finance · Score basado en P/E, dividendo, ROE, deuda y upside analistas</p>
+    </motion.div>
+  );
+}
+
+// --- FINANCIAL GOALS PANEL ---
+export function FinancialGoalsPanel({ data }: { data: any[] }) {
+  if (!data || data.length === 0) return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+      className="glass-card p-6 rounded-2xl border border-white/5 mt-2 text-center text-white/40 text-sm">
+      No tienes objetivos financieros guardados aún. Dime tus metas y las registraré.
+    </motion.div>
+  );
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+      className="glass-card p-6 rounded-2xl border border-yellow-500/20 mt-2 w-full space-y-4">
+      <div className="flex items-center gap-2">
+        <CheckCircle2 className="w-5 h-5 text-yellow-400" />
+        <h3 className="font-bold text-white">Objetivos Financieros</h3>
+      </div>
+      <div className="space-y-4">
+        {data.map((goal: any) => {
+          const progress = goal.target_amount > 0 ? Math.min((goal.current_amount / goal.target_amount) * 100, 100) : 0;
+          const isCompleted = goal.status === 'completed';
+          const daysLeft = goal.target_date
+            ? Math.ceil((new Date(goal.target_date).getTime() - Date.now()) / 86400000) : null;
+
+          return (
+            <div key={goal.id} className={`glass-card p-4 rounded-xl border ${isCompleted ? 'border-emerald-500/30' : 'border-white/5'} space-y-3`}>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-bold text-white text-sm">{goal.title}</p>
+                  {goal.description && <p className="text-[10px] text-white/40 mt-0.5">{goal.description}</p>}
+                </div>
+                {isCompleted
+                  ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  : <XCircle className="w-4 h-4 text-white/20 shrink-0" />}
+              </div>
+
+              {goal.target_amount > 0 && (
+                <>
+                  <div className="flex justify-between text-xs text-white/50">
+                    <span>{goal.current_amount?.toLocaleString('es-ES')}€ ahorrado</span>
+                    <span>{goal.target_amount?.toLocaleString('es-ES')}€ objetivo</span>
+                  </div>
+                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all ${isCompleted ? 'bg-emerald-500' : progress >= 75 ? 'bg-blue-500' : progress >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                      style={{ width: `${progress}%` }} />
+                  </div>
+                  <p className="text-[10px] text-white/30 text-right">{progress.toFixed(1)}% completado</p>
+                </>
+              )}
+
+              {daysLeft !== null && !isCompleted && (
+                <p className={`text-[10px] font-bold ${daysLeft < 30 ? 'text-red-400' : daysLeft < 90 ? 'text-amber-400' : 'text-white/40'}`}>
+                  {daysLeft > 0 ? `⏱ ${daysLeft} días restantes` : '⚠️ Plazo vencido'}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+}
+
+// --- PDF REPORT TRIGGER PANEL ---
+export function ReportReadyPanel({ data, onDownload }: { data: any; onDownload?: () => void }) {
+  if (!data) return null;
+  return (
+    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+      className="glass-card p-6 rounded-2xl border border-emerald-500/20 mt-2 w-full relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-3xl -z-10" />
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+          <Activity className="w-5 h-5 text-emerald-400" />
+        </div>
+        <div>
+          <h3 className="font-bold text-white">Informe de Cartera listo</h3>
+          <p className="text-[10px] text-white/40">{data.assets?.length ?? 0} posiciones · Generado {data.generatedAt}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        {[
+          { label: 'Capital Invertido', value: `${data.totalInvested?.toLocaleString('es-ES', { maximumFractionDigits: 0 })}€` },
+          { label: 'Valor Actual', value: `${data.totalCurrentValue?.toLocaleString('es-ES', { maximumFractionDigits: 0 })}€` },
+          { label: 'P&L Total', value: `${data.totalPnl >= 0 ? '+' : ''}${data.totalPnl?.toLocaleString('es-ES', { maximumFractionDigits: 0 })}€`, color: data.totalPnl >= 0 ? 'text-emerald-400' : 'text-red-400' },
+          { label: 'Rentabilidad', value: `${data.totalPnlPct >= 0 ? '+' : ''}${data.totalPnlPct?.toFixed(2)}%`, color: data.totalPnlPct >= 0 ? 'text-emerald-400' : 'text-red-400' },
+        ].map(k => (
+          <div key={k.label} className="glass-card p-3 rounded-xl border border-white/5">
+            <p className="text-[9px] text-white/40 uppercase font-bold">{k.label}</p>
+            <p className={`text-sm font-black mt-1 ${(k as any).color || 'text-white'}`}>{k.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={onDownload}
+        className="w-full py-3 px-4 bg-emerald-500 hover:bg-emerald-400 text-black font-black rounded-xl transition-all text-sm flex items-center justify-center gap-2 group"
+      >
+        <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+        Descargar PDF
+      </button>
+    </motion.div>
+  );
+}

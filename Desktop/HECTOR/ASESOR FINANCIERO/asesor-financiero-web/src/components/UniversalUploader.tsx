@@ -9,6 +9,7 @@ import { useUser } from '@/context/UserContext';
 import { parseSheet } from '@/lib/financial-parser';
 import { extractAssetsFromSummary, extractTransactionsFromSummary } from '@/lib/asset-extractor';
 import { PortfolioAsset, Transaction } from '@/types/supabase';
+import { detectPayslip } from '@/lib/payslip-detector';
 
 // Lazy-load pdfjs-dist as a singleton Promise (avoids the fragile 500ms delay)
 let pdfjsPromise: Promise<typeof import('pdfjs-dist')> | null = null;
@@ -158,6 +159,7 @@ export default function UniversalUploader() {
   const [txSyncSuccess, setTxSyncSuccess] = useState(false);
   const [showReviewPanel, setShowReviewPanel] = useState(false);
   const [pendingAutoSave, setPendingAutoSave] = useState(false);
+  const [payslipDetected, setPayslipDetected] = useState<{ net: number; gross: number; period: string } | null>(null);
 
   // Reset selected sheet when summary changes
   useEffect(() => {
@@ -326,6 +328,31 @@ export default function UniversalUploader() {
           } else {
             setDocumentText(text, file.name);
             setPendingAutoSave(true);
+            // Auto-detect nómina
+            const payslip = detectPayslip(text);
+            if (payslip.detected && payslip.net_amount) {
+              setPayslipDetected({
+                net: payslip.net_amount,
+                gross: payslip.gross_amount ?? 0,
+                period: payslip.period_label || `${payslip.month ?? '?'}/${payslip.year ?? '?'}`,
+              });
+              // Save to income history via Supabase if we have userId and month/year
+              if (userIdRef.current && payslip.month && payslip.year) {
+                const { createClient } = await import('@/lib/supabase/client');
+                const supabase = createClient();
+                await supabase.from('user_income_history').upsert({
+                  user_id: userIdRef.current,
+                  month: payslip.month,
+                  year: payslip.year,
+                  net_amount: payslip.net_amount,
+                  gross_amount: payslip.gross_amount,
+                  irpf_percent: payslip.irpf_percent,
+                  ss_employee: payslip.ss_employee,
+                  employer_name: payslip.employer_name,
+                  source: 'payslip_upload',
+                }, { onConflict: 'user_id,month,year' });
+              }
+            }
           }
           setIsProcessing(false);
         } catch (err) {
@@ -488,6 +515,25 @@ export default function UniversalUploader() {
             animate={{ opacity: 1, scale: 1 }}
             className="w-full space-y-6"
           >
+            {/* Payslip auto-detect banner */}
+            {payslipDetected && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass-card p-4 rounded-2xl border border-emerald-500/30 flex items-start justify-between gap-3"
+              >
+                <div>
+                  <p className="text-emerald-400 font-bold text-sm">✓ Nómina detectada y guardada</p>
+                  <p className="text-white/60 text-xs mt-0.5">
+                    Período: {payslipDetected.period} · Neto: <span className="text-white font-bold">{payslipDetected.net.toLocaleString('es-ES')}€</span>
+                    {payslipDetected.gross > 0 && <> · Bruto: {payslipDetected.gross.toLocaleString('es-ES')}€</>}
+                  </p>
+                  <p className="text-white/30 text-[10px] mt-1">El asesor IA ya conoce este ingreso y lo usará en futuras proyecciones.</p>
+                </div>
+                <button onClick={() => setPayslipDetected(null)} className="text-white/30 hover:text-white/60 text-lg leading-none">×</button>
+              </motion.div>
+            )}
+
             {/* File Info Card */}
             <div className="glass-card p-6 rounded-2xl flex items-center justify-between border border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.1)] relative overflow-hidden">
               <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500" />

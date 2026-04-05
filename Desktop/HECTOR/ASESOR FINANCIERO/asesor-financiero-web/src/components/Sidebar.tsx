@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Bot, User, Settings, LogOut, PieChart, Wallet } from "lucide-react";
+import { LayoutDashboard, Bot, User, Settings, LogOut, PieChart, Wallet, History } from "lucide-react";
 
 import { supabase } from "@/lib/supabase";
 
@@ -12,6 +12,7 @@ const navItems = [
   { href: "/dashboard/asesor", label: "Asesor IA", icon: Bot },
   { href: "/dashboard/cartera", label: "Inversiones", icon: PieChart },
   { href: "/dashboard/perfil", label: "Perfil Pro", icon: User },
+  { href: "/dashboard/historial", label: "Historial Chat", icon: History },
 ];
 
 export default function Sidebar() {

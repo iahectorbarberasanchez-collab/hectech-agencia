@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import Sidebar from "@/components/Sidebar";
 import { useFinancial } from "@/context/FinancialContext";
-import { MarketQuoteCard, PortfolioDistribution, AssetComparison, TaxOptimizationCard, MacroPanel, WhatIfPanel, CashFlowPanel } from "@/components/GenerativeUI";
+import { MarketQuoteCard, PortfolioDistribution, AssetComparison, TaxOptimizationCard, MacroPanel, WhatIfPanel, CashFlowPanel, MonteCarloPanel, CapitalGainsPanel, CorrelationHeatmapPanel, ETFOverlapPanel, StockScreenerPanel, FinancialGoalsPanel, ReportReadyPanel } from "@/components/GenerativeUI";
 
 const BASE_SUGGESTIONS = [
   "Haz un resumen de mis datos",
@@ -174,6 +174,34 @@ export default function AsesorPage() {
   };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-save chat to Supabase 5s after the last AI response
+  useEffect(() => {
+    if (status !== 'ready' || currentMessages.length < 3) return;
+    if (chatSaveTimerRef.current) clearTimeout(chatSaveTimerRef.current);
+    chatSaveTimerRef.current = setTimeout(async () => {
+      if (!userId) return;
+      try {
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+        const serialized = currentMessages
+          .filter((m: any) => m.role !== 'system')
+          .map((m: any) => ({
+            role: m.role,
+            content: (m.parts as any[])?.filter((p: any) => p.type === 'text').map((p: any) => p.text).join('') ?? '',
+          }))
+          .filter(m => m.content);
+        if (serialized.length < 2) return;
+        await supabase.from('user_chat_history').insert({
+          user_id: userId,
+          messages: serialized,
+        });
+      } catch { /* silent */ }
+    }, 5000);
+    return () => { if (chatSaveTimerRef.current) clearTimeout(chatSaveTimerRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   // When data changes, clear chat to adapt context
   const prevHasData = useRef(hasData);
@@ -373,6 +401,23 @@ export default function AsesorPage() {
                           return <WhatIfPanel key={toolCallId} data={output.data} />;
                         case 'project_cash_flow':
                           return <CashFlowPanel key={toolCallId} data={output.data} />;
+                        case 'run_monte_carlo':
+                          return <MonteCarloPanel key={toolCallId} data={output.data} />;
+                        case 'calculate_capital_gains':
+                          return <CapitalGainsPanel key={toolCallId} data={output.data} />;
+                        case 'analyze_portfolio_correlation':
+                          return <CorrelationHeatmapPanel key={toolCallId} data={output.data} />;
+                        case 'analyze_etf_overlap':
+                          return <ETFOverlapPanel key={toolCallId} data={output.data} />;
+                        case 'screen_stocks':
+                          return <StockScreenerPanel key={toolCallId} data={output.data} />;
+                        case 'get_financial_goals':
+                          return <FinancialGoalsPanel key={toolCallId} data={output.data} />;
+                        case 'prepare_portfolio_report':
+                          return <ReportReadyPanel key={toolCallId} data={output.data} onDownload={async () => {
+                            const { generatePortfolioReport } = await import('@/lib/report-pdf');
+                            await generatePortfolioReport(output.data);
+                          }} />;
                         default:
                           return null;
                       }
