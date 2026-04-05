@@ -27,8 +27,9 @@ const googleProvider = createGoogleGenerativeAI({
 
 function getModel() {
   if (process.env.GROQ_API_KEY) {
-    // llama-3.1-8b-instant: 20k TPM on free tier — handles large contexts without hitting limits
-    return groqProvider('llama-3.1-8b-instant');
+    // llama-3.3-70b-versatile: best quality for complex financial analysis.
+    // Context has been trimmed to ~4k tokens base so it stays within 12k TPM free tier.
+    return groqProvider('llama-3.3-70b-versatile');
   }
   // Fallback to Gemini if no Groq key
   return googleProvider('gemini-2.0-flash');
