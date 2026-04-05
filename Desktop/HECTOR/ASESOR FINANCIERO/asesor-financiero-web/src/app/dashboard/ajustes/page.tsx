@@ -129,7 +129,7 @@ export default function AjustesPage() {
           {/* Header */}
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
             <h1 className="text-3xl font-bold text-white mb-1">Ajustes</h1>
-            <p className="text-white/50">Personaliza tu experiencia en HecTechAI Advisor.</p>
+            <p className="text-white/50">Personaliza tu experiencia en tu Asesor Financiero.</p>
           </motion.div>
 
           {loading ? (

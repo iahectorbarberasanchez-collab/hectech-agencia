@@ -125,20 +125,26 @@ export default function PerfilPage() {
   const handleSave = async () => {
     if (!user?.id) return;
     setIsSaving(true);
-    const { error } = await supabase
-      .from("user_financial_profile")
-      .upsert(
-        { ...editForm, user_id: user.id, updated_at: new Date().toISOString() },
-        { onConflict: "user_id" }
-      );
+    try {
+      const { error } = await supabase
+        .from("user_financial_profile")
+        .upsert(
+          { ...editForm, user_id: user.id, updated_at: new Date().toISOString() },
+          { onConflict: "user_id" }
+        );
 
-    if (!error) {
+      if (error) throw error;
+
       setProfile({ ...editForm, updated_at: new Date().toISOString() });
       setSaveOk(true);
       setIsEditing(false);
       setTimeout(() => setSaveOk(false), 3000);
+    } catch (err: any) {
+      console.error("Error saving profile:", err);
+      alert("❌ Error al guardar perfil: " + (err.message || String(err)));
+    } finally {
+      setIsSaving(false);
     }
-    setIsSaving(false);
   };
 
   const set = (field: keyof UserProfile, value: string | number) =>

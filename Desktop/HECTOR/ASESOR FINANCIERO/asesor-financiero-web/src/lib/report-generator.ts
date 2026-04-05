@@ -136,5 +136,5 @@ export function generateFinancialReport({
     doc.text(`Página ${i} de ${pageCount}`, 190, 290, { align: 'right' });
   }
 
-  doc.save(`Informe_Financiero_${userName.replace(' ', '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+  doc.save(`Informe_Financiero_${userName.replace(/ /g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
 }

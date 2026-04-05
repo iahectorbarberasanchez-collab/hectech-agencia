@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, Send, Sparkles, User, RefreshCw, FileSpreadsheet, AlertTriangle, ArrowRight } from "lucide-react";
 import Link from "next/link";
@@ -33,70 +34,61 @@ export default function AsesorPage() {
   const hasData = summary !== null && (summary.totalRows > 0 || (summary.fileType === 'pdf' && !!documentText));
 
   const [chatInput, setChatInput] = useState("");
-  // useChat options cast because @ai-sdk/react v3 ChatInit type includes 'api' at runtime
-  // but the TypeScript definition changed — works correctly at runtime
+
+  // Ref to hold current body values — read fresh on every API call
+  const bodyRef = useRef<Record<string, unknown>>({});
+  bodyRef.current = {
+    userId,
+    financialData: financialData && Object.keys(financialData).length > 0 ? financialData : null,
+    financialSummary: summary,
+    documentText: documentText,
+  };
+
+  const transport = useMemo(
+    () => new DefaultChatTransport({ api: '/api/chat', body: () => bodyRef.current }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
   const chat = useChat({
-    api: '/api/chat',
-    body: {
-      userId,
-      financialData: financialData && Object.keys(financialData).length > 0 ? financialData : null,
-      financialSummary: summary,
-      documentText: documentText
-    },
-    initialMessages: [
+    transport,
+    messages: [
       {
         id: "initial-1",
-        role: "assistant",
-        content: hasData
-          ? `¡Hola! Ya veo que has cargado **${summary!.fileName}** ${summary!.fileType === 'pdf' ? 'en formato PDF' : `con **${summary!.totalRows} registros**`}. Puedo analizarlo ahora mismo. ¿Qué quieres saber? Especialidades: Salud financiera, trading, análisis técnico/fundamental y macroeconomía.`
-          : "¡Hola! Soy tu Asesor Financiero IA Avanzado de HecTechAI. El primer paso para asesorarte es conocer tu estado actual: **¿Cuáles son tus ingresos y gastos mensuales aproximados?**\n\nPuedes decírmelo directamente por aquí o subir tu archivo Excel o PDF en el Panel para un análisis exacto. También puedes consultarme sobre mercados, trading o análisis fundamental/técnico."
+        role: "assistant" as const,
+        parts: [
+          {
+            type: 'text' as const,
+            text: hasData
+              ? `¡Hola! Ya veo que has cargado **${summary!.fileName}** ${summary!.fileType === 'pdf' ? 'en formato PDF' : `con **${summary!.totalRows} registros**`}. Puedo analizarlo ahora mismo. ¿Qué quieres saber? Especialidades: Salud financiera, trading, análisis técnico/fundamental y macroeconomía.`
+              : "¡Hola! Soy tu Asesor Financiero IA Avanzado. El primer paso para asesorarte es conocer tu estado actual: **¿Cuáles son tus ingresos y gastos mensuales aproximados?**\n\nPuedes decírmelo directamente por aquí o subir tu archivo Excel o PDF en el Panel para un análisis exacto. También puedes consultarme sobre mercados, trading o análisis fundamental/técnico."
+          }
+        ]
       }
     ]
-  } as any);
+  });
 
-  // Map properties safely, trying both possible naming conventions
-  const { 
-    messages = [], 
-    setMessages, 
-    sendMessage, 
-    append,
-    handleSubmit: sdkHandleSubmit, 
-    input: sdkInput, 
-    handleInputChange: sdkHandleInputChange, 
-    isLoading: sdkIsLoading, 
-    status, 
-    error 
-  } = chat as any;
+  const {
+    messages = [],
+    setMessages,
+    sendMessage,
+    status,
+    error
+  } = chat;
 
   const currentMessages = messages || [];
-  const isLoading = sdkIsLoading || status === 'loading' || status === 'streaming';
-  
-  // Use either the SDK input or our local state
-  const displayInput = sdkInput !== undefined ? sdkInput : chatInput;
+  const isLoading = status === 'submitted' || status === 'streaming';
   
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (sdkHandleInputChange) {
-      sdkHandleInputChange(e);
-    } else {
-      setChatInput(e.target.value);
-    }
+    setChatInput(e.target.value);
   };
 
   const onFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted with input:", displayInput);
-    
-    if (sdkHandleSubmit) {
-      sdkHandleSubmit(e);
-    } else if (sendMessage) {
-      const msg = chatInput;
-      setChatInput("");
-      await sendMessage(msg);
-    } else if (append) {
-      const msg = chatInput;
-      setChatInput("");
-      await append({ role: 'user', content: msg });
-    }
+    if (!chatInput?.trim() || isLoading) return;
+    const msg = chatInput;
+    setChatInput("");
+    await sendMessage({ text: msg });
   };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -110,8 +102,13 @@ export default function AsesorPage() {
       setMessages([
         {
           id: Date.now().toString(),
-          role: "assistant",
-          content: `📂 He detectado que acabas de cargar **${summary.fileName}** ${summary.fileType === 'pdf' ? 'en formato PDF' : `con **${summary.totalRows} registros**`}. ¡Ya tengo todos tus datos disponibles y puedo analizarlos a fondo! ¿Por dónde empezamos?`
+          role: "assistant" as const,
+          parts: [
+            {
+              type: 'text' as const,
+              text: `📂 He detectado que acabas de cargar **${summary.fileName}** ${summary.fileType === 'pdf' ? 'en formato PDF' : `con **${summary.totalRows} registros**`}. ¡Ya tengo todos tus datos disponibles y puedo analizarlos a fondo! ¿Por dónde empezamos?`
+            }
+          ]
         }
       ]);
     }
@@ -149,10 +146,15 @@ export default function AsesorPage() {
     setMessages([
       {
         id: Date.now().toString(),
-        role: "assistant",
-        content: hasData
-          ? `¡Nueva sesión iniciada! Aquí sigo con tus datos de **${summary!.fileName}**. ¿Qué analizamos ahora?`
-          : "¡Sesión reiniciada! ¿En qué aspecto de tus finanzas o los mercados te puedo ayudar hoy?"
+        role: "assistant" as const,
+        parts: [
+          {
+            type: 'text' as const,
+            text: hasData
+              ? `¡Nueva sesión iniciada! Aquí sigo con tus datos de **${summary!.fileName}**. ¿Qué analizamos ahora?`
+              : "¡Sesión reiniciada! ¿En qué aspecto de tus finanzas o los mercados te puedo ayudar hoy?"
+          }
+        ]
       }
     ]);
   };
@@ -161,14 +163,7 @@ export default function AsesorPage() {
 
   const handleSuggestionClick = (suggestion: string) => {
     if (isLoading) return;
-    if (sendMessage) {
-      sendMessage(suggestion);
-    } else if (append) {
-      append({ role: 'user', content: suggestion });
-    } else if (sdkHandleInputChange) {
-      sdkHandleInputChange({ target: { value: suggestion } } as any);
-      setTimeout(() => document.getElementById('chat-submit-btn')?.click(), 50);
-    }
+    sendMessage({ text: suggestion });
   };
 
   return (
@@ -185,7 +180,7 @@ export default function AsesorPage() {
             </div>
             <div>
               <h1 className="text-lg font-bold text-white">Asesor IA Premium</h1>
-              <p className="text-xs text-emerald-400 font-medium">Motor GPT-4o conectado</p>
+              <p className="text-xs text-emerald-400 font-medium">Motor Gemini 3.1 conectado</p>
             </div>
           </div>
 
@@ -267,20 +262,24 @@ export default function AsesorPage() {
                       : "bg-emerald-600 text-white rounded-tr-sm"
                   }`}
                 >
-                  {msg.content}
+                  {/* Texto del mensaje */}
+                  {(msg.parts as any[])?.filter((p: any) => p.type === 'text').map((part: any, i: number) => (
+                    <span key={i}>{part.text}</span>
+                  ))}
 
                   {/* Renderizado de Herramientas (Generative UI) */}
-                  {msg.toolInvocations && msg.toolInvocations.map((tool: any) => {
-                    const { toolCallId, toolName, state, result } = tool;
-                    if (state === 'result' && result.success) {
+                  {(msg.parts as any[])?.filter((p: any) => p.type === 'dynamic-tool' || p.type?.startsWith('tool-')).map((tool: any) => {
+                    const toolCallId = tool.toolCallId;
+                    const toolName = tool.type === 'dynamic-tool' ? tool.toolName : tool.type?.replace('tool-', '');
+                    const { state, output } = tool;
+                    if (state === 'output-available' && output?.success) {
                       switch (toolName) {
                         case 'get_market_data':
-                          return <MarketQuoteCard key={toolCallId} data={result.data} />;
+                          return <MarketQuoteCard key={toolCallId} data={output.data} />;
                         case 'show_portfolio_distribution':
-                          return <PortfolioDistribution key={toolCallId} data={result.data} />;
+                          return <PortfolioDistribution key={toolCallId} data={output.data} />;
                         case 'calculate_tax_optimization':
-                          return <TaxOptimizationCard key={toolCallId} data={result.data} />;
-                        // Podríamos añadir más casos aquí
+                          return <TaxOptimizationCard key={toolCallId} data={output.data} />;
                         default:
                           return null;
                       }
@@ -326,7 +325,7 @@ export default function AsesorPage() {
           <form onSubmit={onFormSubmit} className="flex items-end gap-3 max-w-3xl mx-auto">
             <div className="flex-1 glass-card rounded-2xl flex items-end gap-2 px-4 py-3">
               <input
-                value={displayInput || ""}
+                value={chatInput}
                 onChange={onInputChange}
                 type="text"
                 placeholder={
@@ -340,9 +339,9 @@ export default function AsesorPage() {
             <button
               id="chat-submit-btn"
               type="submit"
-              disabled={!(displayInput?.trim()) || isLoading}
+              disabled={!chatInput?.trim() || isLoading}
               className={`p-3 rounded-full transition-all shrink-0 ${
-                (displayInput?.trim()) && !isLoading
+                chatInput?.trim() && !isLoading
                   ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:scale-105"
                   : "glass text-white/20 cursor-not-allowed"
               }`}

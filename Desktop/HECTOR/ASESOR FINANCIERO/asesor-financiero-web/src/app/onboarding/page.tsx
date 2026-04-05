@@ -192,8 +192,9 @@ export default function Onboarding() {
           }, { onConflict: 'user_id' });
 
         if (error) throw error;
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error saving profile:", err);
+        alert("⚠️ Hubo un problema al guardar tu perfil: " + (err.message || String(err)));
       }
 
       setTimeout(() => {

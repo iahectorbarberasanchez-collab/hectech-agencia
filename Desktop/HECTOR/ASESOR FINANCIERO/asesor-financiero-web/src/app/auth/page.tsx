@@ -16,6 +16,11 @@ export default function AuthPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Redirect to dashboard if already authenticated
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace('/dashboard');
+    });
+
     const params = new URLSearchParams(window.location.search);
     const mode = params.get("mode");
     if (mode === "register") {
@@ -47,8 +52,9 @@ export default function AuthPage() {
         // Supabase signUp might not auto-login depending on email confirmation settings
         setError("Revisa tu correo para confirmar tu cuenta.");
       }
-    } catch (err: any) {
-      setError(err.message || "Ocurrió un error inesperado.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Ocurrió un error inesperado.";
+      setError(message);
     } finally {
       setIsLoading(false);
     }

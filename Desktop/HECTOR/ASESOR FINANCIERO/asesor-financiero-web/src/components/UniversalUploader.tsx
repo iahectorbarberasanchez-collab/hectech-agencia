@@ -10,29 +10,103 @@ import { parseSheet } from '@/lib/financial-parser';
 import { extractAssetsFromSummary, extractTransactionsFromSummary } from '@/lib/asset-extractor';
 import { PortfolioAsset, Transaction } from '@/types/supabase';
 
-// Load pdfjs-dist dynamically to avoid SSR issues
-let pdfjs: any = null;
+// Lazy-load pdfjs-dist as a singleton Promise (avoids the fragile 500ms delay)
+let pdfjsPromise: Promise<typeof import('pdfjs-dist')> | null = null;
 
-const extractTextFromPDF = async (file: File): Promise<string> => {
-  if (!pdfjs) {
-    // Small delay to wait for pdfjs if it's still loading
-    await new Promise(resolve => setTimeout(resolve, 500));
-    if (!pdfjs) throw new Error("Motor PDF no cargado. Reintenta en un momento.");
+const getPdfjs = () => {
+  if (!pdfjsPromise) {
+    pdfjsPromise = import('pdfjs-dist').then((m) => {
+      m.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${m.version}/build/pdf.worker.min.mjs`;
+      return m;
+    });
   }
+  return pdfjsPromise;
+};
 
+/**
+ * Extracts text from a PDF preserving the visual line structure.
+ * Groups text items by their Y-coordinate so that columns in tables
+ * are reconstructed left-to-right instead of being concatenated in stream order.
+ */
+const extractTextFromPDF = async (file: File): Promise<string> => {
+  const lib = await getPdfjs();
   const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-  let fullText = '';
+  const pdf = await lib.getDocument({ data: arrayBuffer }).promise;
+  const pageTexts: string[] = [];
 
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const textContent = await page.getTextContent();
-    const pageText = textContent.items.map((item: any) => item.str).join(' ');
-    fullText += pageText + '\n';
+
+    // Group text items by rounded Y position (same line = within 3pt of each other)
+    const lineMap = new Map<number, { x: number; text: string }[]>();
+
+    for (const item of textContent.items) {
+      if (!('str' in item)) continue;
+      const str = (item as any).str as string;
+      if (!str) continue;
+      // PDF coordinate system: Y increases upward, so round to nearest 3pt bucket
+      const yBucket = Math.round((item as any).transform[5] / 3) * 3;
+      const x = (item as any).transform[4] as number;
+      if (!lineMap.has(yBucket)) lineMap.set(yBucket, []);
+      lineMap.get(yBucket)!.push({ x, text: str });
+    }
+
+    // Sort lines top-to-bottom (higher Y = top of page in PDF coords)
+    const sortedYs = Array.from(lineMap.keys()).sort((a, b) => b - a);
+
+    const lines = sortedYs.map(y => {
+      const items = lineMap.get(y)!.sort((a, b) => a.x - b.x);
+      // Join items on the same line; use tab between distant items to preserve column gaps
+      const parts: string[] = [];
+      let lastX = -Infinity;
+      for (const { x, text } of items) {
+        const gap = x - lastX;
+        if (parts.length > 0 && gap > 20) {
+          parts.push('\t'); // Column separator
+        }
+        parts.push(text);
+        lastX = x + text.length * 6; // Approximate char width
+      }
+      return parts.join('').trim();
+    }).filter(line => line.length > 0);
+
+    if (lines.length > 0) {
+      pageTexts.push(`--- Página ${i} ---\n${lines.join('\n')}`);
+    }
   }
 
-  return fullText;
+  return pageTexts.join('\n\n');
 };
+
+/**
+ * Extracts the actual value from an ExcelJS cell value.
+ * Handles: Date, RichText, Formula result, Error, Boolean, Number, String.
+ */
+function extractCellValue(val: any): any {
+  if (val === null || val === undefined) return null;
+  if (typeof val === 'number' || typeof val === 'boolean') return val;
+  if (val instanceof Date) return val.toISOString().split('T')[0]; // → "YYYY-MM-DD"
+  if (typeof val === 'string') return val === '' ? null : val;
+  if (typeof val === 'object') {
+    // Formula cell: { formula, result } or { sharedFormula, result }
+    if ('result' in val) {
+      return val.result instanceof Date
+        ? val.result.toISOString().split('T')[0]
+        : val.result;
+    }
+    // RichText cell: { richText: [{ text: 'abc', font: {...} }, ...] }
+    if (val.richText && Array.isArray(val.richText)) {
+      return val.richText.map((r: any) => r.text ?? '').join('') || null;
+    }
+    // Error cell: { error: '#DIV/0!' }
+    if (val.error) return null;
+    // Hyperlink cell: { text: 'label', hyperlink: '...' }
+    if (val.text !== undefined) return val.text || null;
+  }
+  return String(val) || null;
+}
+
 
 const calculateNumericTotals = (rows: any[], columns: string[]): Record<string, number> => {
   const totals: Record<string, number> = {};
@@ -69,6 +143,10 @@ const calculateNumericTotals = (rows: any[], columns: string[]): Record<string, 
 export default function UniversalUploader() {
   const { setFinancialData, setDocumentText, summary, clearData, saveToSupabase, syncAssetsToPortfolio, syncTransactionsToUser, isSaving, isLoading } = useFinancial();
   const { userId } = useUser();
+  // Keep userId in a ref so async callbacks always have the latest value
+  const userIdRef = React.useRef(userId);
+  useEffect(() => { userIdRef.current = userId; }, [userId]);
+
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -76,7 +154,9 @@ export default function UniversalUploader() {
   const [detectedAssets, setDetectedAssets] = useState<Partial<PortfolioAsset>[]>([]);
   const [detectedTransactions, setDetectedTransactions] = useState<Partial<Transaction>[]>([]);
   const [syncSuccess, setSyncSuccess] = useState(false);
+  const [syncCount, setSyncCount] = useState(0);
   const [txSyncSuccess, setTxSyncSuccess] = useState(false);
+  const [showReviewPanel, setShowReviewPanel] = useState(false);
   const [pendingAutoSave, setPendingAutoSave] = useState(false);
 
   // Reset selected sheet when summary changes
@@ -91,14 +171,6 @@ export default function UniversalUploader() {
       saveToSupabase(userId, false).catch(console.error);
     }
   }, [pendingAutoSave, userId, summary, saveToSupabase]);
-
-  useEffect(() => {
-    // Initialize PDF.js
-    import('pdfjs-dist').then((m) => {
-      pdfjs = m;
-      pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-    });
-  }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -125,16 +197,50 @@ export default function UniversalUploader() {
             }
 
             const workbook = new ExcelJS.Workbook();
-            await workbook.xlsx.load(data);
-            
+
+            // Use the correct reader for each format
+            if (file.name.match(/\.csv$/i)) {
+              const text = new TextDecoder('utf-8').decode(data);
+              // Parse CSV manually: split lines, then split by comma/semicolon
+              const delimiter = text.includes(';') ? ';' : ',';
+              const lines = text.split(/\r?\n/);
+              const ws = workbook.addWorksheet('CSV');
+              lines.forEach((line, rowIdx) => {
+                if (!line.trim()) return;
+                const cells = line.split(delimiter).map(c => c.replace(/^"(.*)"$/, '$1').trim());
+                const row = ws.getRow(rowIdx + 1);
+                cells.forEach((cell, colIdx) => {
+                  row.getCell(colIdx + 1).value = cell;
+                });
+                row.commit();
+              });
+            } else {
+              await workbook.xlsx.load(data);
+            }
+
             const financialData: Record<string, FinancialSheet> = {};
-            
-            workbook.eachSheet((worksheet, sheetId) => {
+
+            workbook.eachSheet((worksheet) => {
               const sheetName = worksheet.name;
               const rawData: any[][] = [];
+              // Find the actual column extent (avoid reading 16384 empty columns)
+              let maxCol = 0;
+              worksheet.eachRow({ includeEmpty: false }, (row) => {
+                const lastCol = (row as any).actualCellCount || row.cellCount;
+                if (lastCol > maxCol) maxCol = lastCol;
+              });
+
               worksheet.eachRow({ includeEmpty: true }, (row) => {
-                const rowValues = Array.from(row.values as any[]).slice(1);
-                rawData.push(rowValues);
+                // row.values is 1-indexed; index 0 is undefined
+                const rowValues: any[] = [];
+                for (let c = 1; c <= Math.max(maxCol, 1); c++) {
+                  const cell = row.getCell(c);
+                  rowValues.push(extractCellValue(cell.value));
+                }
+                // Trim trailing nulls to keep arrays lean
+                let end = rowValues.length;
+                while (end > 0 && (rowValues[end - 1] === null || rowValues[end - 1] === undefined)) end--;
+                rawData.push(rowValues.slice(0, end));
               });
               
               const parsedSheet = parseSheet(sheetName, rawData);
@@ -183,8 +289,26 @@ export default function UniversalUploader() {
             setDetectedAssets(extracted);
             setDetectedTransactions(extractedTxs);
             setSyncSuccess(false);
+            setSyncCount(0);
             setTxSyncSuccess(false);
+            if (extracted.length > 0) setShowReviewPanel(true);
             setPendingAutoSave(true);
+
+            // AUTO-SYNC: save portfolio to Supabase immediately, no button needed
+            const uid = userIdRef.current;
+            if (uid && extracted.length > 0) {
+              try {
+                const result = await syncAssetsToPortfolio(uid, extracted);
+                if (result.success) {
+                  setSyncSuccess(true);
+                  setSyncCount(result.count ?? extracted.length);
+                } else {
+                  setError(`No se pudo guardar la cartera: ${result.error}`);
+                }
+              } catch (syncErr) {
+                console.error("Auto-sync error:", syncErr);
+              }
+            }
 
             setIsProcessing(false);
           } catch (err) {
@@ -407,7 +531,53 @@ export default function UniversalUploader() {
               </div>
             </div>
 
-            {/* Investments Detected Alert */}
+            {/* Quick Review Panel - shows detected assets before confirming sync */}
+            <AnimatePresence>
+              {detectedAssets.length > 0 && showReviewPanel && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="bg-slate-800/60 border border-white/10 rounded-2xl overflow-hidden"
+                >
+                  <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                    <h4 className="text-white font-bold text-sm">🔍 Revisión Rápida — ¿Son correctos estos activos?</h4>
+                    <button onClick={() => setShowReviewPanel(false)} className="text-white/40 hover:text-white/80 text-xs">
+                      Cerrar
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto max-h-60">
+                    <table className="w-full text-[11px] text-white/60">
+                      <thead>
+                        <tr className="border-b border-white/10 text-left">
+                          <th className="px-4 py-2 text-white/40 font-bold uppercase tracking-widest">Ticker</th>
+                          <th className="px-4 py-2 text-white/40 font-bold uppercase tracking-widest">Nombre</th>
+                          <th className="px-4 py-2 text-white/40 font-bold uppercase tracking-widest">Tipo</th>
+                          <th className="px-4 py-2 text-right text-white/40 font-bold uppercase tracking-widest">Valor (€)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detectedAssets.map((a, i) => (
+                          <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                            <td className="px-4 py-2 font-mono text-emerald-400 font-bold">{a.ticker || '—'}</td>
+                            <td className="px-4 py-2">{a.asset_name}</td>
+                            <td className="px-4 py-2">{a.asset_type || '—'}</td>
+                            <td className="px-4 py-2 text-right tabular-nums">
+                              {a.value_eur != null ? a.value_eur.toLocaleString('es-ES', { minimumFractionDigits: 2 }) : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="p-3 text-[10px] text-white/30 text-center">
+                    Si los datos no son correctos, descarta el archivo y revisa tu Excel.
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Investments Detected + Auto-saved */}
             <AnimatePresence>
               {detectedAssets.length > 0 && (
                 <motion.div
@@ -422,46 +592,70 @@ export default function UniversalUploader() {
                         <Zap className="w-5 h-5 fill-emerald-400" />
                       </div>
                       <div>
-                        <h4 className="text-white font-bold text-sm">¡Inversiones detectadas!</h4>
-                        <p className="text-white/60 text-xs">He encontrado {detectedAssets.length} activos en tu archivo.</p>
+                        <h4 className="text-white font-bold text-sm">
+                          {syncSuccess
+                            ? `✓ ${syncCount} inversiones guardadas en tu cartera`
+                            : `Detectando ${detectedAssets.length} inversiones...`}
+                        </h4>
+                        <p className="text-white/60 text-xs">
+                          {syncSuccess
+                            ? 'El asesor IA ya puede ver tu cartera y calcular rendimiento en tiempo real.'
+                            : 'Guardando automáticamente en tu perfil...'}
+                        </p>
                       </div>
                     </div>
-                    
-                    {syncSuccess ? (
-                      <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm px-4">
-                        <CheckCircle2 className="w-5 h-5" />
-                        Sincronizado con éxito
-                      </div>
-                    ) : (
-                      <button
-                        onClick={handleSyncToPortfolio}
-                        disabled={isSaving}
-                        className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2 disabled:opacity-50"
-                      >
-                        {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                        Sincronizar con mi Cartera
-                      </button>
-                    )}
+
+                    <div className="flex items-center gap-2">
+                      {syncSuccess ? (
+                        <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm px-4">
+                          <CheckCircle2 className="w-5 h-5" />
+                          Guardado
+                        </div>
+                      ) : isSaving ? (
+                        <div className="flex items-center gap-2 text-white/50 text-sm px-4">
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          Guardando...
+                        </div>
+                      ) : null}
+                      {/* Re-sync button in case they want to force a refresh */}
+                      {syncSuccess && (
+                        <button
+                          onClick={handleSyncToPortfolio}
+                          disabled={isSaving}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-white/40 hover:text-white/70 border border-white/10 hover:border-white/20 transition-all"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          Re-sincronizar
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  
-                  {/* Miniature Asset List */}
+
+                  {/* Asset list */}
                   <div className="px-5 pb-5 flex flex-wrap gap-2">
-                    {detectedAssets.slice(0, 10).map((asset, i) => (
-                      <div key={i} className="bg-white/5 border border-white/10 px-3 py-1 rounded-lg text-[10px] text-white/50 flex items-center gap-2">
-                        <span className="text-emerald-400 font-bold uppercase">{asset.ticker || '???'}</span>
-                        <span className="opacity-70">{asset.asset_name}</span>
-                        {asset.value_eur && asset.value_eur > 0 && (
-                          <span className="text-white/40 border-l border-white/10 pl-2">{asset.value_eur.toLocaleString('es-ES')}€</span>
+                    {detectedAssets.slice(0, 12).map((asset, i) => (
+                      <div key={i} className="bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg text-[10px] text-white/50 flex items-center gap-2">
+                        <span className="text-emerald-400 font-bold uppercase">{asset.ticker || '—'}</span>
+                        <span className="opacity-70 max-w-[120px] truncate">{asset.asset_name}</span>
+                        {asset.quantity && asset.quantity > 0 && (
+                          <span className="text-white/30 border-l border-white/10 pl-2">{asset.quantity} uds.</span>
+                        )}
+                        {asset.purchase_price && asset.purchase_price > 0 && (
+                          <span className="text-blue-400/70">@{asset.purchase_price.toFixed(2)}</span>
                         )}
                       </div>
                     ))}
-                    {detectedAssets.length > 10 && <div className="text-[10px] text-white/30 pt-1">+{detectedAssets.length - 10} más</div>}
+                    {detectedAssets.length > 12 && (
+                      <div className="text-[10px] text-white/30 pt-1">+{detectedAssets.length - 12} más</div>
+                    )}
                   </div>
                 </motion.div>
               )}
+            </AnimatePresence>
 
             {/* Transactions Detected Alert */}
-            {detectedTransactions.length > 0 && (
+            <AnimatePresence>
+              {detectedTransactions.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}

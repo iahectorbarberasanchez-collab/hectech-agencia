@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from "react";
 import { useUser } from "@/context/UserContext";
 import { supabase, PortfolioAsset, Transaction } from "@/lib/supabase";
 
@@ -91,10 +91,21 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load data from Supabase on mount/login
+  // Debounce userId changes to avoid flooding Supabase during auth state transitions
+  const [debouncedUserId, setDebouncedUserId] = useState(userId);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => setDebouncedUserId(userId), 350);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, [userId]);
+
+  // Load data from Supabase on mount/login (uses debouncedUserId to avoid floods)
   useEffect(() => {
     const loadData = async () => {
-      if (!userId) {
+      if (!debouncedUserId) {
         clearData();
         return;
       }
@@ -131,7 +142,7 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
     };
 
     loadData();
-  }, [userId]);
+  }, [debouncedUserId]);
 
   const setFinancialData = (sheets: Record<string, FinancialSheet>, fileName = "documento.xlsx") => {
     setData(sheets);
@@ -176,9 +187,10 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
       return { success: true };
-    } catch (err: any) {
-      console.error("Error saving financial document:", err);
-      return { success: false, error: err.message };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("Error saving financial document:", message);
+      return { success: false, error: message };
     } finally {
       setIsSaving(false);
     }
@@ -188,26 +200,33 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
     if (!uid || assets.length === 0) return { success: false, error: 'No data' };
     setIsSaving(true);
     try {
+      // Delete ALL existing portfolio assets for this user first.
+      // This gives a clean slate so deleted assets don't linger from old uploads.
+      const { error: deleteError } = await supabase
+        .from('user_portfolio')
+        .delete()
+        .eq('user_id', uid);
+
+      if (deleteError) throw deleteError;
+
+      // Insert the fresh asset list
       const payload = assets.map(a => ({
         ...a,
         user_id: uid,
-        created_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       }));
 
-      // Basic upsert by ticker and name for this user to avoid obvious duplicates
-      // Note: In a real app we'd define a unique constraint in the DB
       const { data, error } = await supabase
         .from('user_portfolio')
-        .upsert(payload, { 
-          onConflict: 'user_id,ticker,asset_name' 
-        })
+        .insert(payload)
         .select();
 
       if (error) throw error;
       return { success: true, count: data?.length || 0 };
-    } catch (err: any) {
-      console.error("Error syncing assets:", err);
-      return { success: false, error: err.message };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("Error syncing assets:", message);
+      return { success: false, error: message };
     } finally {
       setIsSaving(false);
     }
@@ -253,9 +272,10 @@ export function FinancialProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
       return { success: true, count: data?.length || 0 };
-    } catch (err: any) {
-      console.error("Error syncing transactions:", err);
-      return { success: false, error: err.message };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("Error syncing transactions:", message);
+      return { success: false, error: message };
     } finally {
       setIsSaving(false);
     }

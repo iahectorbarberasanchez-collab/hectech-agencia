@@ -28,6 +28,24 @@ export default function Dashboard() {
   const [marketData, setMarketData] = useState<MarketQuote[]>([]);
   const [isMarketLoading, setIsMarketLoading] = useState(true);
 
+  // Fetch user display name from profile
+  useEffect(() => {
+    if (!userId) return;
+    supabase
+      .from('user_financial_profile')
+      .select('occupation')
+      .eq('user_id', userId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.occupation) {
+          setUserName(data.occupation);
+        } else if (user?.email) {
+          // Fallback: use part of email before @
+          setUserName(user.email.split('@')[0]);
+        }
+      });
+  }, [userId, user]);
+
   // Dashboard calculations
   const dashboardStats = getDashboardSummary(summary);
 
@@ -128,7 +146,11 @@ export default function Dashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-3xl font-bold text-white mb-2"
               >
-                {isUserLoading ? "Cargando..." : "Hola de nuevo"}
+                {isUserLoading
+                  ? "Cargando..."
+                  : userName
+                  ? `Hola, ${userName} 👋`
+                  : "Hola de nuevo 👋"}
               </motion.h2>
               <motion.p
                 initial={{ opacity: 0 }}
@@ -204,7 +226,11 @@ export default function Dashboard() {
                 <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Oportunidad Fiscal</span>
               </div>
               <div className="text-2xl font-black text-white">
-                Analizando...
+                {dashboardStats.monthlyIncome <= 0
+                  ? "Sin datos"
+                  : dashboardStats.monthlyIncome * 12 > 40000
+                  ? "Tramo 37%+"
+                  : "Tramo optimizado"}
               </div>
               <div className="text-[10px] text-white/30 mt-1 flex items-center gap-1">
                 <Link href="/dashboard/asesor" className="hover:text-emerald-400 transition-colors">Solicitar estudio fiscal →</Link>

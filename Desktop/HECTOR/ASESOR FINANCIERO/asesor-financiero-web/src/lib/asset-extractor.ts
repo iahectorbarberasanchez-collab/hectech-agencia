@@ -1,6 +1,11 @@
 import { FinancialSummary, FinancialTable } from "@/context/FinancialContext";
 import { PortfolioAsset, Transaction } from "./supabase";
 
+const safeNum = (val: any): number => {
+  const n = Number(val);
+  return isNaN(n) ? 0 : n;
+};
+
 /**
  * Scans the financial summary and extracts potential portfolio assets.
  */
@@ -27,13 +32,32 @@ export function extractAssetsFromSummary(summary: FinancialSummary): Partial<Por
       table.data.forEach((row: any) => {
         const name = String(row[nameCol] || "").trim();
         const ticker = String(row[tickerCol] || "").trim().toUpperCase();
-        const quantity = Number(row[colMap.quantity] || 0);
-        const price = Number(row[colMap.avg_price] || row[colMap.current_price] || 0);
-        const value = Number(row[valueCol] || 0);
+        const quantity = safeNum(row[colMap.quantity]);
+        const avgPrice = safeNum(row[colMap.avg_price]);
+        const currentPrice = safeNum(row[colMap.current_price]);
+        // Best price for purchase: avg_price first, then current_price
+        const purchasePrice = avgPrice > 0 ? avgPrice : 0;
 
-        // Filter out clearly invalid rows (empty names AND tickers, or zero values)
+        // Total invested: explicit column, or calculate from qty × price
+        const totalInvestedCol = colMap.total_invested;
+        let totalInvested = totalInvestedCol ? safeNum(row[totalInvestedCol]) : 0;
+        if (totalInvested <= 0 && quantity > 0 && purchasePrice > 0) {
+          totalInvested = quantity * purchasePrice;
+        }
+
+        // Current value: explicit column, or calculate from qty × current_price
+        const currentValueCol = colMap.current_value;
+        let currentValue = currentValueCol ? safeNum(row[currentValueCol]) : 0;
+        if (currentValue <= 0 && quantity > 0 && currentPrice > 0) {
+          currentValue = quantity * currentPrice;
+        }
+
+        // value_eur for display: prefer current value, then invested
+        const valueEur = currentValue > 0 ? currentValue : totalInvested;
+
+        // Filter out clearly invalid rows
         if (!name && !ticker) return;
-        if (value <= 0 && quantity <= 0) return;
+        if (valueEur <= 0 && quantity <= 0) return;
 
         // Dedup within the same file extraction
         const dedupKey = `${ticker || 'NO_TICKER'}_${name}`.toUpperCase();
@@ -44,11 +68,11 @@ export function extractAssetsFromSummary(summary: FinancialSummary): Partial<Por
           asset_name: name || ticker || "Activo detectado",
           ticker: ticker || "",
           quantity: quantity > 0 ? quantity : undefined,
-          purchase_price: price > 0 ? price : undefined,
-          value_eur: value > 0 ? value : (quantity * price),
-          asset_type: row[colMap.asset_type] || "Inversión",
-          allocation_percent: Number(row[colMap.weight] || 0),
-          target_percent: 0
+          purchase_price: purchasePrice > 0 ? purchasePrice : undefined,
+          value_eur: valueEur > 0 ? valueEur : 0,
+          asset_type: String(row[colMap.asset_type] || "Inversión").trim(),
+          allocation_percent: safeNum(row[colMap.weight]),
+          target_percent: 0,
         });
       });
     });
@@ -110,16 +134,34 @@ export function extractTransactionsFromSummary(summary: FinancialSummary): Parti
       table.data.forEach((row: any) => {
         const dateRaw = row[dateCol] || row['FECHA'] || row['DATE'];
         const desc = String(row[descCol] || row['DESCRIPCION'] || row['CONCEPTO'] || "Transacción").trim();
-        const amount = Number(row[amountCol] || row['IMPORTE'] || row['AMOUNT'] || 0);
+        const amount = safeNum(row[amountCol] || row['IMPORTE'] || row['AMOUNT']);
 
         if (!dateRaw || amount === 0) return;
 
         // Dedup key: Date + Amount + Desc (normalized)
         let dateStr = "";
-        try {
-           dateStr = new Date(dateRaw).toISOString().split('T')[0];
-        } catch(e) {
-           dateStr = String(dateRaw).split(' ')[0];
+        if (typeof dateRaw === 'number') {
+          // Excel serial number (days since 1900-01-01)
+          const jsDate = new Date((dateRaw - 25569) * 86400 * 1000);
+          dateStr = isNaN(jsDate.getTime()) ? new Date().toISOString().split('T')[0] : jsDate.toISOString().split('T')[0];
+        } else if (typeof dateRaw === 'string') {
+          // DD/MM/YYYY text format
+          const parts = dateRaw.split(/[/-]/);
+          if (parts.length === 3 && parts[0].length <= 2 && parts[2].length === 4) {
+            dateStr = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+          } else {
+            try {
+              dateStr = new Date(dateRaw).toISOString().split('T')[0];
+            } catch(e) {
+              dateStr = new Date().toISOString().split('T')[0];
+            }
+          }
+        } else {
+          try {
+            dateStr = new Date(dateRaw).toISOString().split('T')[0];
+          } catch(e) {
+            dateStr = new Date().toISOString().split('T')[0];
+          }
         }
 
         const dedupKey = `${dateStr}_${amount}_${desc.toUpperCase()}`;
