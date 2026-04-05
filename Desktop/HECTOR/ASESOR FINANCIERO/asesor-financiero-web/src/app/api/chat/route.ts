@@ -1,3 +1,4 @@
+import { createGroq } from '@ai-sdk/groq';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { streamText, convertToModelMessages } from 'ai';
 import { createClient } from '@/lib/supabase/server';
@@ -10,12 +11,26 @@ import { getMacroSummaryText } from '@/lib/macro-snapshot';
 let macroCacheData: { text: string; ts: number } | null = null;
 const MACRO_CACHE_TTL = 5 * 60 * 1000;
 
-// Allow responses of up to 30 seconds
-export const maxDuration = 30;
+// Allow responses of up to 60 seconds
+export const maxDuration = 60;
+
+// Primary: Groq (free tier — 14,400 req/day, 500K tokens/day with llama-3.3-70b)
+// Fallback: Google Gemini (if GOOGLE_GENERATIVE_AI_API_KEY is set and has quota)
+const groqProvider = createGroq({
+  apiKey: process.env.GROQ_API_KEY || '',
+});
 
 const googleProvider = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '',
 });
+
+function getModel() {
+  if (process.env.GROQ_API_KEY) {
+    return groqProvider('llama-3.3-70b-versatile');
+  }
+  // Fallback to Gemini if no Groq key
+  return googleProvider('gemini-2.0-flash');
+}
 
 export async function POST(req: Request) {
   try {
@@ -105,7 +120,7 @@ export async function POST(req: Request) {
     const enrichedMessages = [...macroMessage, ...contextMessages, ...modelMessages];
 
     const result = await streamText({
-      model: googleProvider('gemini-2.0-flash'),
+      model: getModel(),
       system: SYSTEM_PROMPT,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       messages: enrichedMessages as any,

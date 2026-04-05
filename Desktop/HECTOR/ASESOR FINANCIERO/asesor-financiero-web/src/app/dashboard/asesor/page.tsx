@@ -190,7 +190,7 @@ export default function AsesorPage() {
             </div>
             <div>
               <h1 className="text-lg font-bold text-white">Asesor IA Premium</h1>
-              <p className="text-xs text-emerald-400 font-medium">Motor Gemini 3.1 conectado</p>
+              <p className="text-xs text-emerald-400 font-medium">Motor Llama 3.3 · 70B · Groq</p>
             </div>
           </div>
 
