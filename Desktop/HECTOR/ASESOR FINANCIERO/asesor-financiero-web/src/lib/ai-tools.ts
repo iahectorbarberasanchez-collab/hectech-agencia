@@ -472,6 +472,15 @@ export function buildAITools(params: {
         const totalValue = total_portfolio_value ?? positions.reduce((s, p) => s + p.current_value, 0);
         if (totalValue === 0) return { success: false, error: 'No se pudo calcular el valor total de la cartera.' };
 
+        // If all assets have target_percent = 0 (no targets set), auto-calculate targets
+        // from the current distribution so rebalancing reflects real drift over time.
+        const targetsSum = positions.reduce((s, p) => s + p.target_percent, 0);
+        if (targetsSum === 0) {
+          positions.forEach(p => {
+            p.target_percent = totalValue > 0 ? Math.round((p.current_value / totalValue) * 10000) / 100 : 0;
+          });
+        }
+
         const suggestions = positions.map(p => {
           const currentPct = totalValue > 0 ? (p.current_value / totalValue) * 100 : 0;
           const targetValue = (p.target_percent / 100) * totalValue;

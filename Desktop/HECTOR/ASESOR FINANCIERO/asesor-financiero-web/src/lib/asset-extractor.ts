@@ -72,11 +72,23 @@ export function extractAssetsFromSummary(summary: FinancialSummary): Partial<Por
           value_eur: valueEur > 0 ? valueEur : 0,
           asset_type: String(row[colMap.asset_type] || "Inversión").trim(),
           allocation_percent: safeNum(row[colMap.weight]),
-          target_percent: 0,
+          target_percent: 0, // will be recalculated below from real weights
         });
       });
     });
   });
+
+  // Set target_percent = current allocation weight so rebalancing uses real distribution.
+  // If the Excel already provided explicit weight, use that; otherwise calculate from value_eur.
+  const totalValue = detectedAssets.reduce((s, a) => s + (a.value_eur ?? 0), 0);
+  if (totalValue > 0) {
+    detectedAssets.forEach(a => {
+      const explicitWeight = a.allocation_percent ?? 0;
+      a.target_percent = explicitWeight > 0
+        ? Math.round(explicitWeight * 100) / 100
+        : Math.round(((a.value_eur ?? 0) / totalValue) * 10000) / 100; // 2-decimal %
+    });
+  }
 
   return detectedAssets;
 }
