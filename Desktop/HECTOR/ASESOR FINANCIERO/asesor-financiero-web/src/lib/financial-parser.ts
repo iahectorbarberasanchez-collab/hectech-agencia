@@ -220,21 +220,26 @@ function extractTableFromBlock(block: { grid: any[][]; range: any }) {
   const { grid, range } = block;
   if (grid.length < 2) return null;
 
-  // Detect if there are multiple header rows (e.g., merged/grouped headers)
-  // A row is considered a "header row" if most of its cells are non-numeric strings
-  let headerRowCount = 1;
-  const secondRow = grid[1] || [];
-  const secondRowIsAllText = secondRow.every(
-    (v: any) => v === null || v === undefined || v === '' || typeof v === 'string'
+  // Detect if the first row is a section label (e.g. "ACTIVOS") rather than actual column headers.
+  // Heuristic: first row has ≤2 non-empty string cells AND second row has ≥3 non-empty string cells.
+  const firstRowNonNull = grid[0].filter(
+    (v: any) => v !== null && v !== undefined && String(v).trim() !== ''
   );
-  const secondRowHasValues = secondRow.some((v: any) => v !== null && v !== undefined && v !== '');
-  if (secondRowIsAllText && secondRowHasValues) {
-    // Could be a sub-header; merge with first row
-    headerRowCount = 1; // Still treat first row as primary header
-  }
+  const secondRow = grid[1] || [];
+  const secondRowNonNull = secondRow.filter(
+    (v: any) => v !== null && v !== undefined && String(v).trim() !== ''
+  );
+  const isLabelFirstRow =
+    firstRowNonNull.length <= 2 &&
+    firstRowNonNull.every((v: any) => typeof v === 'string') &&
+    secondRowNonNull.length >= 3 &&
+    secondRowNonNull.every((v: any) => typeof v === 'string');
 
-  // Build header names from first row
-  const rawHeaders = grid[0].map((h: any, i: number) => {
+  const headerGridRow = isLabelFirstRow ? 1 : 0;
+  const dataStartRow = isLabelFirstRow ? 2 : 1;
+
+  // Build header names from the detected header row
+  const rawHeaders = grid[headerGridRow].map((h: any, i: number) => {
     const val = String(h ?? '').trim();
     return val || `Col_${i + 1}`;
   });
@@ -251,7 +256,7 @@ function extractTableFromBlock(block: { grid: any[][]; range: any }) {
   });
 
   const rows: Record<string, any>[] = [];
-  for (let r = headerRowCount; r < grid.length; r++) {
+  for (let r = dataStartRow; r < grid.length; r++) {
     const rowObj: Record<string, any> = {};
     let hasData = false;
     for (let c = 0; c < headers.length; c++) {
@@ -298,6 +303,7 @@ function identifyColumns(headers: string[]): Record<string, string> {
       'DINERO PUESTO', 'CAPITAL INVERTIDO', 'INVERSION INICIAL', 'TOTAL €',
       'COSTE', 'INVESTED', 'CASH BASIS', 'CAPITAL', 'PRINCIPAL', 'COSTE TOTAL',
       'IMPORTE INVERTIDO', 'VALOR COMPRA', 'PRECIO COSTE', 'COSTE MEDIO TOTAL',
+      'TOTAL INVERTIDO', 'INVERTIDO', 'INVERSION TOTAL',
     ],
     quantity: [
       'CANTIDAD', 'ACCIONES', 'UNIDADES', 'TITULOS', 'QUANTITY', 'AMOUNT',
@@ -355,6 +361,13 @@ function identifyColumns(headers: string[]): Record<string, string> {
       }
     }
   });
+
+  // Fallback: if no asset_name was detected but the first header is a placeholder (Col_N)
+  // and there IS a ticker column, the placeholder column likely holds the human-readable name.
+  if (!mapping.asset_name && mapping.ticker) {
+    const firstPlaceholder = headers.find(h => /^Col_\d+$/.test(h));
+    if (firstPlaceholder) mapping.asset_name = firstPlaceholder;
+  }
 
   return mapping;
 }
