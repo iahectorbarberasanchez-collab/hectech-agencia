@@ -10,13 +10,20 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import Sidebar from "@/components/Sidebar";
 import { useFinancial } from "@/context/FinancialContext";
-import { MarketQuoteCard, PortfolioDistribution, AssetComparison, TaxOptimizationCard } from "@/components/GenerativeUI";
+import { MarketQuoteCard, PortfolioDistribution, AssetComparison, TaxOptimizationCard, MacroPanel } from "@/components/GenerativeUI";
 
 const BASE_SUGGESTIONS = [
   "Haz un resumen de mis datos",
   "¿Cuánto estoy gastando en total?",
   "¿Dónde puedo recortar gastos?",
   "Dame un plan de inversión",
+];
+
+const MACRO_SUGGESTIONS = [
+  "¿Cómo está la macro ahora mismo?",
+  "¿Está el mercado en modo miedo o codicia?",
+  "¿Cómo afecta el BCE a mis inversiones?",
+  "¿Es buen momento para invertir?",
 ];
 
 const NO_DATA_SUGGESTIONS = [
@@ -159,7 +166,10 @@ export default function AsesorPage() {
     ]);
   };
 
-  const suggestions = hasData ? BASE_SUGGESTIONS : NO_DATA_SUGGESTIONS;
+  // Mix data-specific suggestions with macro suggestions
+  const suggestions = hasData
+    ? [...BASE_SUGGESTIONS.slice(0, 2), ...MACRO_SUGGESTIONS.slice(0, 2)]
+    : [...NO_DATA_SUGGESTIONS.slice(0, 2), ...MACRO_SUGGESTIONS.slice(0, 2)];
 
   const handleSuggestionClick = (suggestion: string) => {
     if (isLoading) return;
@@ -280,6 +290,8 @@ export default function AsesorPage() {
                           return <PortfolioDistribution key={toolCallId} data={output.data} />;
                         case 'calculate_tax_optimization':
                           return <TaxOptimizationCard key={toolCallId} data={output.data} />;
+                        case 'get_macro_context':
+                          return <MacroPanel key={toolCallId} data={output.data} />;
                         default:
                           return null;
                       }

@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getMarketData } from './market-data';
+import { getMacroMarketData, formatMacroForAI } from './macro-data';
+import { MACRO_SNAPSHOT, getMacroSummaryText } from './macro-snapshot';
 import { runOptimization } from './tax-calculator';
 import { extractAssetsFromSummary } from './asset-extractor';
 
@@ -229,6 +231,60 @@ export function buildAITools(params: {
       execute: async ({ income, gains = 0, losses = 0 }: { income: number; gains?: number; losses?: number }) => {
         const data = runOptimization(income, gains, losses);
         return { success: true, data };
+      },
+    },
+
+    get_macro_context: {
+      description:
+        'Obtiene el contexto macroeconómico completo y actualizado: datos de mercado en tiempo real (VIX, yields, índices, FX, commodities) + indicadores económicos estáticos (Fed rate, CPI, PCE, BCE, Euribor, PIB, desempleo). Úsalo cuando el usuario pregunte sobre macro, entorno de mercado, economía global, tipos de interés, inflación, o cuando quieras contextualizar tus análisis con el entorno actual.',
+      inputSchema: z.object({
+        focus: z
+          .enum(['full', 'market', 'economic', 'spain', 'us', 'europe'])
+          .optional()
+          .describe('Qué parte del contexto macro mostrar: full (todo), market (solo datos de mercado en vivo), economic (solo indicadores económicos), spain (España específico), us (EEUU), europe (Europa)'),
+      }),
+      execute: async ({ focus = 'full' }: { focus?: 'full' | 'market' | 'economic' | 'spain' | 'us' | 'europe' }) => {
+        try {
+          const liveData = await getMacroMarketData();
+          const liveText = formatMacroForAI(liveData);
+
+          let economicText = '';
+          if (focus === 'full' || focus === 'economic') {
+            economicText = getMacroSummaryText();
+          } else if (focus === 'spain') {
+            const s = MACRO_SNAPSHOT.spain;
+            economicText = `=== ESPAÑA ===\n${Object.values(s).map(i => `• ${i.label}: ${i.value} — ${i.note}`).join('\n')}`;
+          } else if (focus === 'us') {
+            const s = MACRO_SNAPSHOT.us;
+            economicText = `=== EEUU ===\n${Object.values(s).map(i => `• ${i.label}: ${i.value} — ${i.note}`).join('\n')}`;
+          } else if (focus === 'europe') {
+            const s = MACRO_SNAPSHOT.europe;
+            economicText = `=== EUROPA ===\n${Object.values(s).map(i => `• ${i.label}: ${i.value} — ${i.note}`).join('\n')}`;
+          }
+
+          const includeMarket = focus === 'full' || focus === 'market';
+          const combined = [
+            includeMarket ? liveText : '',
+            economicText,
+          ].filter(Boolean).join('\n\n');
+
+          return {
+            success: true,
+            data: {
+              liveMarket: liveData,
+              snapshot: focus !== 'market' ? MACRO_SNAPSHOT : null,
+              text: combined,
+              sentiment: liveData.marketSentiment,
+              lastUpdated: {
+                marketData: liveData.timestamp,
+                economicSnapshot: MACRO_SNAPSHOT.lastUpdated,
+              },
+            },
+          };
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          return { success: false, error: `Error obteniendo datos macro: ${message}` };
+        }
       },
     },
 

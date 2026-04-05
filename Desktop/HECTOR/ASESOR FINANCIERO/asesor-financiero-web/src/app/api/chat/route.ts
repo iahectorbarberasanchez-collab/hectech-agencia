@@ -3,6 +3,12 @@ import { streamText, convertToModelMessages } from 'ai';
 import { createClient } from '@/lib/supabase/server';
 import { SYSTEM_PROMPT, buildContextMessages } from '@/lib/ai-prompts';
 import { buildAITools } from '@/lib/ai-tools';
+import { getMacroMarketData, formatMacroForAI } from '@/lib/macro-data';
+import { getMacroSummaryText } from '@/lib/macro-snapshot';
+
+// Cache macro data for 5 minutes to avoid hammering Yahoo Finance on every message
+let macroCacheData: { text: string; ts: number } | null = null;
+const MACRO_CACHE_TTL = 5 * 60 * 1000;
 
 // Allow responses of up to 30 seconds
 export const maxDuration = 30;
@@ -51,6 +57,22 @@ export async function POST(req: Request) {
         .limit(20),
     ]);
 
+    // Fetch macro context (cached 5 min) — injected as first system message
+    let macroContextText = '';
+    try {
+      if (!macroCacheData || Date.now() - macroCacheData.ts > MACRO_CACHE_TTL) {
+        const liveData = await getMacroMarketData();
+        macroContextText = `${formatMacroForAI(liveData)}\n\n${getMacroSummaryText()}`;
+        macroCacheData = { text: macroContextText, ts: Date.now() };
+      } else {
+        macroContextText = macroCacheData.text;
+      }
+    } catch (macroErr) {
+      // Non-fatal: if macro fetch fails, AI still works with snapshot
+      try { macroContextText = getMacroSummaryText(); } catch { /* ignore */ }
+      console.warn('Macro market data fetch failed, using snapshot only:', macroErr);
+    }
+
     // Build context messages from user data (extracted to lib/ai-prompts.ts)
     const contextMessages = buildContextMessages({
       profile: profile as Record<string, unknown> | null,
@@ -74,11 +96,16 @@ export async function POST(req: Request) {
     // Convert UIMessages (from client) to ModelMessages for streamText
     const modelMessages = await convertToModelMessages(messages, { tools });
 
+    // Build macro system message (prepend before user context)
+    const macroMessage = macroContextText
+      ? [{ role: 'system', content: macroContextText }]
+      : [];
+
     // Prepend context system messages to conversation
-    const enrichedMessages = [...contextMessages, ...modelMessages];
+    const enrichedMessages = [...macroMessage, ...contextMessages, ...modelMessages];
 
     const result = await streamText({
-      model: googleProvider('gemini-1.5-flash'),
+      model: googleProvider('gemini-2.0-flash'),
       system: SYSTEM_PROMPT,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       messages: enrichedMessages as any,
