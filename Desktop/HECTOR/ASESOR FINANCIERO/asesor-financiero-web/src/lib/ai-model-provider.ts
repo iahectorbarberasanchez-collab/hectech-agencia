@@ -24,9 +24,8 @@ function getOpenRouterModel(modelId?: string): LanguageModel {
   const { createOpenRouter } = require('@openrouter/ai-sdk-provider');
   const or = createOpenRouter({
     apiKey: process.env.OPENROUTER_API_KEY,
-    // Lets OpenRouter rank your app in their leaderboard (optional)
     extraHeaders: {
-      'HTTP-Referer': 'https://asesor-financiero.vercel.app',
+      'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
       'X-Title': 'Asesor Financiero Premium',
     },
   });

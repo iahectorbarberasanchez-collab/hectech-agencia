@@ -10,7 +10,7 @@ import { getModel, isUnlimitedProvider } from '@/lib/ai-model-provider';
 let macroCacheData: { text: string; ts: number } | null = null;
 const MACRO_CACHE_TTL = 5 * 60 * 1000;
 
-// Allow responses of up to 60 seconds
+// Max response time — 60s (ignored outside of Vercel/edge deployments)
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
