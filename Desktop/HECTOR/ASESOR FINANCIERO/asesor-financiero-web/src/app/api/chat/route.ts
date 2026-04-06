@@ -1,11 +1,10 @@
-import { createGroq } from '@ai-sdk/groq';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { streamText, convertToModelMessages } from 'ai';
 import { createClient } from '@/lib/supabase/server';
 import { SYSTEM_PROMPT, buildContextMessages } from '@/lib/ai-prompts';
 import { buildAITools } from '@/lib/ai-tools';
 import { getMacroMarketData, formatMacroForAI } from '@/lib/macro-data';
 import { getMacroSummaryText } from '@/lib/macro-snapshot';
+import { getModel, isUnlimitedProvider } from '@/lib/ai-model-provider';
 
 // Cache macro data for 5 minutes to avoid hammering Yahoo Finance on every message
 let macroCacheData: { text: string; ts: number } | null = null;
@@ -13,27 +12,6 @@ const MACRO_CACHE_TTL = 5 * 60 * 1000;
 
 // Allow responses of up to 60 seconds
 export const maxDuration = 60;
-
-// Primary: Groq llama-3.1-8b-instant (20k TPM free — avoids the 12k limit of llama-3.3-70b)
-// Secondary: Groq llama-3.3-70b-versatile (better quality but only 12k TPM — used for short/simple queries)
-// Fallback: Google Gemini (if GOOGLE_GENERATIVE_AI_API_KEY is set and has quota)
-const groqProvider = createGroq({
-  apiKey: process.env.GROQ_API_KEY || '',
-});
-
-const googleProvider = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || '',
-});
-
-function getModel(fast = false) {
-  if (process.env.GROQ_API_KEY) {
-    // fast=true → llama-3.1-8b-instant (20k TPM) used as fallback when 70b exceeds token limit
-    return fast
-      ? groqProvider('llama-3.1-8b-instant')
-      : groqProvider('llama-3.3-70b-versatile');
-  }
-  return googleProvider('gemini-2.0-flash');
-}
 
 export async function POST(req: Request) {
   try {
@@ -61,20 +39,20 @@ export async function POST(req: Request) {
         .select('asset_name,asset_type,value_eur,target_percent,ticker,quantity,purchase_price')
         .eq('user_id', userId)
         .order('value_eur', { ascending: false })
-        .limit(15), // Top 15 by value to keep context compact
+        .limit(isUnlimitedProvider() ? 40 : 15), // Unlimited providers can handle more context
       supabase
         .from('user_income_history')
         .select('month,year,amount,source,description')
         .eq('user_id', userId)
         .order('year', { ascending: false })
         .order('month', { ascending: false })
-        .limit(6),
+        .limit(isUnlimitedProvider() ? 24 : 6),
       supabase
         .from('user_transactions')
         .select('date,description,type,amount,category')
         .eq('user_id', userId)
         .order('date', { ascending: false })
-        .limit(5), // Reduced to 5 to stay within Groq 12k TPM
+        .limit(isUnlimitedProvider() ? 20 : 5),
     ]);
 
     // Fetch macro context (cached 5 min) — injected as first system message.
@@ -132,7 +110,7 @@ export async function POST(req: Request) {
     // Prepend context system messages to conversation
     const enrichedMessages = [...macroMessage, ...contextMessages, ...modelMessages];
 
-    // Try quality model first; auto-fallback to fast model on TPM limit (413)
+    // Try primary model; auto-fallback to fast Groq model on TPM limit (Groq only)
     let result;
     try {
       result = await streamText({
@@ -142,11 +120,12 @@ export async function POST(req: Request) {
         messages: enrichedMessages as any,
         tools,
       });
-    } catch (tpmErr: unknown) {
-      const msg = tpmErr instanceof Error ? tpmErr.message : String(tpmErr);
-      const isTpmError = msg.includes('Request too large') || msg.includes('tokens per minute') || (tpmErr as any)?.statusCode === 413;
-      if (!isTpmError) throw tpmErr;
-      console.warn('[chat] TPM limit hit on 70b — retrying with 8b-instant');
+    } catch (primaryErr: unknown) {
+      const msg = primaryErr instanceof Error ? primaryErr.message : String(primaryErr);
+      const isTpmError = msg.includes('Request too large') || msg.includes('tokens per minute') || (primaryErr as any)?.statusCode === 413;
+      // Only retry with fast model if Groq TPM error — other providers don't have this limit
+      if (!isTpmError || isUnlimitedProvider()) throw primaryErr;
+      console.warn('[chat] Groq TPM limit hit — retrying with llama-3.1-8b-instant');
       result = await streamText({
         model: getModel(true),
         system: SYSTEM_PROMPT,

@@ -62,6 +62,18 @@ export default function AsesorPage() {
   const router = useRouter();
   const { user, userId, isLoading: isUserLoading } = useUser();
   const { summary, financialData, documentText, isLoading: isFinancialLoading } = useFinancial();
+  const [modelLabel, setModelLabel] = useState<string>('Cargando...');
+  const [isUnlimited, setIsUnlimited] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/chat/model-info')
+      .then(r => r.json())
+      .then(info => {
+        setModelLabel(info.label ?? 'IA Premium');
+        setIsUnlimited(info.unlimited ?? false);
+      })
+      .catch(() => setModelLabel('IA Premium'));
+  }, []);
 
   const hasData = summary !== null && (summary.totalRows > 0 || (summary.fileType === 'pdf' && !!documentText));
 
@@ -295,7 +307,12 @@ export default function AsesorPage() {
             </div>
             <div>
               <h1 className="text-lg font-bold text-white">Asesor IA Premium</h1>
-              <p className="text-xs text-emerald-400 font-medium">Motor Llama 3.3 · 70B · Groq</p>
+              <p className="text-xs font-medium flex items-center gap-1.5">
+                <span className={isUnlimited ? 'text-emerald-400' : 'text-amber-400'}>{modelLabel}</span>
+                {isUnlimited && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[9px] font-bold uppercase tracking-wider">∞ Sin límite</span>
+                )}
+              </p>
             </div>
           </div>
 
