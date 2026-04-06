@@ -6,6 +6,26 @@ const safeNum = (val: any): number => {
   return isNaN(n) ? 0 : n;
 };
 
+/** Returns true if a string looks purely numeric (e.g. "1433.542898") */
+function isNumericString(s: string): boolean {
+  if (!s || s.trim() === '') return false;
+  return !isNaN(Number(s.replace(/[,. ]/g, '')));
+}
+
+/** Aggregate/category row type labels that should NOT be imported as individual assets */
+const AGGREGATE_TYPES = new Set([
+  'PATRIMONIO TOTAL', 'PATRIMONIO', 'TOTAL CARTERA', 'TOTAL PORTFOLIO',
+  'CARTERA TOTAL', 'RESUMEN', 'CONSOLIDADO', 'TOTAL ACTIVOS', 'ACTIVOS TOTAL',
+  'TOTAL GENERAL', 'SUBTOTAL', 'GRAND TOTAL',
+]);
+
+/** Category labels that are groupings of assets, not individual holdings */
+const CATEGORY_TYPES = new Set([
+  'CRIPTOMONEDAS', 'CRIPTO', 'ACCIONES', 'RENTA VARIABLE',
+  'RENTA FIJA', 'FONDOS', 'ETF', 'INMUEBLES', 'MATERIAS PRIMAS',
+  'COMMODITIES', 'DERIVADOS', 'OPCIONES', 'FUTUROS',
+]);
+
 /**
  * Scans the financial summary and extracts potential portfolio assets.
  */
@@ -30,13 +50,30 @@ export function extractAssetsFromSummary(summary: FinancialSummary): Partial<Por
       if (!nameCol && !tickerCol) return;
 
       table.data.forEach((row: any) => {
-        const name = String(row[nameCol] || "").trim();
+        let name = String(row[nameCol] || "").trim();
         const ticker = String(row[tickerCol] || "").trim().toUpperCase();
+        const rawAssetType = String(row[colMap.asset_type] || "").trim().toUpperCase();
         const quantity = safeNum(row[colMap.quantity]);
         const avgPrice = safeNum(row[colMap.avg_price]);
         const currentPrice = safeNum(row[colMap.current_price]);
         // Best price for purchase: avg_price first, then current_price
         const purchasePrice = avgPrice > 0 ? avgPrice : 0;
+
+        // ── Skip aggregate/total rows ────────────────────────────────
+        // These are summary rows (e.g. "PATRIMONIO TOTAL") not real assets
+        if (AGGREGATE_TYPES.has(rawAssetType)) return;
+        // Skip category rows that have no ticker (e.g. "CRIPTOMONEDAS" group row)
+        if (CATEGORY_TYPES.has(rawAssetType) && !ticker) return;
+
+        // ── Recover name if it's numeric ─────────────────────────────
+        // If the parser mapped a value/amount column as asset_name, use ticker or type instead
+        if (isNumericString(name)) {
+          if (ticker) {
+            name = ticker; // e.g. "BTC", "AAPL"
+          } else {
+            return; // No valid identifier at all — skip
+          }
+        }
 
         // Total invested: explicit column, or calculate from qty × price
         const totalInvestedCol = colMap.total_invested;
@@ -70,7 +107,7 @@ export function extractAssetsFromSummary(summary: FinancialSummary): Partial<Por
           quantity: quantity > 0 ? quantity : undefined,
           purchase_price: purchasePrice > 0 ? purchasePrice : undefined,
           value_eur: valueEur > 0 ? valueEur : 0,
-          asset_type: String(row[colMap.asset_type] || "Inversión").trim(),
+          asset_type: String(row[colMap.asset_type] || "Inversión").trim() || "Inversión",
           allocation_percent: safeNum(row[colMap.weight]),
           target_percent: 0, // will be recalculated below from real weights
         });

@@ -112,9 +112,10 @@ export default function PerfilPage() {
       .from("user_financial_profile")
       .select("*")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
-    const loaded = !error && data ? data : {};
+    if (error) console.error("Profile fetch error:", error.message);
+    const loaded = data ?? {};
     setProfile(loaded);
     setEditForm(loaded);
     setIsLoading(false);

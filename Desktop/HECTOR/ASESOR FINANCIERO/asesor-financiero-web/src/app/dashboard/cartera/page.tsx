@@ -58,6 +58,8 @@ export default function CarteraPage() {
   const [marketQuotes, setMarketQuotes] = useState<Record<string, MarketQuote>>({});
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+  const PAGE_SIZE = 20;
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -438,7 +440,7 @@ export default function CarteraPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/2">
-                      {assets.map((asset, idx) => (
+                      {(showAll ? assets : assets.slice(0, PAGE_SIZE)).map((asset, idx) => (
                         <motion.tr 
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
@@ -502,22 +504,27 @@ export default function CarteraPage() {
                             </div>
                           </td>
                           <td className="px-8 py-5 text-right">
-                            <div className="flex flex-col items-end">
-                              <span className="text-white font-black text-xs">
-                                {(() => {
-                                  const quote = asset.ticker ? marketQuotes[asset.ticker.toUpperCase()] : null;
-                                  const currentPrice = quote?.price || 0;
-                                  const val = (asset.quantity && currentPrice > 0) ? (asset.quantity * currentPrice) : asset.value_eur;
-                                  return ((val / totalValue) * 100).toFixed(1);
-                                })()}%
-                              </span>
-                              <div className="w-12 h-1 bg-white/5 rounded-full mt-1 overflow-hidden">
-                                <div 
-                                  className="h-full bg-indigo-500" 
-                                  style={{ width: `${(asset.value_eur / totalValue) * 100}%` }} 
-                                />
-                              </div>
-                            </div>
+                            {(() => {
+                              const quote = asset.ticker ? marketQuotes[asset.ticker.toUpperCase()] : null;
+                              const currentPrice = quote?.price || 0;
+                              const val = (asset.quantity && currentPrice > 0) ? (asset.quantity * currentPrice) : asset.value_eur;
+                              const actualPct = totalValue > 0 ? (val / totalValue) * 100 : 0;
+                              const targetPct = asset.target_percent || 0;
+                              const drift = actualPct - targetPct;
+                              return (
+                                <div className="flex flex-col items-end gap-1">
+                                  <span className="text-white font-black text-xs">{actualPct.toFixed(1)}%</span>
+                                  {targetPct > 0 && (
+                                    <span className={`text-[9px] font-bold ${Math.abs(drift) > 5 ? (drift > 0 ? 'text-amber-400' : 'text-blue-400') : 'text-white/30'}`}>
+                                      obj {targetPct.toFixed(1)}% {drift !== 0 ? `(${drift > 0 ? '+' : ''}${drift.toFixed(1)}%)` : ''}
+                                    </span>
+                                  )}
+                                  <div className="w-14 h-1 bg-white/5 rounded-full overflow-hidden">
+                                    <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${Math.min(actualPct * 3, 100)}%` }} />
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td className="px-8 py-5 text-right">
                             <button 
@@ -529,6 +536,16 @@ export default function CarteraPage() {
                           </td>
                         </motion.tr>
                       ))}
+
+                      {!showAll && assets.length > PAGE_SIZE && (
+                        <tr>
+                          <td colSpan={6} className="px-8 py-4 text-center">
+                            <button onClick={() => setShowAll(true)} className="text-xs text-white/40 hover:text-white transition-colors underline underline-offset-2">
+                              Ver todos los {assets.length} activos ({assets.length - PAGE_SIZE} más)
+                            </button>
+                          </td>
+                        </tr>
+                      )}
 
                       {assets.length === 0 && !isAdding && (
                         <tr>
@@ -576,41 +593,48 @@ export default function CarteraPage() {
 
             {/* Charts & Analysis */}
             <div className="space-y-6">
-              <div className="glass-card p-6 rounded-2xl border border-white/5 h-[400px] flex flex-col">
-                <h4 className="font-semibold text-white mb-6 flex items-center gap-2">
+              <div className="glass-card p-6 rounded-2xl border border-white/5 flex flex-col">
+                <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
                   <PieIcon className="w-5 h-5 text-emerald-400" />
                   Distribución Actual
                 </h4>
-                <div className="flex-1">
+                <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={chartData}
+                        data={chartData.slice(0, 12)}
                         cx="50%"
                         cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={5}
+                        innerRadius={55}
+                        outerRadius={90}
+                        paddingAngle={3}
                         dataKey="value"
                       >
-                        {chartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        {chartData.slice(0, 12).map((_entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
                         ))}
                       </Pie>
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: "#1e1b4b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px" }}
+                      <Tooltip
+                        contentStyle={{ backgroundColor: "#12121a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", fontSize: 11 }}
                         itemStyle={{ color: "#fff" }}
+                        formatter={(v: any) => [`${Number(v).toLocaleString('es-ES', { maximumFractionDigits: 0 })} €`]}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
-                  {chartData.map((entry, index) => (
-                    <div key={entry.name} className="flex items-center gap-1.5 text-[10px] text-white/60">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                      {entry.name} ({entry.percent}%)
+                <div className="mt-3 space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                  {chartData.slice(0, 12).map((entry, index) => (
+                    <div key={entry.name} className="flex items-center justify-between text-[10px]">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                        <span className="text-white/60 truncate max-w-[120px]">{entry.name}</span>
+                      </div>
+                      <span className="text-white/40 shrink-0 ml-1">{entry.percent}%</span>
                     </div>
                   ))}
+                  {chartData.length > 12 && (
+                    <p className="text-[9px] text-white/20 text-center pt-1">+{chartData.length - 12} activos más</p>
+                  )}
                 </div>
               </div>
 

@@ -30,7 +30,8 @@ function getOpenRouterModel(modelId?: string): LanguageModel {
     },
   });
   // Default: DeepSeek V3 (free tier) — best tool-calling + financial analysis
-  return or(modelId ?? process.env.OPENROUTER_MODEL ?? 'deepseek/deepseek-chat-v3-0324:free');
+  // Use 'deepseek/deepseek-chat:free' (points to latest DeepSeek Chat free endpoint)
+  return or(modelId ?? process.env.OPENROUTER_MODEL ?? 'deepseek/deepseek-chat:free');
 }
 
 function getOllamaModel(modelId?: string): LanguageModel {
@@ -79,7 +80,7 @@ export function getProviderInfo(): ProviderInfo {
     const model = process.env.OLLAMA_MODEL ?? 'qwen3:14b';
     return { provider: 'ollama', model, label: `Ollama · ${model}`, unlimited: true, local: true };
   }
-  if (forced === 'openrouter' || (!forced && !!process.env.OPENROUTER_API_KEY)) {
+  if (forced === 'openrouter' || (!forced && !!process.env.OPENROUTER_API_KEY?.trim())) {
     const model = process.env.OPENROUTER_MODEL ?? 'deepseek/deepseek-chat-v3-0324:free';
     const shortName = model.split('/').pop()?.replace(':free', '') ?? model;
     return { provider: 'openrouter', model, label: `OpenRouter · ${shortName}`, unlimited: true, local: false };
@@ -105,11 +106,11 @@ export function getModel(fast = false): LanguageModel {
   if (forced === 'groq') return getGroqModel(fast);
   if (forced === 'google') return getGoogleModel();
 
-  // Auto-detect by available keys
-  if (process.env.OPENROUTER_API_KEY) return getOpenRouterModel();
-  if (process.env.OLLAMA_BASE_URL) return getOllamaModel();
-  if (process.env.GROQ_API_KEY) return getGroqModel(fast);
-  if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) return getGoogleModel();
+  // Auto-detect by available keys (guard against empty strings)
+  if (process.env.OPENROUTER_API_KEY?.trim()) return getOpenRouterModel();
+  if (process.env.OLLAMA_BASE_URL?.trim()) return getOllamaModel();
+  if (process.env.GROQ_API_KEY?.trim()) return getGroqModel(fast);
+  if (process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim()) return getGoogleModel();
 
   // Last resort: Ollama on localhost (user may have it running)
   return getOllamaModel();

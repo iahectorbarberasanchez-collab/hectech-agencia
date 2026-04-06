@@ -348,7 +348,7 @@ export default function AsesorPage() {
           {error && (
             <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-sm mb-4">
               <AlertTriangle className="w-4 h-4 inline mr-2" />
-              <strong>Error de conexión AI:</strong> {error.message}. Verifica tu conexión o el estado de los servicios de IA de Google Gemini.
+              <strong>Error de conexión AI:</strong> {error.message}. Verifica tu API key (OpenRouter/Groq/Ollama) en el archivo .env.local.
             </div>
           )}
 

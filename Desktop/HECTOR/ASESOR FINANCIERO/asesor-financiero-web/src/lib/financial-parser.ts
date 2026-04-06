@@ -271,13 +271,16 @@ function extractTableFromBlock(block: { grid: any[][]; range: any }) {
 
   if (rows.length === 0) return null;
 
+  const rawColumnMap = identifyColumns(headers);
+  const columnMap = validateColumnMapping(rawColumnMap, rows);
+
   return {
     headers,
     rows,
     totalRows: rows.length,
     type: classifyTable(headers, rows.length),
     range,
-    columnMap: identifyColumns(headers),
+    columnMap,
   };
 }
 
@@ -291,9 +294,12 @@ function identifyColumns(headers: string[]): Record<string, string> {
 
   const keywords: Record<string, string[]> = {
     asset_name: [
-      'ACTIVO', 'NOMBRE', 'ASSET', 'INVERSION', 'TITULO', 'INSTRUMENTO',
-      'VALOR', 'DESCRIPTION', 'CONCEPTO', 'PRODUCTO', 'NAME', 'SECURITY',
-      'DENOMINACION', 'FONDO', 'EMPRESA', 'COMPANIA',
+      // Must be human-readable names — numeric-looking columns are validated away below
+      'ACTIVO', 'NOMBRE', 'ASSET', 'TITULO', 'INSTRUMENTO',
+      'PRODUCTO', 'NAME', 'SECURITY', 'DENOMINACION', 'FONDO', 'EMPRESA', 'COMPANIA',
+      // Note: 'VALOR' removed — in Spanish it means "amount/value", not "name"
+      // Note: 'INVERSION' removed — ambiguous (often means invested amount)
+      // Note: 'CONCEPTO' removed — usually a transaction description field
     ],
     ticker: [
       'TICKER', 'SIMBOLO', 'SYMBOL', 'ISIN', 'CODICE', 'RIC', 'IDENTIFICADOR',
@@ -303,12 +309,13 @@ function identifyColumns(headers: string[]): Record<string, string> {
       'DINERO PUESTO', 'CAPITAL INVERTIDO', 'INVERSION INICIAL', 'TOTAL €',
       'COSTE', 'INVESTED', 'CASH BASIS', 'CAPITAL', 'PRINCIPAL', 'COSTE TOTAL',
       'IMPORTE INVERTIDO', 'VALOR COMPRA', 'PRECIO COSTE', 'COSTE MEDIO TOTAL',
-      'TOTAL INVERTIDO', 'INVERTIDO', 'INVERSION TOTAL',
+      'TOTAL INVERTIDO', 'INVERTIDO', 'INVERSION TOTAL', 'INVERSION',
     ],
     quantity: [
-      'CANTIDAD', 'ACCIONES', 'UNIDADES', 'TITULOS', 'QUANTITY', 'AMOUNT',
+      'CANTIDAD', 'ACCIONES', 'UNIDADES', 'TITULOS', 'QUANTITY',
       'VOLUMEN', 'SHARES', 'SIZE', 'QTY', 'NUM. TITULOS', 'PARTICIPACIONES',
       'NUMERO', 'NÚM', 'NUM.',
+      // Note: 'AMOUNT' removed — usually means EUR amount, not unit count
     ],
     avg_price: [
       'PRECIO MEDIO', 'PRECIO COMPRA', 'PMC', 'P. MEDIO', 'AVG PRICE',
@@ -370,4 +377,54 @@ function identifyColumns(headers: string[]): Record<string, string> {
   }
 
   return mapping;
+}
+
+/**
+ * Validates the column mapping against actual row data.
+ * If the column mapped to `asset_name` contains predominantly numeric values,
+ * it's almost certainly a value/amount column — clear it to prevent numbers appearing as names.
+ */
+function validateColumnMapping(
+  colMap: Record<string, string>,
+  rows: Record<string, any>[]
+): Record<string, string> {
+  if (!colMap.asset_name || rows.length === 0) return colMap;
+
+  const sample = rows.slice(0, Math.min(10, rows.length));
+  const nameCol = colMap.asset_name;
+  let numericCount = 0;
+
+  for (const row of sample) {
+    const val = row[nameCol];
+    if (val === null || val === undefined) continue;
+    // A value is "numeric" if it's already a number OR a string that parses cleanly as a number
+    if (typeof val === 'number') { numericCount++; continue; }
+    if (typeof val === 'string' && val.trim() !== '' && !isNaN(Number(val.replace(/[,. ]/g, '')))) {
+      numericCount++;
+    }
+  }
+
+  // If >60% of sampled values in the "name" column are numeric → wrong column
+  if (numericCount / sample.length > 0.6) {
+    const validated = { ...colMap };
+    delete validated.asset_name;
+
+    // Try to find another unmapped string column to use as asset_name
+    // (pick the first column whose values are mostly strings and not already mapped)
+    const mappedCols = new Set(Object.values(validated));
+    for (const header of Object.keys(sample[0] || {})) {
+      if (mappedCols.has(header)) continue;
+      const strCount = sample.filter(r => {
+        const v = r[header];
+        return v !== null && v !== undefined && typeof v === 'string' && v.trim().length > 1 && isNaN(Number(v));
+      }).length;
+      if (strCount / sample.length > 0.5) {
+        validated.asset_name = header;
+        break;
+      }
+    }
+    return validated;
+  }
+
+  return colMap;
 }
