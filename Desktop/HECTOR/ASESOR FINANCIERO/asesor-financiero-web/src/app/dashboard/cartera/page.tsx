@@ -28,8 +28,8 @@ const ASSET_TYPE_COLORS: Record<string, { bg: string, text: string, border: stri
   "ETF": { bg: "bg-indigo-500/10", text: "text-indigo-400", border: "border-indigo-500/20" },
   "Cripto": { bg: "bg-orange-500/10", text: "text-orange-400", border: "border-orange-500/20" },
   "Criptomoneda": { bg: "bg-orange-500/10", text: "text-orange-400", border: "border-orange-500/20" },
+  "Materias Primas": { bg: "bg-yellow-500/10", text: "text-yellow-400", border: "border-yellow-500/20" },
   "Oro": { bg: "bg-yellow-500/10", text: "text-yellow-400", border: "border-yellow-500/20" },
-  "Metal (Oro)": { bg: "bg-yellow-500/10", text: "text-yellow-400", border: "border-yellow-500/20" },
   "Cash": { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20" },
   "Inmuebles": { bg: "bg-purple-500/10", text: "text-purple-400", border: "border-purple-500/20" },
   "Inversión": { bg: "bg-slate-500/10", text: "text-slate-400", border: "border-slate-500/20" },
@@ -537,7 +537,7 @@ export default function CarteraPage() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {["Todos", "Acción", "ETF", "Cripto", "Oro", "Cash"].map(type => (
+                    {["Todos", "Acción", "ETF", "Cripto", "Materias Primas", "Cash"].map(type => (
                       <button
                         key={type}
                         onClick={() => { setFilterType(type); setShowAll(false); }}

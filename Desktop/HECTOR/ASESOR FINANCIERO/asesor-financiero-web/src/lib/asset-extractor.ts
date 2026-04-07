@@ -195,8 +195,8 @@ export function classifyAssetType(ticker: string, name: string): string {
   if (['CASH', 'EFECTIVO', 'LIQUIDEZ', 'MONEY MARKET'].some(k => n.includes(k))) return 'Cash';
 
   // 2. Precious metals
-  if (METAL_TICKERS.has(t) || METAL_TICKERS.has(rawT)) return 'Oro';
-  if (['ORO', 'GOLD', 'PLATA', 'SILVER', 'PLATINO', 'PALADIO'].some(k => n.includes(k))) return 'Oro';
+  if (METAL_TICKERS.has(t) || METAL_TICKERS.has(rawT)) return 'Materias Primas';
+  if (['ORO', 'GOLD', 'PLATA', 'SILVER', 'PLATINO', 'PALADIO'].some(k => n.includes(k))) return 'Materias Primas';
 
   // 3. Crypto — check stripped ticker first (handles BTCEUR → BTC, ETHEUR → ETH, etc.)
   if (CRYPTO_TICKERS.has(t)) return 'Cripto';

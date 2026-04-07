@@ -149,8 +149,8 @@ export default function Dashboard() {
     if (rm.etf) resumenBreakdown.push({ label: 'ETF', value: rm.etf, color: 'bg-indigo-500', icon: '🌍' });
     if (rm.cripto) resumenBreakdown.push({ label: 'Cripto', value: rm.cripto, color: 'bg-orange-500', icon: '₿' });
     // Oro and Plata shown as individual cards so each position is clearly visible
-    if (rm.oro) resumenBreakdown.push({ label: 'Oro', value: rm.oro, color: 'bg-yellow-500', icon: '🥇' });
-    if (rm.plata) resumenBreakdown.push({ label: 'Plata', value: rm.plata, color: 'bg-slate-400', icon: '🥈' });
+    if (rm.oro) resumenBreakdown.push({ label: 'Oro', value: rm.oro, color: 'bg-yellow-500', icon: '⚜️' });
+    if (rm.plata) resumenBreakdown.push({ label: 'Plata', value: rm.plata, color: 'bg-slate-400', icon: '🪙' });
     if (rm.emergencyFund) resumenBreakdown.push({ label: 'Fondo Emergencia', value: rm.emergencyFund, color: 'bg-emerald-500', icon: '🛡️' });
     if (rm.trading) resumenBreakdown.push({ label: 'Cuenta Trading', value: rm.trading, color: 'bg-purple-500', icon: '⚡' });
   }
