@@ -39,26 +39,54 @@ const KNOWN_BROKERS = new Set([
 
 /** Crypto ticker patterns */
 const CRYPTO_TICKERS = new Set([
+  // Layer 1 / Major
   'BTC', 'ETH', 'SOL', 'ADA', 'XRP', 'DOGE', 'DOT', 'AVAX', 'MATIC',
   'LINK', 'UNI', 'LTC', 'BCH', 'ATOM', 'ALGO', 'XLM', 'VET', 'FIL',
   'TRX', 'ETC', 'XMR', 'DASH', 'ZEC', 'NEAR', 'ICP', 'SAND', 'MANA',
   'AXS', 'THETA', 'EOS', 'CAKE', 'CRO', 'FTM', 'LUNA', 'SHIB', 'PEPE',
   'ARB', 'OP', 'APT', 'SUI', 'SEI', 'INJ', 'TIA', 'BLUR', 'WLD',
   'BNB', 'USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDP',
+  // Gaming / NFT / Meme
+  'ENJ', 'POPCAT', 'BONK', 'WIF', 'FLOKI', 'TURBO', 'MEME', 'BOME',
+  'MYRO', 'SLERF', 'SILLY', 'CATS', 'NEIRO', 'MOG', 'CATI',
+  // DeFi
+  'AAVE', 'COMP', 'MKR', 'SNX', 'YFI', 'BAL', 'SUSHI', 'CRV', 'LDO',
+  'RPL', '1INCH', 'DYDX', 'GMX', 'PERP', 'RUNE', 'OSMO',
+  // AI / Data
+  'FET', 'OCEAN', 'RNDR', 'GRT', 'NMR', 'AGIX', 'TAO', 'WLD',
+  // Older altcoins / Trade Republic listed
+  'BEAM', 'QTUM', 'HBAR', 'EGLD', 'FLOW', 'IMX', 'ROSE', 'KAVA',
+  'ONE', 'CELO', 'XTZ', 'BAT', 'ZRX', 'BAND', 'ANKR', 'CHZ',
+  'HOT', 'OMG', 'IOTA', 'ICX', 'ZIL', 'ONT', 'WAVES', 'SC', 'DCR',
+  'LSK', 'NANO', 'STMX', 'REP', 'MLN', 'PIXEL', 'PYTH', 'JUP',
+  'STRK', 'MANTA', 'ALT', 'DYM', 'ACE', 'PORTAL', 'MAVIA', 'SAGA',
+  'NOT', 'DOGS', 'HMSTR', 'EIGEN', 'SCR', 'CELO', 'POL',
   // Common pair suffixes stripped: BTC-USD → BTC, ETH-EUR → ETH
 ]);
 
 /** Well-known ETF tickers */
 const ETF_TICKERS = new Set([
-  'VUAA', 'VWCE', 'VWRL', 'VUSA', 'VAGP', 'VGWL', 'VNRT',
-  'IWDA', 'SWRD', 'CSPX', 'IUSA', 'IUKD', 'IDVY', 'EMIM',
-  'NQSE', 'EQQQ', 'QQQ', 'SPY', 'VOO', 'VTI', 'IVV', 'VEA', 'VWO',
-  'AGGH', 'AGGU', 'VAGF', 'TLT', 'IEF', 'LQD', 'HYG',
+  // Vanguard
+  'VUAA', 'VWCE', 'VWRL', 'VUSA', 'VAGP', 'VGWL', 'VNRT', 'VFEM', 'VEUR',
+  'VERX', 'VJPN', 'VFEA', 'VHYL', 'VAGF', 'VDPX', 'VOO', 'VTI', 'VEA', 'VWO',
+  'VIG', 'VYM', 'VNQ', 'VB', 'VO', 'VV',
+  // iShares
+  'IWDA', 'SWRD', 'CSPX', 'IUSA', 'IUKD', 'IDVY', 'EMIM', 'IQQQ', 'IQQH',
+  'IBTA', 'IBTM', 'IBTS', 'AGGH', 'AGGU', 'IEAG', 'IGLN',
+  // US ETFs
+  'QQQ', 'SPY', 'IVV', 'TQQQ', 'SQQQ', 'SPXL', 'UPRO',
+  'TLT', 'IEF', 'SHY', 'LQD', 'HYG', 'JNK', 'BND', 'BNDW', 'AGG',
   'GLD', 'IAU', 'SLV', 'PHGP', 'SGLN', 'PHPP',
+  // Sector SPDR (US)
+  'XLK', 'XLF', 'XLE', 'XLV', 'XLI', 'XLC', 'XLRE', 'XLU', 'XLB', 'XLP',
+  // Sector ETFs (Europe / Trade Republic)
+  'DFEN', 'ITA', 'PPA', 'FITE', 'WAR', 'NATO',   // Aerospace & Defense
+  'XXX',                                            // Trade Republic Aerospace & Defense ETF
+  'EQQQ', 'NQSE',
+  // ARK
   'ARKK', 'ARKG', 'ARKQ', 'ARKW', 'ARKF',
-  'XLK', 'XLF', 'XLE', 'XLV', 'XLI', 'XLC', 'XLRE',
-  'MSCI', 'ACWI', 'EEM', 'EFA', 'AGG', 'BND', 'BNDW',
-  // iShares / Amundi / Lyxor / Xtrackers common patterns
+  // Other
+  'ACWI', 'EEM', 'EFA', 'MSCI',
 ]);
 
 /** Precious metals */
@@ -70,42 +98,56 @@ const METAL_TICKERS = new Set([
 /**
  * Auto-classifies an asset based on its ticker and/or name.
  * Returns one of: "Cripto", "ETF", "Acción", "Oro", "Cash", "Inversión"
+ *
+ * Handles Trade Republic crypto pairs without separator:
+ *   BTCEUR, ETHEUR, XRPEUR, LINKEUR, ADAEUR, UNIEUR, BEAMEUR, etc.
  */
 export function classifyAssetType(ticker: string, name: string): string {
-  const t = (ticker || '').toUpperCase().replace(/[-/](USD|EUR|USDT|BTC|GBP)$/, '').trim();
+  const rawT = (ticker || '').toUpperCase().trim();
+
+  // Strip pair suffixes — both with separator (BTC-USD) and without (BTCEUR, BTCUSDT)
+  // Order matters: strip longer suffixes first
+  const t = rawT
+    .replace(/[-/](USDT|USDC|USD|EUR|GBP|CHF|BTC|ETH)$/, '')  // with separator
+    .replace(/(USDT|USDC)$/, '')                                  // without separator — USDT first (longer)
+    .replace(/(EUR|USD|GBP|CHF)$/, '');                           // without separator — fiat suffix
+
   const n = (name || '').toUpperCase().trim();
 
-  // 1. Cash / Liquidity
+  // 1. Cash / Liquidity (check raw ticker before stripping too)
+  if (['EUR', 'USD', 'GBP', 'CHF', 'JPY', 'CAD', 'AUD', 'CASH', 'EFECTIVO', 'LIQUIDEZ'].includes(rawT)) return 'Cash';
   if (['EUR', 'USD', 'GBP', 'CHF', 'JPY', 'CAD', 'AUD', 'CASH', 'EFECTIVO', 'LIQUIDEZ'].includes(t)) return 'Cash';
   if (['CASH', 'EFECTIVO', 'LIQUIDEZ', 'MONEY MARKET'].some(k => n.includes(k))) return 'Cash';
 
-  // 2. Precious metals (check before ETF since GLD/IAU are also ETF tickers but by convention they're metals)
-  if (METAL_TICKERS.has(t)) return 'Oro';
+  // 2. Precious metals
+  if (METAL_TICKERS.has(t) || METAL_TICKERS.has(rawT)) return 'Oro';
   if (['ORO', 'GOLD', 'PLATA', 'SILVER', 'PLATINO', 'PALADIO'].some(k => n.includes(k))) return 'Oro';
 
-  // 3. Crypto
+  // 3. Crypto — check stripped ticker first (handles BTCEUR → BTC, ETHEUR → ETH, etc.)
   if (CRYPTO_TICKERS.has(t)) return 'Cripto';
+  if (CRYPTO_TICKERS.has(rawT)) return 'Cripto';
   // Crypto name patterns
   if (['BITCOIN', 'ETHEREUM', 'RIPPLE', 'CARDANO', 'SOLANA', 'DOGECOIN', 'LITECOIN',
-       'POLKADOT', 'CHAINLINK', 'AVALANCHE', 'POLYGON', 'BINANCE COIN'].some(k => n.includes(k))) return 'Cripto';
-  // Pairs like BTC-USD, ETH-EUR
-  if (/^(BTC|ETH|SOL|ADA|XRP|DOGE|DOT|AVAX|MATIC|LTC|BNB)[/-]/.test(ticker.toUpperCase())) return 'Cripto';
-
-  // 4. ETF
-  if (ETF_TICKERS.has(t)) return 'ETF';
-  // Common ETF name patterns
-  if (['ISHARES', 'VANGUARD', 'AMUNDI', 'LYXOR', 'XTRACKERS', 'INVESCO', 'SPDR',
-       'WISDOMTREE', 'VANECK', 'PIMCO'].some(k => n.includes(k))) return 'ETF';
-  // UCITS = almost always ETF (European regulation)
-  if (n.includes('UCITS') || n.includes('SICAV') || n.includes('INDEX FUND')) return 'ETF';
-  // Tickers with common ETF suffixes
-  if (/^(I|V|S|X|A)[A-Z]{2,4}$/.test(t) && t.length <= 5) {
-    // Short uppercase tickers starting with these letters are often ETFs, but not certain
-    // Only classify as ETF if we're fairly confident — skip heuristic for now
+       'POLKADOT', 'CHAINLINK', 'AVALANCHE', 'POLYGON', 'BINANCE COIN',
+       'ENJIN', 'POPCAT', 'BEAM PROTOCOL', 'QTUM'].some(k => n.includes(k))) return 'Cripto';
+  // If the raw ticker ends in EUR/USDT and the stripped base is a known crypto — already handled above
+  // Extra fallback: if rawT matches XXXEUR pattern and XXX >= 2 chars and not a known stock
+  if (/^[A-Z]{2,8}(EUR|USDT|USDC|USD|BTC)$/.test(rawT) && t.length >= 2 && t.length <= 8) {
+    // The stripped base could be a crypto we don't know about — classify as Cripto cautiously
+    // Only if the suffix is EUR/USDT (Trade Republic pattern), not if it's a legitimate company ticker
+    return 'Cripto';
   }
 
-  // 5. Stocks — if it has a ticker and doesn't match above, assume it's a stock
-  if (t && t.length >= 2 && t.length <= 6) return 'Acción';
+  // 4. ETF (check before Acción to catch known ETFs)
+  if (ETF_TICKERS.has(t) || ETF_TICKERS.has(rawT)) return 'ETF';
+  // Common ETF name patterns
+  if (['ISHARES', 'VANGUARD', 'AMUNDI', 'LYXOR', 'XTRACKERS', 'INVESCO', 'SPDR',
+       'WISDOMTREE', 'VANECK', 'PIMCO', 'DIREXION', 'PROSHARES'].some(k => n.includes(k))) return 'ETF';
+  // UCITS = almost always ETF (European regulation)
+  if (n.includes('UCITS') || n.includes('SICAV') || n.includes('INDEX FUND') || n.includes('INDEX ETF')) return 'ETF';
+
+  // 5. Stocks — short tickers (1-6 chars) that didn't match crypto/ETF
+  if (t && t.length >= 1 && t.length <= 6) return 'Acción';
 
   // 6. Fallback
   return 'Inversión';
