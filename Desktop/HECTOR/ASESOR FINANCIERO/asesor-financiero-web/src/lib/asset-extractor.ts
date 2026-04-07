@@ -95,6 +95,47 @@ const METAL_TICKERS = new Set([
   'GLD', 'IAU', 'SLV', 'PHGP', 'SGLN', 'PHPP', 'GLDA', 'GOLDA',
 ]);
 
+const CRYPTO_DISPLAY_NAMES: Record<string, string> = {
+  BTC: 'Bitcoin', ETH: 'Ethereum', SOL: 'Solana', XRP: 'Ripple', ADA: 'Cardano',
+  DOT: 'Polkadot', LINK: 'Chainlink', AVAX: 'Avalanche', MATIC: 'Polygon',
+  DOGE: 'Dogecoin', LTC: 'Litecoin', BCH: 'Bitcoin Cash', ATOM: 'Cosmos',
+  UNI: 'Uniswap', AAVE: 'Aave', BNB: 'BNB', NEAR: 'NEAR', ICP: 'Internet Computer',
+  SAND: 'The Sandbox', MANA: 'Decentraland', AXS: 'Axie Infinity', ENJ: 'Enjin',
+  BEAM: 'Beam', QTUM: 'Qtum', HBAR: 'Hedera', EGLD: 'MultiversX', FLOW: 'Flow',
+  IMX: 'Immutable X', GRT: 'The Graph', FET: 'Fetch.ai', RNDR: 'Render',
+  ARB: 'Arbitrum', OP: 'Optimism', SUI: 'Sui', APT: 'Aptos', INJ: 'Injective',
+  TIA: 'Celestia', JUP: 'Jupiter', POPCAT: 'Popcat', CHZ: 'Chiliz',
+  XLM: 'Stellar', VET: 'VeChain', FIL: 'Filecoin', TRX: 'TRON',
+};
+
+const PLATFORM_SHEET_NAMES = new Set([
+  'BINANCE', 'TRADE REPUBLIC', 'TRADEREPUBLIC', 'QUANTFURY', 'REVOLUT',
+  'BITGET', 'GOIN', 'BITMART', 'GATE', 'GATE.IO', 'MEXC',
+  'COINBASE', 'KRAKEN', 'BYBIT', 'KUCOIN',
+]);
+
+function detectPlatformFromTicker(rawTicker: string): string | null {
+  const t = rawTicker.toUpperCase().trim();
+  if (/[A-Z]{2,8}EUR$/.test(t) && !t.endsWith('USDT') && !t.endsWith('USDC')) {
+    return 'Trade Republic';
+  }
+  if (/[A-Z]{2,8}USDT$/.test(t) || /[A-Z]{2,8}USDC$/.test(t)) return 'Binance';
+  if (/[A-Z]{2,8}BTC$/.test(t) && t !== 'BTC') return 'Binance';
+  return null;
+}
+
+function detectPlatformFromSheet(sheetName: string): string | null {
+  const s = sheetName.toUpperCase().replace(/\s+/g, ' ').trim();
+  for (const platform of PLATFORM_SHEET_NAMES) {
+    if (s.includes(platform)) {
+      if (platform === 'TRADEREPUBLIC' || platform === 'TRADE REPUBLIC') return 'Trade Republic';
+      if (platform === 'GATE' || platform === 'GATE.IO') return 'Gate.io';
+      return platform.charAt(0) + platform.slice(1).toLowerCase();
+    }
+  }
+  return null;
+}
+
 /**
  * Auto-classifies an asset based on its ticker and/or name.
  * Returns one of: "Cripto", "ETF", "Acción", "Oro", "Cash", "Inversión"
@@ -166,6 +207,8 @@ export function extractAssetsFromSummary(summary: FinancialSummary): Partial<Por
     const summaryTables = allTables.filter(t => t.type === 'summary');
     const tablesToProcess = summaryTables.length > 0 ? summaryTables : allTables;
 
+    const sheetPlatform = detectPlatformFromSheet(sheet.name);
+
     tablesToProcess.forEach(table => {
       const colMap = (table as any).columnMap || {};
 
@@ -180,6 +223,10 @@ export function extractAssetsFromSummary(summary: FinancialSummary): Partial<Por
         let name = String(row[nameCol] || "").trim();
         const ticker = String(row[tickerCol] || "").trim().toUpperCase();
         const rawAssetType = String(row[colMap.asset_type] || "").trim().toUpperCase();
+
+        // Detect platform
+        const tickerPlatform = detectPlatformFromTicker(ticker);
+        const platform = tickerPlatform ?? sheetPlatform ?? null;
         const quantity = safeNum(row[colMap.quantity]);
         const avgPrice = safeNum(row[colMap.avg_price]);
         const currentPrice = safeNum(row[colMap.current_price]);
@@ -213,6 +260,23 @@ export function extractAssetsFromSummary(summary: FinancialSummary): Partial<Por
         // ── If name is empty but ticker exists, use ticker ────────────
         if (!name && ticker) name = ticker;
 
+        // Format a human-readable name that includes the platform (so BTC·TR ≠ BTC·Binance)
+        if (platform) {
+          const baseTicker = ticker
+            .replace(/[-/](USDT|USDC|USD|EUR|GBP|CHF|BTC|ETH)$/, '')
+            .replace(/(USDT|USDC)$/, '')
+            .replace(/(EUR|USD|GBP|CHF)$/, '')
+            .toUpperCase();
+          const cryptoDisplayName = CRYPTO_DISPLAY_NAMES[baseTicker];
+          if (cryptoDisplayName && (CRYPTO_TICKERS.has(baseTicker) || classifyAssetType(ticker, name) === 'Cripto')) {
+            name = `${cryptoDisplayName} · ${platform}`;
+          } else if (name && name !== ticker) {
+            name = `${name} · ${platform}`;
+          } else {
+            name = `${ticker} · ${platform}`;
+          }
+        }
+
         // Total invested: explicit column, or calculate from qty × price
         const totalInvestedCol = colMap.total_invested;
         let totalInvested = totalInvestedCol ? safeNum(row[totalInvestedCol]) : 0;
@@ -235,7 +299,7 @@ export function extractAssetsFromSummary(summary: FinancialSummary): Partial<Por
         if (valueEur <= 0 && quantity <= 0) return;
 
         // Dedup within the same file extraction
-        const dedupKey = `${ticker || 'NO_TICKER'}_${name}`.toUpperCase();
+        const dedupKey = `${ticker || 'NO_TICKER'}_${platform || 'NO_PLATFORM'}_${name}`.toUpperCase();
         if (seenKeys.has(dedupKey)) return;
         seenKeys.add(dedupKey);
 

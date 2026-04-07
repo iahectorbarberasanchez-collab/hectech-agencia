@@ -131,6 +131,25 @@ export default function Dashboard() {
   const portfolioProfit = portfolioTotal - portfolioInvested;
   const portfolioProfitPct = portfolioInvested > 0 ? (portfolioProfit / portfolioInvested) * 100 : 0;
 
+  // Prefer Resum sheet values when available, fall back to DB calculation
+  const displayInvested = summary?.resumenMetrics?.totalInvested ?? portfolioInvested;
+  const displayCurrentValue = summary?.resumenMetrics?.totalCurrentValue ?? portfolioTotal;
+  const displayProfit = displayCurrentValue - displayInvested;
+  const displayProfitPct = displayInvested > 0 ? (displayProfit / displayInvested) * 100 : 0;
+
+  // Category breakdown from Resum sheet
+  const resumenBreakdown: { label: string; value: number; color: string; icon: string }[] = [];
+  const rm = summary?.resumenMetrics;
+  if (rm) {
+    if (rm.acciones) resumenBreakdown.push({ label: 'Acciones', value: rm.acciones, color: 'bg-blue-500', icon: '📈' });
+    if (rm.etf) resumenBreakdown.push({ label: 'ETF', value: rm.etf, color: 'bg-indigo-500', icon: '🌍' });
+    if (rm.cripto) resumenBreakdown.push({ label: 'Cripto', value: rm.cripto, color: 'bg-orange-500', icon: '₿' });
+    if (rm.oro) resumenBreakdown.push({ label: 'Oro / Plata', value: rm.oro, color: 'bg-yellow-500', icon: '🥇' });
+    if (rm.emergencyFund) resumenBreakdown.push({ label: 'Fondo Emergencia', value: rm.emergencyFund, color: 'bg-emerald-500', icon: '🛡️' });
+    if (rm.trading) resumenBreakdown.push({ label: 'Cuenta Trading', value: rm.trading, color: 'bg-purple-500', icon: '⚡' });
+  }
+  const hasResumenBreakdown = resumenBreakdown.length > 0;
+
   // Group assets by type for mini breakdown
   const typeBreakdown = portfolioAssets.reduce<Record<string, number>>((acc, a) => {
     const type = a.asset_type || 'Inversión';
@@ -223,29 +242,32 @@ export default function Dashboard() {
                 <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
                   <Wallet className="w-5 h-5" />
                 </div>
-                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Patrimonio Invertido</span>
+                <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Inversión Total</span>
               </div>
               <div className="text-2xl font-black text-white">
-                {portfolioLoading ? <span className="opacity-30 text-base">Cargando...</span> : portfolioTotal > 0 ? `${portfolioTotal.toLocaleString("es-ES", { maximumFractionDigits: 0 })} €` : "-- €"}
+                {portfolioLoading ? <span className="opacity-30 text-base">Cargando...</span> : displayInvested > 0 ? `${displayInvested.toLocaleString("es-ES", { maximumFractionDigits: 0 })} €` : "-- €"}
               </div>
               <div className="text-[10px] text-white/30 mt-1 flex items-center gap-1">
-                <Activity className="w-3 h-3" /> {portfolioAssets.length} activos en cartera
+                {displayCurrentValue !== displayInvested && displayCurrentValue > 0
+                  ? <><Activity className="w-3 h-3" /> Valor actual: {displayCurrentValue.toLocaleString("es-ES", { maximumFractionDigits: 0 })} €</>
+                  : <><Activity className="w-3 h-3" /> {portfolioAssets.length} activos en cartera</>
+                }
               </div>
             </motion.div>
 
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.05 }} className="glass-card p-5 rounded-2xl border border-white/5 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-16 h-16 blur-2xl transition-all" style={{ background: portfolioProfit >= 0 ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }} />
+              <div className="absolute top-0 right-0 w-16 h-16 blur-2xl transition-all" style={{ background: displayProfit >= 0 ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }} />
               <div className="flex items-center gap-3 mb-2">
-                <div className={`p-2 rounded-lg ${portfolioProfit >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
-                  {portfolioProfit >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+                <div className={`p-2 rounded-lg ${displayProfit >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                  {displayProfit >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
                 </div>
                 <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Beneficio Neto</span>
               </div>
-              <div className={`text-2xl font-black ${portfolioProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {portfolioLoading ? <span className="opacity-30 text-base text-white">Cargando...</span> : portfolioInvested > 0 ? `${portfolioProfit >= 0 ? '+' : ''}${portfolioProfit.toLocaleString("es-ES", { maximumFractionDigits: 0 })} €` : "-- €"}
+              <div className={`text-2xl font-black ${displayProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {portfolioLoading ? <span className="opacity-30 text-base text-white">Cargando...</span> : displayInvested > 0 ? `${displayProfit >= 0 ? '+' : ''}${displayProfit.toLocaleString("es-ES", { maximumFractionDigits: 0 })} €` : "-- €"}
               </div>
               <div className="text-[10px] text-white/30 mt-1 flex items-center gap-1">
-                {portfolioInvested > 0 && <span className={portfolioProfitPct >= 0 ? 'text-emerald-500/60' : 'text-red-500/60'}>{portfolioProfitPct >= 0 ? '+' : ''}{portfolioProfitPct.toFixed(1)}% rentabilidad total</span>}
+                {displayInvested > 0 && <span className={displayProfitPct >= 0 ? 'text-emerald-500/60' : 'text-red-500/60'}>{displayProfitPct >= 0 ? '+' : ''}{displayProfitPct.toFixed(1)}% rentabilidad total</span>}
               </div>
             </motion.div>
 
@@ -315,6 +337,42 @@ export default function Dashboard() {
                       <div className="text-sm font-black text-white">{value.toLocaleString("es-ES", { maximumFractionDigits: 0 })} €</div>
                       <div className="mt-1 h-1 bg-white/5 rounded-full overflow-hidden">
                         <div className={`h-full rounded-full ${colors[i % colors.length]}`} style={{ width: `${pct}%`, opacity: 0.7 }} />
+                      </div>
+                      <div className="text-[10px] text-white/20 mt-0.5">{pct.toFixed(1)}%</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Resum Breakdown — shown when Resum sheet data is available */}
+          {hasResumenBreakdown && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-card p-6 rounded-2xl border border-emerald-500/10 mb-8"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-bold text-white flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-emerald-400" />
+                  Desglose por Categoría
+                  <span className="text-[10px] text-emerald-400/60 font-normal ml-1">desde hoja Resum</span>
+                </h3>
+                <div className="text-xs text-white/30">
+                  Total: {displayInvested.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €
+                </div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                {resumenBreakdown.map(({ label, value, color, icon }) => {
+                  const pct = displayInvested > 0 ? (value / displayInvested) * 100 : 0;
+                  return (
+                    <div key={label} className="bg-white/3 rounded-xl p-3 border border-white/5">
+                      <div className="text-xl mb-1">{icon}</div>
+                      <div className="text-[10px] text-white/40 uppercase tracking-wider font-bold mb-1 truncate">{label}</div>
+                      <div className="text-sm font-black text-white">{value.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €</div>
+                      <div className="mt-1.5 h-1 bg-white/5 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.min(pct, 100)}%`, opacity: 0.8 }} />
                       </div>
                       <div className="text-[10px] text-white/20 mt-0.5">{pct.toFixed(1)}%</div>
                     </div>
