@@ -49,18 +49,27 @@ const CRYPTO_TICKERS = new Set([
   // Gaming / NFT / Meme
   'ENJ', 'POPCAT', 'BONK', 'WIF', 'FLOKI', 'TURBO', 'MEME', 'BOME',
   'MYRO', 'SLERF', 'SILLY', 'CATS', 'NEIRO', 'MOG', 'CATI',
+  'GALA', 'APE', 'ILV', 'MICHI', 'SPX', 'PNUT', 'WLFI', 'PUMP',
   // DeFi
   'AAVE', 'COMP', 'MKR', 'SNX', 'YFI', 'BAL', 'SUSHI', 'CRV', 'LDO',
   'RPL', '1INCH', 'DYDX', 'GMX', 'PERP', 'RUNE', 'OSMO', 'LRC',
+  'UMA', 'CAKE', 'RAY', 'KUJI',
   // AI / Data
-  'FET', 'OCEAN', 'RNDR', 'GRT', 'NMR', 'AGIX', 'TAO', 'WLD',
+  'FET', 'OCEAN', 'RNDR', 'RENDER', 'GRT', 'NMR', 'AGIX', 'TAO',
+  'AITECH', 'NEUR',
+  // L1/L2 & infrastructure
+  'TON', 'QNT', 'BGB', 'PI', 'XCN', 'PEAQ', 'AVAL', 'AIXBT',
   // Older altcoins / Trade Republic listed
-  'BEAM', 'QTUM', 'HBAR', 'EGLD', 'FLOW', 'IMX', 'ROSE', 'KAVA',
+  'BEAM', 'HBAR', 'EGLD', 'FLOW', 'IMX', 'ROSE', 'KAVA',
   'ONE', 'CELO', 'XTZ', 'BAT', 'ZRX', 'BAND', 'ANKR', 'CHZ',
   'HOT', 'OMG', 'IOTA', 'ICX', 'ZIL', 'ONT', 'WAVES', 'SC', 'DCR',
   'LSK', 'NANO', 'STMX', 'REP', 'MLN', 'PIXEL', 'PYTH', 'JUP',
   'STRK', 'MANTA', 'ALT', 'DYM', 'ACE', 'PORTAL', 'MAVIA', 'SAGA',
-  'NOT', 'DOGS', 'HMSTR', 'EIGEN', 'SCR', 'CELO', 'POL',
+  'NOT', 'DOGS', 'HMSTR', 'EIGEN', 'SCR', 'POL', 'METAL',
+  // Micro-cap / niche confirmed by user
+  'SAUCE', 'GFAL',
+  // Full-name aliases (users sometimes enter token full name as ticker)
+  'SYNTHETIX', 'LOOPRING', 'CURVE', 'ORIGIN', 'KYBER',
   // Common pair suffixes stripped: BTC-USD → BTC, ETH-EUR → ETH
 ]);
 
@@ -85,6 +94,9 @@ const ETF_TICKERS = new Set([
   'EQQQ', 'NQSE',
   // ARK
   'ARKK', 'ARKG', 'ARKQ', 'ARKW', 'ARKF',
+  // Thematic
+  'QTUM',   // Defiance Quantum ETF (NOT the Qtum crypto)
+  'URNU',   // Uranium ETF
   // Other
   'ACWI', 'EEM', 'EFA', 'MSCI',
 ]);
@@ -93,6 +105,7 @@ const ETF_TICKERS = new Set([
 const METAL_TICKERS = new Set([
   'XAU', 'XAG', 'XPT', 'XPD', 'GOLD', 'SILVER', 'PLAT', 'PALL',
   'GLD', 'IAU', 'SLV', 'PHGP', 'SGLN', 'PHPP', 'GLDA', 'GOLDA',
+  'ORO', 'PLATA',  // Spanish names used directly as tickers
 ]);
 
 const CRYPTO_DISPLAY_NAMES: Record<string, string> = {
@@ -101,12 +114,22 @@ const CRYPTO_DISPLAY_NAMES: Record<string, string> = {
   DOGE: 'Dogecoin', LTC: 'Litecoin', BCH: 'Bitcoin Cash', ATOM: 'Cosmos',
   UNI: 'Uniswap', AAVE: 'Aave', BNB: 'BNB', NEAR: 'NEAR', ICP: 'Internet Computer',
   SAND: 'The Sandbox', MANA: 'Decentraland', AXS: 'Axie Infinity', ENJ: 'Enjin',
-  BEAM: 'Beam', QTUM: 'Qtum', HBAR: 'Hedera', EGLD: 'MultiversX', FLOW: 'Flow',
-  IMX: 'Immutable X', GRT: 'The Graph', FET: 'Fetch.ai', RNDR: 'Render',
+  BEAM: 'Beam', HBAR: 'Hedera', EGLD: 'MultiversX', FLOW: 'Flow',
+  IMX: 'Immutable X', GRT: 'The Graph', FET: 'Fetch.ai', RNDR: 'Render', RENDER: 'Render',
   ARB: 'Arbitrum', OP: 'Optimism', SUI: 'Sui', APT: 'Aptos', INJ: 'Injective',
   TIA: 'Celestia', JUP: 'Jupiter', POPCAT: 'Popcat', CHZ: 'Chiliz',
   XLM: 'Stellar', VET: 'VeChain', FIL: 'Filecoin', TRX: 'TRON',
   SNX: 'Synthetix', LRC: 'Loopring',
+  RUNE: 'THORChain', GALA: 'Gala', QNT: 'Quant', APE: 'ApeCoin', ILV: 'Illuvium',
+  CAKE: 'PancakeSwap', BAL: 'Balancer', RAY: 'Raydium', TON: 'Toncoin',
+  AIXBT: 'AIXBT', WLFI: 'World Liberty Fi', PNUT: 'Peanut', AVAL: 'Aval',
+  PEAQ: 'Peaq', PUMP: 'Pump', KUJI: 'Kujira', AITECH: 'Aitech',
+  SAUCE: 'SaucerSwap', GFAL: 'GFAL', XCN: 'Chain', BGB: 'Bitget Token',
+  PI: 'Pi Network', METAL: 'Metal', BOME: 'Book of Meme', MICHI: 'Michi',
+  NEUR: 'Neur', SPX: 'SPX6900', WIF: 'dogwifhat', FLOKI: 'Floki',
+  PEPE: 'Pepe', BONK: 'Bonk', WLD: 'Worldcoin',
+  UMA: 'UMA', CRV: 'Curve', CURVE: 'Curve',
+  SYNTHETIX: 'Synthetix', LOOPRING: 'Loopring', ORIGIN: 'Origin Protocol', KYBER: 'Kyber Network',
 };
 
 const PLATFORM_SHEET_NAMES = new Set([
@@ -181,7 +204,7 @@ export function classifyAssetType(ticker: string, name: string): string {
   // Crypto name patterns
   if (['BITCOIN', 'ETHEREUM', 'RIPPLE', 'CARDANO', 'SOLANA', 'DOGECOIN', 'LITECOIN',
        'POLKADOT', 'CHAINLINK', 'AVALANCHE', 'POLYGON', 'BINANCE COIN',
-       'ENJIN', 'POPCAT', 'BEAM PROTOCOL', 'QTUM',
+       'ENJIN', 'POPCAT', 'BEAM PROTOCOL',
        'SYNTHETIX', 'LOOPRING'].some(k => n.includes(k))) return 'Cripto';
   // Extra fallback: if afterColon matches XXXEUR/XXXUSDT pattern → Trade Republic / Binance crypto
   if (/^[A-Z]{2,8}(EUR|USDT|USDC|USD|BTC)$/.test(afterColon) && t.length >= 2 && t.length <= 8) {

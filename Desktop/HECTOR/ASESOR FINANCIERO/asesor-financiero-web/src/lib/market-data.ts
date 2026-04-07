@@ -30,15 +30,26 @@ export interface MarketQuote {
 
 // All known crypto base tickers — will be normalized to BASE-USD or BASE-EUR
 const CRYPTO_BASE_TICKERS = new Set([
+  // Layer 1 / Major
   'BTC', 'ETH', 'SOL', 'ADA', 'XRP', 'DOT', 'DOGE', 'AVAX', 'MATIC', 'LINK',
   'UNI', 'LTC', 'BCH', 'ATOM', 'ALGO', 'XLM', 'VET', 'FIL', 'NEAR', 'ICP',
   'APT', 'ARB', 'OP', 'INJ', 'SUI', 'BNB', 'TRX', 'ETC', 'XMR', 'DASH', 'ZEC',
+  'TON', 'QNT', 'XCN', 'BGB', 'PI',
+  // DeFi
   'SAND', 'MANA', 'AXS', 'THETA', 'CRO', 'FTM', 'SHIB', 'PEPE', 'WLD', 'TIA',
   'SEI', 'BLUR', 'AAVE', 'COMP', 'MKR', 'CRV', 'LDO', 'GRT', 'FET', 'RNDR',
-  'ENJ', 'BEAM', 'QTUM', 'HBAR', 'EGLD', 'FLOW', 'IMX', 'ROSE', 'KAVA', 'ONE',
+  'SNX', 'LRC', 'BAL', 'RUNE', 'CAKE', 'RAY', 'UMA',
+  // Gaming / NFT / Meme
+  'ENJ', 'GALA', 'APE', 'ILV', 'MANA',
+  'BEAM', 'HBAR', 'EGLD', 'FLOW', 'IMX', 'ROSE', 'KAVA', 'ONE',
   'CELO', 'XTZ', 'BAT', 'ZRX', 'ANKR', 'CHZ', 'HOT', 'OMG', 'IOTA', 'ICX',
   'ZIL', 'ONT', 'WAVES', 'DCR', 'NANO', 'NMR', 'JUP', 'PYTH', 'STRK', 'POPCAT',
-  'BONK', 'WIF', 'FLOKI',
+  'BONK', 'WIF', 'FLOKI', 'BOME', 'PEPE', 'PNUT', 'WLFI', 'AVAL', 'PEAQ',
+  'PUMP', 'MICHI', 'SPX',
+  // AI / Data
+  'RENDER', 'AITECH',
+  // Infrastructure / newer
+  'AIXBT', 'KUJI', 'SAUCE', 'GFAL', 'NEUR', 'METAL', 'XCN',
 ]);
 
 // Spanish IBEX 35 tickers → .MC suffix
@@ -71,6 +82,16 @@ const EURONEXT_SYMBOLS: Record<string, string> = {
   'MC': 'MC.PA',
   'SAN.PA': 'SAN.PA',
   'DRO': 'DRO.AX',   // DroneShield (ASX:DRO)
+};
+
+// Full token name → canonical ticker (for users who enter the full name as ticker)
+const FULL_NAME_TO_TICKER: Record<string, string> = {
+  'SYNTHETIX': 'SNX',
+  'LOOPRING':  'LRC',
+  'CURVE':     'CRV',
+  'ORIGIN':    'OGN',
+  'KYBER':     'KNC',
+  'RENDER':    'RNDR',   // Render Token rebranded but RNDR still works on Yahoo
 };
 
 // Map exchange prefixes to Yahoo Finance suffixes
@@ -142,17 +163,20 @@ export function normalizeSymbol(symbol: string): string {
   // If extractBaseTicker already resolved to a Yahoo symbol (e.g., ETR:P911 → P911.DE), use it
   if (yahooSymbol) return yahooSymbol;
 
+  // Resolve full-name aliases (SYNTHETIX → SNX, CURVE → CRV, etc.)
+  const resolvedBase = FULL_NAME_TO_TICKER[base] ?? base;
+
   // Known crypto → add -USD or -EUR suffix
-  if (CRYPTO_BASE_TICKERS.has(base)) return `${base}-${currency}`;
+  if (CRYPTO_BASE_TICKERS.has(resolvedBase)) return `${resolvedBase}-${currency}`;
 
   // IBEX 35 → .MC suffix
-  if (IBEX_SYMBOLS.has(base)) return `${base}.MC`;
+  if (IBEX_SYMBOLS.has(resolvedBase)) return `${resolvedBase}.MC`;
 
   // European stocks
-  if (EURONEXT_SYMBOLS[base]) return EURONEXT_SYMBOLS[base];
+  if (EURONEXT_SYMBOLS[resolvedBase]) return EURONEXT_SYMBOLS[resolvedBase];
 
-  // Return as-is (US stocks, ETFs, etc.)
-  return base;
+  // Return resolved base (US stocks, ETFs, etc.)
+  return resolvedBase;
 }
 
 /**
