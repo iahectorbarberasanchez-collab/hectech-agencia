@@ -127,7 +127,11 @@ export default function Dashboard() {
   };
 
   const portfolioTotal = portfolioAssets.reduce((s, a) => s + (a.value_eur || 0), 0);
-  const portfolioInvested = portfolioAssets.reduce((s, a) => s + ((a.quantity || 0) * (a.purchase_price || 0) || a.value_eur || 0), 0);
+  const portfolioInvested = portfolioAssets.reduce((s, a) => {
+    // Use qty × price only when both are set — otherwise fall back to value_eur (avoids inflating cost)
+    if (a.quantity && a.purchase_price && a.purchase_price > 0) return s + a.quantity * a.purchase_price;
+    return s + (a.value_eur || 0);
+  }, 0);
   const portfolioProfit = portfolioTotal - portfolioInvested;
   const portfolioProfitPct = portfolioInvested > 0 ? (portfolioProfit / portfolioInvested) * 100 : 0;
 

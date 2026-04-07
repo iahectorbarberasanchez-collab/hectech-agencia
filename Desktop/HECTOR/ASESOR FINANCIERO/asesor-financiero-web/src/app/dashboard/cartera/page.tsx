@@ -580,9 +580,11 @@ export default function CarteraPage() {
                         const quote = getQuoteForAsset(asset);
                         const currentPrice = quote?.price || 0;
                         const currentValue = (asset.quantity && currentPrice > 0) ? asset.quantity * currentPrice : asset.value_eur;
-                        const invested = (asset.quantity && asset.purchase_price) ? asset.quantity * asset.purchase_price : asset.value_eur;
-                        const pnl = invested > 0 ? currentValue - invested : 0;
-                        const pnlPct = invested > 0 ? (pnl / invested) * 100 : 0;
+                        // Only calculate P&L when we have a real purchase price — never fall back to value_eur as cost
+                        const hasCost = !!(asset.quantity && asset.purchase_price && asset.purchase_price > 0);
+                        const invested = hasCost ? asset.quantity! * asset.purchase_price! : (asset.value_eur || 0);
+                        const pnl = hasCost ? currentValue - invested : 0;
+                        const pnlPct = hasCost && invested > 0 ? (pnl / invested) * 100 : 0;
                         const actualPct = totalValue > 0 ? (currentValue / totalValue) * 100 : 0;
                         const targetPct = asset.target_percent || 0;
                         const drift = actualPct - targetPct;
@@ -653,7 +655,7 @@ export default function CarteraPage() {
                             </td>
                             {/* P&L */}
                             <td className="px-4 py-4 text-right">
-                              {invested > 0 ? (
+                              {hasCost ? (
                                 <div className="flex flex-col items-end">
                                   <span className={`text-xs font-black flex items-center gap-1 ${pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                                     {pnl >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
