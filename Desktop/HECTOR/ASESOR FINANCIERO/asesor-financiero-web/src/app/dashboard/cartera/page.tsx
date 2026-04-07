@@ -96,13 +96,18 @@ export default function CarteraPage() {
     setIsLoading(false);
   }
 
+  // Tickers that are currencies/stablecoins — never fetch a market price for these
+  const CASH_TICKERS = new Set(['USD', 'EUR', 'GBP', 'CHF', 'JPY', 'CAD', 'AUD',
+    'USDT', 'USDC', 'BUSD', 'DAI', 'TUSD', 'USDP', 'CASH']);
+
   async function syncMarketPrices(tickers: string[]) {
     setIsRefreshing(true);
     try {
       // Extract raw tickers, handling "Bitcoin · Trade Republic" format
+      // Skip cash/stablecoin tickers — their value never changes
       const rawTickers = tickers.map(t =>
         t.toUpperCase().split('·')[0].trim().split(' ')[0]
-      ).filter(Boolean);
+      ).filter(t => t && !CASH_TICKERS.has(t));
 
       const res = await fetch(`/api/market?symbols=${rawTickers.join(',')}`);
       const json = await res.json();
@@ -577,11 +582,15 @@ export default function CarteraPage() {
                     </thead>
                     <tbody className="divide-y divide-white/2">
                       {(showAll ? sortedAssets : sortedAssets.slice(0, PAGE_SIZE)).map((asset, idx) => {
-                        const quote = getQuoteForAsset(asset);
+                        const isCash = asset.asset_type === 'Cash' || CASH_TICKERS.has((asset.ticker || '').toUpperCase());
+                        const quote = isCash ? null : getQuoteForAsset(asset);
                         const currentPrice = quote?.price || 0;
-                        const currentValue = (asset.quantity && currentPrice > 0) ? asset.quantity * currentPrice : asset.value_eur;
+                        // Cash: value is fixed — no revaluation, no P&L
+                        const currentValue = isCash
+                          ? (asset.value_eur || 0)
+                          : (asset.quantity && currentPrice > 0) ? asset.quantity * currentPrice : asset.value_eur;
                         // Only calculate P&L when we have a real purchase price — never fall back to value_eur as cost
-                        const hasCost = !!(asset.quantity && asset.purchase_price && asset.purchase_price > 0);
+                        const hasCost = !isCash && !!(asset.quantity && asset.purchase_price && asset.purchase_price > 0);
                         const invested = hasCost ? asset.quantity! * asset.purchase_price! : (asset.value_eur || 0);
                         const pnl = hasCost ? currentValue - invested : 0;
                         const pnlPct = hasCost && invested > 0 ? (pnl / invested) * 100 : 0;
