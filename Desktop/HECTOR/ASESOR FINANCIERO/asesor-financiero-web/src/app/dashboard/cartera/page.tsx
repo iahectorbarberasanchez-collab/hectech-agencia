@@ -537,7 +537,7 @@ export default function CarteraPage() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {["Todos", "Acción", "ETF", "Cripto", "Oro", "Cash", "Inversión"].map(type => (
+                    {["Todos", "Acción", "ETF", "Cripto", "Oro", "Cash"].map(type => (
                       <button
                         key={type}
                         onClick={() => { setFilterType(type); setShowAll(false); }}
