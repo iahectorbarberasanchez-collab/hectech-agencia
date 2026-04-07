@@ -74,43 +74,92 @@ function extractResumenMetrics(sheets: FinancialSheet[]): ResumenMetrics | null 
 
   const metrics: ResumenMetrics = {};
 
-  const firstNum = (vals: unknown[], from = 0): number | null => {
-    for (let i = from; i < vals.length; i++) {
-      const n = Number(vals[i]);
-      if (!isNaN(n) && n > 0) return n;
+  // Helper: parse a raw cell value to a positive number, handling Spanish format
+  const toNum = (raw: unknown): number => {
+    if (typeof raw === 'number') return raw > 0 ? raw : 0;
+    const s = String(raw ?? '').trim().replace(/\s/g, '').replace(/€/g, '');
+    // Spanish: 25.031,50 → 25031.50 | English: 25,031.50 → 25031.50
+    const n = s.includes(',') && s.includes('.')
+      ? (s.lastIndexOf(',') > s.lastIndexOf('.') ? Number(s.replace(/\./g, '').replace(',', '.')) : Number(s.replace(/,/g, '')))
+      : s.includes(',')
+        ? (s.split(',')[1]?.length <= 2 ? Number(s.replace(',', '.')) : Number(s.replace(/,/g, '')))
+        : Number(s);
+    return isNaN(n) || n <= 0 ? 0 : n;
+  };
+
+  // Helper: try to assign a numeric value to the right metric field based on a text label
+  const tryAssign = (label: string, num: number) => {
+    if (num <= 0) return;
+    const l = label.toUpperCase().trim().replace(/[:_\-]/g, ' ');
+    if (/dinero.{0,15}puesto|total.{0,15}invertid|capital.{0,15}invertid|total.{0,10}aportad|inversion.{0,10}total/i.test(l)) {
+      if (!metrics.totalInvested || num > metrics.totalInvested) metrics.totalInvested = num;
     }
-    return null;
+    if (/valor.{0,15}actual|valor.{0,10}total|total.{0,10}actual|total.{0,10}cartera|patrimonio.{0,10}total|total.{0,10}valor/i.test(l)) {
+      if (!metrics.totalCurrentValue || num > metrics.totalCurrentValue) metrics.totalCurrentValue = num;
+    }
+    if (/^accion(es)?$|total.{0,8}accion/i.test(l)) metrics.acciones = num;
+    if (/^etf$|total.{0,8}etf/i.test(l)) metrics.etf = num;
+    if (/criptomonedas?|^cripto$|total.{0,8}cripto/i.test(l)) metrics.cripto = num;
+    if (/\boro\b|\bplata\b|oro.*plata|plata.*oro|metales?/i.test(l)) metrics.oro = num;
+    if (/colch[oó]n|fondo.{0,15}emerg|emergencia/i.test(l)) metrics.emergencyFund = num;
+    if (/cuenta.{0,10}trading|^trading$|cuenta.{0,10}inver/i.test(l)) metrics.trading = num;
   };
 
   for (const table of resSheet.tables) {
+    // STRATEGY 1: Column header names with numericTotals (wide table like: | Tipo | Dinero Puesto | Valor Actual |)
+    for (const [colName, total] of Object.entries(table.numericTotals || {})) {
+      tryAssign(colName, total);
+    }
+
     for (const row of table.data) {
+      const entries = Object.entries(row);
       const vals = Object.values(row);
+
+      // STRATEGY 2: Category column + value columns
+      // Row: { 'Categoría': 'Acciones', 'Dinero Puesto': 5000, 'Valor Actual': 6000 }
+      for (const [key, val] of entries) {
+        if (/tipo|categor[ií]a|activo|descripci[oó]n|concepto/i.test(key)) {
+          const categoryName = String(val ?? '').toUpperCase().trim();
+          // Find "Dinero Puesto" or "Valor Actual" columns in this row
+          for (const [k2, v2] of entries) {
+            const n = toNum(v2);
+            if (n <= 0) continue;
+            // Combine category + column header to determine what this is
+            const combined = `${categoryName} ${k2}`.toUpperCase();
+            tryAssign(combined, n);
+            // Also try category name alone for category-specific metrics
+            if (/^ACCIONES?$/.test(categoryName)) metrics.acciones = metrics.acciones || n;
+            if (/^ETF$/.test(categoryName)) metrics.etf = metrics.etf || n;
+            if (/CRIPTO/.test(categoryName)) metrics.cripto = metrics.cripto || n;
+            if (/ORO|PLATA/.test(categoryName)) metrics.oro = metrics.oro || n;
+            if (/COLCH[OÓ]N|EMERGENCIA/.test(categoryName)) metrics.emergencyFund = metrics.emergencyFund || n;
+            if (/TRADING/.test(categoryName)) metrics.trading = metrics.trading || n;
+          }
+          break;
+        }
+      }
+
+      // STRATEGY 3: Key-value rows — text in one cell, number in adjacent cell
       for (let i = 0; i < vals.length; i++) {
         const cell = String(vals[i] ?? '').trim();
-        if (!cell || !isNaN(Number(cell.replace(',', '.')))) continue;
-        const label = cell.toUpperCase();
-        const numVal = firstNum(vals, i + 1);
-        if (numVal === null) continue;
-
-        if (/dinero.{0,10}puesto|total.{0,10}invertid|capital.{0,10}invertid/i.test(label)) {
-          metrics.totalInvested = numVal;
-        } else if (/valor.{0,10}actual|valor.{0,10}total|total.{0,10}actual|total.{0,10}cartera/i.test(label)) {
-          metrics.totalCurrentValue = numVal;
-        } else if (/^acciones?$/i.test(label)) {
-          metrics.acciones = numVal;
-        } else if (/^etf$/i.test(label)) {
-          metrics.etf = numVal;
-        } else if (/criptomonedas?|cripto$/i.test(label)) {
-          metrics.cripto = numVal;
-        } else if (/\boro\b|\bplata\b|metal.{0,10}precioso/i.test(label)) {
-          metrics.oro = numVal;
-        } else if (/colch[oó]n|fondo.{0,15}emerg|emergencia/i.test(label)) {
-          metrics.emergencyFund = numVal;
-        } else if (/cuenta.{0,10}trading|trading$/i.test(label)) {
-          metrics.trading = numVal;
+        if (!cell || cell.length < 2) continue;
+        const cellNum = toNum(cell);
+        if (cellNum > 0) continue; // Skip numeric cells
+        // Look ahead for a numeric value in the next 3 cells
+        for (let j = i + 1; j < Math.min(i + 4, vals.length); j++) {
+          const n = toNum(vals[j]);
+          if (n > 0) {
+            tryAssign(cell, n);
+            break;
+          }
         }
       }
     }
+  }
+
+  // STRATEGY 4: Sheet-level numericTotals (fallback)
+  for (const [colName, total] of Object.entries(resSheet.numericTotals || {})) {
+    tryAssign(colName, total);
   }
 
   return Object.keys(metrics).length > 0 ? metrics : null;

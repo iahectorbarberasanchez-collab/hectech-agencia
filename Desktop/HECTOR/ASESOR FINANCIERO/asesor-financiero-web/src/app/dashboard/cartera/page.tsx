@@ -99,16 +99,28 @@ export default function CarteraPage() {
   async function syncMarketPrices(tickers: string[]) {
     setIsRefreshing(true);
     try {
-      const res = await fetch(`/api/market?symbols=${tickers.join(',')}`);
+      // Extract raw tickers, handling "Bitcoin · Trade Republic" format
+      const rawTickers = tickers.map(t =>
+        t.toUpperCase().split('·')[0].trim().split(' ')[0]
+      ).filter(Boolean);
+
+      const res = await fetch(`/api/market?symbols=${rawTickers.join(',')}`);
       const json = await res.json();
-      
+
       if (json.success && json.data) {
         const quotesMap: Record<string, MarketQuote> = {};
         json.data.forEach((q: MarketQuote) => {
-          quotesMap[q.symbol.toUpperCase()] = q;
-          // También guardamos sin el sufijo .MC o -USD para facilitar búsqueda
-          const base = q.symbol.split('.')[0].split('-')[0].toUpperCase();
+          const sym = q.symbol.toUpperCase();
+          quotesMap[sym] = q;
+          // Also map base ticker without exchange suffix: BTC-EUR → BTC, ASML.AS → ASML
+          const base = sym.split('.')[0].split('-')[0];
           quotesMap[base] = q;
+          // Map crypto-EUR back: BTC-EUR → BTCEUR
+          if (sym.includes('-')) {
+            const [cryptoBase, curr] = sym.split('-');
+            quotesMap[`${cryptoBase}${curr}`] = q; // BTCEUR, BTCUSD
+            quotesMap[`${cryptoBase}USDT`] = q;    // BTCUSDT
+          }
         });
         setMarketQuotes(quotesMap);
       }
@@ -118,6 +130,32 @@ export default function CarteraPage() {
       setIsRefreshing(false);
     }
   }
+
+  // Helper: look up market quote for an asset, handling raw tickers like BTCEUR/ETHEUR
+  const getQuoteForAsset = (asset: PortfolioAsset): MarketQuote | null => {
+    if (!asset.ticker) return null;
+    const t = asset.ticker.toUpperCase().split('·')[0].trim().split(' ')[0];
+
+    // Try direct lookup first
+    if (marketQuotes[t]) return marketQuotes[t];
+
+    // Try with suffix stripped
+    const base = t.replace(/USDT$/, '').replace(/USDC$/, '').replace(/EUR$/, '').replace(/USD$/, '');
+    if (marketQuotes[`${base}-EUR`]) return marketQuotes[`${base}-EUR`];
+    if (marketQuotes[`${base}-USD`]) return marketQuotes[`${base}-USD`];
+    if (marketQuotes[base]) return marketQuotes[base];
+
+    return null;
+  };
+
+  // Helper: split "Bitcoin · Trade Republic" into { name, platform }
+  const parseName = (asset: PortfolioAsset) => {
+    const parts = (asset.asset_name || '').split('·');
+    return {
+      name: parts[0].trim(),
+      platform: parts[1]?.trim() || null,
+    };
+  };
 
   const handleDownloadReport = async () => {
     setIsGenerating(true);
@@ -191,7 +229,7 @@ export default function CarteraPage() {
   }
 
   const totalValue = assets.reduce((sum, a) => {
-    const quote = a.ticker ? marketQuotes[a.ticker.toUpperCase()] : null;
+    const quote = getQuoteForAsset(a);
     const currentPrice = quote?.price || 0;
     const value = (a.quantity && currentPrice > 0) ? (a.quantity * currentPrice) : a.value_eur;
     return sum + value;
@@ -214,7 +252,7 @@ export default function CarteraPage() {
 
   const sortedAssets = [...filteredAssets].sort((a, b) => {
     const getVal = (asset: PortfolioAsset) => {
-      const quote = asset.ticker ? marketQuotes[asset.ticker.toUpperCase()] : null;
+      const quote = getQuoteForAsset(asset);
       const price = quote?.price || 0;
       return (asset.quantity && price > 0) ? (asset.quantity * price) : asset.value_eur;
     };
@@ -231,22 +269,22 @@ export default function CarteraPage() {
   };
 
   const chartData = assets.map(a => {
-    const quote = a.ticker ? marketQuotes[a.ticker.toUpperCase()] : null;
+    const quote = getQuoteForAsset(a);
     const currentPrice = quote?.price || 0;
     const val = (a.quantity && currentPrice > 0) ? (a.quantity * currentPrice) : a.value_eur;
     return {
-      name: a.asset_name,
+      name: parseName(a).name,
       value: val,
       percent: totalValue > 0 ? ((val / totalValue) * 100).toFixed(1) : "0"
     };
   });
 
   const rebalanceData = assets.map(a => {
-    const quote = a.ticker ? marketQuotes[a.ticker.toUpperCase()] : null;
+    const quote = getQuoteForAsset(a);
     const currentPrice = quote?.price || 0;
     const val = (a.quantity && currentPrice > 0) ? (a.quantity * currentPrice) : a.value_eur;
     return {
-      name: a.asset_name,
+      name: parseName(a).name,
       actual: totalValue > 0 ? (val / totalValue) * 100 : 0,
       objetivo: a.target_percent || 0
     };
@@ -330,43 +368,52 @@ export default function CarteraPage() {
             </div>
           </header>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { label: "Valor Actual", value: totalValue, icon: Briefcase, color: "indigo", suffix: "€" },
-              { label: "Inversión Total", value: totalInvested, icon: Wallet, color: "blue", suffix: "€" },
-              { 
-                label: "Beneficio Neto", 
-                value: totalProfit, 
-                icon: totalProfit >= 0 ? TrendingUp : TrendingDown, 
-                color: totalProfit >= 0 ? "emerald" : "red", 
-                suffix: `€ (${totalProfitPercent.toFixed(1)}%)` 
-              }
-            ].map((stat, i) => (
-              <motion.div 
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className="glass-card relative overflow-hidden p-6 rounded-3xl border border-white/5 group hover:border-white/10 transition-all"
-              >
-                <div className={`absolute top-0 right-0 w-32 h-32 bg-${stat.color}-500/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-${stat.color}-500/10 transition-all`} />
-                
-                <div className="flex items-center gap-4 mb-4">
-                  <div className={`w-12 h-12 rounded-2xl bg-${stat.color}-500/10 flex items-center justify-center border border-${stat.color}-500/20`}>
-                    <stat.icon className={`w-6 h-6 text-${stat.color}-400`} />
-                  </div>
-                  <p className="text-white/40 text-sm font-semibold uppercase tracking-wider">{stat.label}</p>
-                </div>
-                
-                <div className="flex items-baseline gap-2">
-                  <h3 className="text-4xl font-black text-white">
-                    {stat.value.toLocaleString("es-ES")}
-                  </h3>
-                  {stat.suffix && <span className="text-xl font-bold text-white/40">{stat.suffix}</span>}
-                </div>
-              </motion.div>
-            ))}
+          {/* Portfolio KPI Strip */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0 }}
+              className="glass-card p-4 rounded-2xl border border-white/5"
+            >
+              <div className="text-[10px] text-white/30 uppercase tracking-widest font-bold mb-1">💰 Capital Invertido</div>
+              <div className="text-xl font-black text-white">{totalInvested.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €</div>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="glass-card p-4 rounded-2xl border border-white/5"
+            >
+              <div className="text-[10px] text-white/30 uppercase tracking-widest font-bold mb-1">📈 Valor Actual</div>
+              <div className="text-xl font-black text-white">{totalValue.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €</div>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className={`glass-card p-4 rounded-2xl border ${totalProfit >= 0 ? 'border-emerald-500/20' : 'border-red-500/20'}`}
+            >
+              <div className="text-[10px] text-white/30 uppercase tracking-widest font-bold mb-1">
+                {totalProfit >= 0 ? '✅' : '❌'} Ganancia / Pérdida
+              </div>
+              <div className={`text-xl font-black ${totalProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                {totalProfit >= 0 ? '+' : ''}{totalProfit.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €
+              </div>
+              <div className={`text-[11px] ${totalProfit >= 0 ? 'text-emerald-500/60' : 'text-red-500/60'}`}>
+                {totalProfitPercent >= 0 ? '+' : ''}{totalProfitPercent.toFixed(2)}%
+              </div>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="glass-card p-4 rounded-2xl border border-white/5"
+            >
+              <div className="text-[10px] text-white/30 uppercase tracking-widest font-bold mb-1">🗂️ Activos</div>
+              <div className="text-xl font-black text-white">{assets.length}</div>
+              <div className="text-[11px] text-white/30">{new Set(assets.map(a => a.asset_type)).size} tipos</div>
+            </motion.div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -519,115 +566,137 @@ export default function CarteraPage() {
                   <table className="w-full text-left">
                     <thead>
                       <tr className="text-white/30 text-[10px] uppercase tracking-[0.2em] font-black italic border-b border-white/5">
-                        <th className="px-8 py-5">Activo</th>
-                        <th className="px-8 py-5">Tipo</th>
-                        <th className="px-8 py-5 text-right">Valor (€)</th>
-                        <th className="px-8 py-5 text-right">Actual %</th>
-                        <th className="px-8 py-5 text-right">Objetivo</th>
-                        <th className="px-8 py-5"></th>
+                        <th className="px-6 py-5">Activo</th>
+                        <th className="px-4 py-5 text-right">Precio Compra</th>
+                        <th className="px-4 py-5 text-right">Precio Actual</th>
+                        <th className="px-4 py-5 text-right">Valor (€)</th>
+                        <th className="px-4 py-5 text-right">P&amp;L</th>
+                        <th className="px-4 py-5 text-right">Peso %</th>
+                        <th className="px-4 py-5"></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/2">
-                      {(showAll ? sortedAssets : sortedAssets.slice(0, PAGE_SIZE)).map((asset, idx) => (
-                        <motion.tr 
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: idx * 0.05 }}
-                          key={asset.id} 
-                          className="hover:bg-white/[0.02] transition-colors group"
-                        >
-                          <td className="px-8 py-5">
-                            <div className="flex flex-col">
-                              <span className="font-bold text-white text-sm">{asset.asset_name}</span>
-                              <span className="text-[10px] text-white/30 font-mono tracking-tighter uppercase">{asset.ticker || 'N/A'}</span>
-                            </div>
-                          </td>
-                          <td className="px-8 py-5">
-                            <div className="flex flex-col gap-1 items-start">
-                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${ASSET_TYPE_COLORS[asset.asset_type]?.bg || 'bg-white/5'} ${ASSET_TYPE_COLORS[asset.asset_type]?.text || 'text-white/40'} border ${ASSET_TYPE_COLORS[asset.asset_type]?.border || 'border-white/5'}`}>
-                                {asset.asset_type}
-                              </span>
-                              <span className="text-[10px] text-white/30 ml-0.5">{asset.quantity || 0} und.</span>
-                            </div>
-                          </td>
-                          <td className="px-8 py-5 text-right">
-                            <div className="flex flex-col">
-                              <span className="font-mono text-white/80 font-bold">
-                                {(() => {
-                                  const quote = asset.ticker ? marketQuotes[asset.ticker.toUpperCase()] : null;
-                                  const price = quote?.price || 0;
-                                  const val = (asset.quantity && price > 0) ? (asset.quantity * price) : asset.value_eur;
-                                  return val.toLocaleString("es-ES", { maximumFractionDigits: 0 });
-                                })()}
-                                <span className="text-[10px] opacity-40 ml-1">€</span>
-                              </span>
-                              <span className="text-[10px] text-white/30">
-                                {asset.ticker ? `${marketQuotes[asset.ticker.toUpperCase()]?.price?.toLocaleString("es-ES") || '--'} €/u` : `${asset.value_eur} €`}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-8 py-5 text-right">
-                            <div className="flex flex-col items-end">
-                              {(() => {
-                                const quote = asset.ticker ? marketQuotes[asset.ticker.toUpperCase()] : null;
-                                const currentPrice = quote?.price || 0;
-                                if (!asset.purchase_price || !currentPrice) return <span className="text-white/20 text-xs">--</span>;
-                                
-                                const profit = currentPrice - asset.purchase_price;
-                                const profitPercent = (profit / asset.purchase_price) * 100;
-                                const totalProfitEur = profit * (asset.quantity || 0);
+                      {(showAll ? sortedAssets : sortedAssets.slice(0, PAGE_SIZE)).map((asset, idx) => {
+                        const quote = getQuoteForAsset(asset);
+                        const currentPrice = quote?.price || 0;
+                        const currentValue = (asset.quantity && currentPrice > 0) ? asset.quantity * currentPrice : asset.value_eur;
+                        const invested = (asset.quantity && asset.purchase_price) ? asset.quantity * asset.purchase_price : asset.value_eur;
+                        const pnl = invested > 0 ? currentValue - invested : 0;
+                        const pnlPct = invested > 0 ? (pnl / invested) * 100 : 0;
+                        const actualPct = totalValue > 0 ? (currentValue / totalValue) * 100 : 0;
+                        const targetPct = asset.target_percent || 0;
+                        const drift = actualPct - targetPct;
+                        const { name: displayName, platform } = parseName(asset);
+                        const colors = ASSET_TYPE_COLORS[asset.asset_type] || ASSET_TYPE_COLORS['Inversión'];
 
-                                return (
-                                  <>
-                                    <span className={`text-xs font-black flex items-center gap-1 ${profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                      {profit >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                                      {Math.abs(profitPercent).toFixed(1)}%
-                                    </span>
-                                    <span className={`text-[10px] font-bold ${profit >= 0 ? 'text-emerald-500/50' : 'text-red-500/50'}`}>
-                                      {profit >= 0 ? '+' : ''}{totalProfitEur.toLocaleString("es-ES", { maximumFractionDigits: 0 })} €
-                                    </span>
-                                  </>
-                                );
-                              })()}
-                            </div>
-                          </td>
-                          <td className="px-8 py-5 text-right">
-                            {(() => {
-                              const quote = asset.ticker ? marketQuotes[asset.ticker.toUpperCase()] : null;
-                              const currentPrice = quote?.price || 0;
-                              const val = (asset.quantity && currentPrice > 0) ? (asset.quantity * currentPrice) : asset.value_eur;
-                              const actualPct = totalValue > 0 ? (val / totalValue) * 100 : 0;
-                              const targetPct = asset.target_percent || 0;
-                              const drift = actualPct - targetPct;
-                              return (
-                                <div className="flex flex-col items-end gap-1">
-                                  <span className="text-white font-black text-xs">{actualPct.toFixed(1)}%</span>
-                                  {targetPct > 0 && (
-                                    <span className={`text-[9px] font-bold ${Math.abs(drift) > 5 ? (drift > 0 ? 'text-amber-400' : 'text-blue-400') : 'text-white/30'}`}>
-                                      obj {targetPct.toFixed(1)}% {drift !== 0 ? `(${drift > 0 ? '+' : ''}${drift.toFixed(1)}%)` : ''}
+                        return (
+                          <motion.tr
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.04 }}
+                            key={asset.id}
+                            className="hover:bg-white/[0.02] transition-colors group"
+                          >
+                            {/* Activo */}
+                            <td className="px-6 py-4">
+                              <div className="flex flex-col gap-0.5">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-bold text-white text-sm">{displayName}</span>
+                                  {platform && (
+                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-white/5 text-white/30 border border-white/10">
+                                      {platform}
                                     </span>
                                   )}
-                                  <div className="w-14 h-1 bg-white/5 rounded-full overflow-hidden">
-                                    <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${Math.min(actualPct * 3, 100)}%` }} />
-                                  </div>
+                                  <span className={`px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider ${colors.bg} ${colors.text} border ${colors.border}`}>
+                                    {asset.asset_type}
+                                  </span>
                                 </div>
-                              );
-                            })()}
-                          </td>
-                          <td className="px-8 py-5 text-right">
-                            <button 
-                              onClick={() => asset.id && handleDeleteAsset(asset.id)}
-                              className="w-10 h-10 rounded-xl bg-red-400/5 text-red-400/20 hover:text-red-400 hover:bg-red-400/10 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </motion.tr>
-                      ))}
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] text-white/30 font-mono uppercase">{asset.ticker || 'N/A'}</span>
+                                  {asset.quantity ? <span className="text-[10px] text-white/20">{asset.quantity} und.</span> : null}
+                                </div>
+                              </div>
+                            </td>
+                            {/* Precio Compra */}
+                            <td className="px-4 py-4 text-right">
+                              {asset.purchase_price ? (
+                                <span className="font-mono text-white/40 text-xs">
+                                  {asset.purchase_price.toLocaleString('es-ES', { maximumFractionDigits: 2 })} €
+                                </span>
+                              ) : (
+                                <span className="text-white/20 text-xs">--</span>
+                              )}
+                            </td>
+                            {/* Precio Actual */}
+                            <td className="px-4 py-4 text-right">
+                              {currentPrice > 0 ? (
+                                <div className="flex flex-col items-end">
+                                  <span className="font-mono text-white/80 text-xs font-bold">
+                                    {currentPrice.toLocaleString('es-ES', { maximumFractionDigits: currentPrice < 1 ? 6 : 2 })} €
+                                  </span>
+                                  {quote && (
+                                    <span className={`text-[9px] font-bold ${quote.changePercent >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                      {quote.changePercent >= 0 ? '+' : ''}{quote.changePercent.toFixed(2)}%
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-white/20 text-xs">--</span>
+                              )}
+                            </td>
+                            {/* Valor */}
+                            <td className="px-4 py-4 text-right">
+                              <span className="font-mono text-white/80 font-bold text-sm">
+                                {currentValue.toLocaleString('es-ES', { maximumFractionDigits: 0 })}
+                                <span className="text-[10px] opacity-40 ml-1">€</span>
+                              </span>
+                            </td>
+                            {/* P&L */}
+                            <td className="px-4 py-4 text-right">
+                              {invested > 0 ? (
+                                <div className="flex flex-col items-end">
+                                  <span className={`text-xs font-black flex items-center gap-1 ${pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                    {pnl >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                                    {pnl >= 0 ? '+' : ''}{pnl.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €
+                                  </span>
+                                  <span className={`text-[9px] font-bold ${pnl >= 0 ? 'text-emerald-500/60' : 'text-red-500/60'}`}>
+                                    {pnlPct >= 0 ? '+' : ''}{pnlPct.toFixed(1)}%
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-white/20 text-xs">--</span>
+                              )}
+                            </td>
+                            {/* Peso % */}
+                            <td className="px-4 py-4 text-right">
+                              <div className="flex flex-col items-end gap-1">
+                                <span className="text-white font-black text-xs">{actualPct.toFixed(1)}%</span>
+                                {targetPct > 0 && (
+                                  <span className={`text-[9px] font-bold ${Math.abs(drift) > 5 ? (drift > 0 ? 'text-amber-400' : 'text-blue-400') : 'text-white/30'}`}>
+                                    obj {targetPct.toFixed(1)}%
+                                  </span>
+                                )}
+                                <div className="w-14 h-1 bg-white/5 rounded-full overflow-hidden">
+                                  <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${Math.min(actualPct * 3, 100)}%` }} />
+                                </div>
+                              </div>
+                            </td>
+                            {/* Delete */}
+                            <td className="px-4 py-4 text-right">
+                              <button
+                                onClick={() => asset.id && handleDeleteAsset(asset.id)}
+                                className="w-10 h-10 rounded-xl bg-red-400/5 text-red-400/20 hover:text-red-400 hover:bg-red-400/10 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </motion.tr>
+                        );
+                      })}
 
                       {!showAll && sortedAssets.length > PAGE_SIZE && (
                         <tr>
-                          <td colSpan={6} className="px-8 py-4 text-center">
+                          <td colSpan={7} className="px-8 py-4 text-center">
                             <button onClick={() => setShowAll(true)} className="text-xs text-white/40 hover:text-white transition-colors underline underline-offset-2">
                               Ver todos los {sortedAssets.length} activos ({sortedAssets.length - PAGE_SIZE} más)
                             </button>
@@ -637,7 +706,7 @@ export default function CarteraPage() {
 
                       {assets.length === 0 && !isAdding && (
                         <tr>
-                          <td colSpan={6} className="px-8 py-24 text-center">
+                          <td colSpan={7} className="px-8 py-24 text-center">
                             <div className="flex flex-col items-center gap-4">
                               <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center border border-white/10 relative">
                                 <Briefcase className="w-10 h-10 text-white/10" />
