@@ -148,14 +148,9 @@ export default function Dashboard() {
     if (rm.acciones) resumenBreakdown.push({ label: 'Acciones', value: rm.acciones, color: 'bg-blue-500', icon: '📈' });
     if (rm.etf) resumenBreakdown.push({ label: 'ETF', value: rm.etf, color: 'bg-indigo-500', icon: '🌍' });
     if (rm.cripto) resumenBreakdown.push({ label: 'Cripto', value: rm.cripto, color: 'bg-orange-500', icon: '₿' });
-    // Oro and Plata come from the "OR y PLATA" sheet — show separately if both present
-    const oroTotal = (rm.oro ?? 0) + (rm.plata ?? 0);
-    if (oroTotal > 0) resumenBreakdown.push({
-      label: rm.oro && rm.plata ? `Oro (${rm.oro?.toFixed(0)}€) + Plata (${rm.plata?.toFixed(0)}€)` : rm.oro ? 'Oro' : 'Plata',
-      value: oroTotal,
-      color: 'bg-yellow-500',
-      icon: '🥇'
-    });
+    // Oro and Plata shown as individual cards so each position is clearly visible
+    if (rm.oro) resumenBreakdown.push({ label: 'Oro', value: rm.oro, color: 'bg-yellow-500', icon: '🥇' });
+    if (rm.plata) resumenBreakdown.push({ label: 'Plata', value: rm.plata, color: 'bg-slate-400', icon: '🥈' });
     if (rm.emergencyFund) resumenBreakdown.push({ label: 'Fondo Emergencia', value: rm.emergencyFund, color: 'bg-emerald-500', icon: '🛡️' });
     if (rm.trading) resumenBreakdown.push({ label: 'Cuenta Trading', value: rm.trading, color: 'bg-purple-500', icon: '⚡' });
   }
@@ -374,7 +369,7 @@ export default function Dashboard() {
                   Total: {displayInvested.toLocaleString('es-ES', { maximumFractionDigits: 0 })} €
                 </div>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
                 {resumenBreakdown.map(({ label, value, color, icon }) => {
                   const pct = displayInvested > 0 ? (value / displayInvested) * 100 : 0;
                   return (
