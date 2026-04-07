@@ -64,20 +64,50 @@ const EURONEXT_SYMBOLS: Record<string, string> = {
   'BAS': 'BAS.DE',
   'VOW3': 'VOW3.DE',
   'ADS': 'ADS.DE',
+  'P911': 'P911.DE',  // Porsche (ETR:P911)
+  '3IB': '3IB.F',    // iShares MSCI Indonesia (FRA:3IB)
   'AIR': 'AIR.PA', // Paris
   'OR': 'OR.PA',
   'MC': 'MC.PA',
   'SAN.PA': 'SAN.PA',
+  'DRO': 'DRO.AX',   // DroneShield (ASX:DRO)
+};
+
+// Map exchange prefixes to Yahoo Finance suffixes
+// Handles tickers in EXCHANGE:TICKER format (e.g., EPA:ASML, ASX:DRO, ETR:P911)
+const EXCHANGE_SUFFIX_MAP: Record<string, string> = {
+  'EPA': '.PA',   // Euronext Paris
+  'ETR': '.DE',   // XETRA Frankfurt
+  'FRA': '.F',    // Frankfurt
+  'ASX': '.AX',   // Australian Stock Exchange
+  'AMS': '.AS',   // Euronext Amsterdam
+  'BIT': '.MI',   // Borsa Italiana
+  'LSE': '.L',    // London Stock Exchange
+  'TSE': '.T',    // Tokyo Stock Exchange
+  'HKG': '.HK',  // Hong Kong
+  'NSE': '.NS',   // India NSE
+  'BME': '.MC',   // Spanish BME (same as IBEX)
 };
 
 /**
  * Extracts the clean base ticker from display names like "Bitcoin · Trade Republic"
  * or raw tickers like "BTCEUR", "BTCUSDT".
  */
-function extractBaseTicker(symbol: string): { base: string; currency: string } {
-  // Remove platform suffix from display names: "Bitcoin · Trade Republic" → "BTCEUR" is already handled
-  // But if ticker is stored as raw like "BTCEUR":
+function extractBaseTicker(symbol: string): { base: string; currency: string; yahooSymbol?: string } {
+  // Strip platform display suffix: "Bitcoin · Trade Republic" → just the ticker part
   const s = symbol.toUpperCase().trim().split('·')[0].trim().split(' ')[0];
+
+  // ── EXCHANGE:TICKER format (EPA:ASML, ASX:DRO, ETR:P911, FRA:3IB) ──────────
+  if (/^[A-Z]{2,4}:[A-Z0-9]{1,8}$/.test(s)) {
+    const [exchange, tkr] = s.split(':');
+    const suffix = EXCHANGE_SUFFIX_MAP[exchange];
+    const yahooSym = suffix ? `${tkr}${suffix}` : tkr;
+    return { base: tkr, currency: 'EUR', yahooSymbol: yahooSym };
+  }
+
+  // ── Underscore tickers (MSCI_INDO, CLEAN_NRG) — custom ETF names ───────────
+  // These likely don't have a standard Yahoo symbol; skip price fetch
+  if (s.includes('_')) return { base: s, currency: 'EUR' };
 
   // EUR suffix without separator (Trade Republic): BTCEUR → BTC/EUR
   if (/^[A-Z]{2,8}EUR$/.test(s) && !['VEUR', 'VERX'].includes(s)) {
@@ -107,7 +137,10 @@ function extractBaseTicker(symbol: string): { base: string; currency: string } {
  * Normalizes any asset ticker to a Yahoo Finance–compatible symbol.
  */
 export function normalizeSymbol(symbol: string): string {
-  const { base, currency } = extractBaseTicker(symbol);
+  const { base, currency, yahooSymbol } = extractBaseTicker(symbol);
+
+  // If extractBaseTicker already resolved to a Yahoo symbol (e.g., ETR:P911 → P911.DE), use it
+  if (yahooSymbol) return yahooSymbol;
 
   // Known crypto → add -USD or -EUR suffix
   if (CRYPTO_BASE_TICKERS.has(base)) return `${base}-${currency}`;

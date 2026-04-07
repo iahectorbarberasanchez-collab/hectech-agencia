@@ -51,7 +51,7 @@ const CRYPTO_TICKERS = new Set([
   'MYRO', 'SLERF', 'SILLY', 'CATS', 'NEIRO', 'MOG', 'CATI',
   // DeFi
   'AAVE', 'COMP', 'MKR', 'SNX', 'YFI', 'BAL', 'SUSHI', 'CRV', 'LDO',
-  'RPL', '1INCH', 'DYDX', 'GMX', 'PERP', 'RUNE', 'OSMO',
+  'RPL', '1INCH', 'DYDX', 'GMX', 'PERP', 'RUNE', 'OSMO', 'LRC',
   // AI / Data
   'FET', 'OCEAN', 'RNDR', 'GRT', 'NMR', 'AGIX', 'TAO', 'WLD',
   // Older altcoins / Trade Republic listed
@@ -106,6 +106,7 @@ const CRYPTO_DISPLAY_NAMES: Record<string, string> = {
   ARB: 'Arbitrum', OP: 'Optimism', SUI: 'Sui', APT: 'Aptos', INJ: 'Injective',
   TIA: 'Celestia', JUP: 'Jupiter', POPCAT: 'Popcat', CHZ: 'Chiliz',
   XLM: 'Stellar', VET: 'VeChain', FIL: 'Filecoin', TRX: 'TRON',
+  SNX: 'Synthetix', LRC: 'Loopring',
 };
 
 const PLATFORM_SHEET_NAMES = new Set([
@@ -146,9 +147,19 @@ function detectPlatformFromSheet(sheetName: string): string | null {
 export function classifyAssetType(ticker: string, name: string): string {
   const rawT = (ticker || '').toUpperCase().trim();
 
+  // ── EXCHANGE:TICKER format (EPA:ASML, ASX:DRO, ETR:P911, FRA:3IB) ──────────
+  // These are always equities listed on a specific stock exchange
+  if (/^[A-Z]{2,4}:[A-Z0-9]{1,8}$/.test(rawT)) return 'Acción';
+
+  // ── Underscore tickers (MSCI_INDO, CLEAN_NRG) are custom ETF names ──────────
+  if (rawT.includes('_')) return 'ETF';
+
+  // Strip exchange prefix for further classification (e.g., EPA:ASML → ASML)
+  const afterColon = rawT.includes(':') ? rawT.split(':')[1] : rawT;
+
   // Strip pair suffixes — both with separator (BTC-USD) and without (BTCEUR, BTCUSDT)
   // Order matters: strip longer suffixes first
-  const t = rawT
+  const t = afterColon
     .replace(/[-/](USDT|USDC|USD|EUR|GBP|CHF|BTC|ETH)$/, '')  // with separator
     .replace(/(USDT|USDC)$/, '')                                  // without separator — USDT first (longer)
     .replace(/(EUR|USD|GBP|CHF)$/, '');                           // without separator — fiat suffix
@@ -170,12 +181,10 @@ export function classifyAssetType(ticker: string, name: string): string {
   // Crypto name patterns
   if (['BITCOIN', 'ETHEREUM', 'RIPPLE', 'CARDANO', 'SOLANA', 'DOGECOIN', 'LITECOIN',
        'POLKADOT', 'CHAINLINK', 'AVALANCHE', 'POLYGON', 'BINANCE COIN',
-       'ENJIN', 'POPCAT', 'BEAM PROTOCOL', 'QTUM'].some(k => n.includes(k))) return 'Cripto';
-  // If the raw ticker ends in EUR/USDT and the stripped base is a known crypto — already handled above
-  // Extra fallback: if rawT matches XXXEUR pattern and XXX >= 2 chars and not a known stock
-  if (/^[A-Z]{2,8}(EUR|USDT|USDC|USD|BTC)$/.test(rawT) && t.length >= 2 && t.length <= 8) {
-    // The stripped base could be a crypto we don't know about — classify as Cripto cautiously
-    // Only if the suffix is EUR/USDT (Trade Republic pattern), not if it's a legitimate company ticker
+       'ENJIN', 'POPCAT', 'BEAM PROTOCOL', 'QTUM',
+       'SYNTHETIX', 'LOOPRING'].some(k => n.includes(k))) return 'Cripto';
+  // Extra fallback: if afterColon matches XXXEUR/XXXUSDT pattern → Trade Republic / Binance crypto
+  if (/^[A-Z]{2,8}(EUR|USDT|USDC|USD|BTC)$/.test(afterColon) && t.length >= 2 && t.length <= 8) {
     return 'Cripto';
   }
 

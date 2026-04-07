@@ -30,6 +30,7 @@ export type ResumenMetrics = {
   etf?: number;
   cripto?: number;
   oro?: number;
+  plata?: number;
   emergencyFund?: number;
   trading?: number;
 };
@@ -160,6 +161,52 @@ function extractResumenMetrics(sheets: FinancialSheet[]): ResumenMetrics | null 
   // STRATEGY 4: Sheet-level numericTotals (fallback)
   for (const [colName, total] of Object.entries(resSheet.numericTotals || {})) {
     tryAssign(colName, total);
+  }
+
+  // STRATEGY 5: Dedicated "OR y PLATA" / "ORO y PLATA" sheet
+  // Look for labels like "TOTAL INVERTIDO EN ORO" and "TOTAL EN PLATA"
+  const goldSheet = sheets.find(s =>
+    /or[o]?\s*(y|&|i)\s*plata/i.test(s.name) ||
+    /oro.*plata|plata.*oro|gold.*silver|silver.*gold/i.test(s.name)
+  );
+  if (goldSheet) {
+    const scanGoldSheet = (sheet: typeof goldSheet) => {
+      for (const table of sheet.tables) {
+        // Column headers
+        for (const [colName, total] of Object.entries(table.numericTotals || {})) {
+          const lbl = colName.toUpperCase();
+          if (/total.{0,20}(invertido|invertida|en)?.{0,10}oro/i.test(lbl) || /\boro\b.*total/i.test(lbl)) {
+            metrics.oro = total;
+          }
+          if (/total.{0,20}(en\s*)?(plata|silver)/i.test(lbl)) {
+            metrics.plata = total;
+          }
+        }
+        // Row scanning
+        for (const row of table.data) {
+          const vals = Object.values(row);
+          for (let i = 0; i < vals.length; i++) {
+            const cell = String(vals[i] ?? '').trim();
+            if (!cell || toNum(cell) > 0) continue;
+            const lbl = cell.toUpperCase();
+            for (let j = i + 1; j < Math.min(i + 4, vals.length); j++) {
+              const n = toNum(vals[j]);
+              if (n <= 0) continue;
+              if (/total.{0,20}(invertido|en)?.{0,10}\boro\b/i.test(lbl)) { metrics.oro = n; break; }
+              if (/total.{0,20}(en\s*)?\bplata\b/i.test(lbl))              { metrics.plata = n; break; }
+              break;
+            }
+          }
+        }
+      }
+      // Sheet numericTotals
+      for (const [colName, total] of Object.entries(sheet.numericTotals || {})) {
+        const lbl = colName.toUpperCase();
+        if (/total.{0,20}(invertido|en)?.{0,10}\boro\b/i.test(lbl)) metrics.oro = metrics.oro ?? total;
+        if (/total.{0,20}(en\s*)?\bplata\b/i.test(lbl)) metrics.plata = metrics.plata ?? total;
+      }
+    };
+    scanGoldSheet(goldSheet);
   }
 
   return Object.keys(metrics).length > 0 ? metrics : null;
