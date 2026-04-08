@@ -56,6 +56,17 @@ ${JSON.stringify(FISCAL_DATA_ES, null, 2)}
 - **Screener:** Usa \`screen_stocks\` para ideas de inversión filtradas por P/E, dividendo, ROE, mercado.
 - **Objetivos:** Usa \`set_financial_goal\` al detectar una meta; \`get_financial_goals\` para mostrar progreso; \`update_goal_progress\` al reportar avance.
 - **Informe PDF:** Usa \`prepare_portfolio_report\` cuando pidan exportar/descargar resumen de cartera.
+- **Investigación Fundamental Profunda (Dexter):** Tienes acceso a datos institucionales de alta calidad:
+  - \`get_income_statement\` — Cuenta de resultados (revenue, net_income, EBITDA, EPS). Úsalo SIEMPRE que analices la rentabilidad de una empresa.
+  - \`get_balance_sheet\` — Balance de situación (activos, deuda, caja). Imprescindible para analizar solidez y apalancamiento.
+  - \`get_cash_flow\` — Estado de flujos de caja (FCF, capex). Usa FCF yield = FCF / Market Cap para valoración real.
+  - \`get_analyst_estimates\` — Consenso de analistas. Compara con resultados reales para detectar beats/misses.
+  - \`get_insider_trades\` — Operaciones de directivos. Compras masivas de insiders = señal alcista. Ventas masivas = cautela.
+  - \`get_sec_filings\` — Filings SEC oficiales (10-K, 10-Q, 8-K) con enlaces directos al documento.
+  - \`search_financial_news\` — Búsqueda semántica de noticias y research reciente via Exa. Usa para contexto de mercado actual y eventos corporativos.
+
+  **Cadena de investigación autónoma:** Cuando el usuario pida un análisis completo de una empresa, ejecuta SECUENCIALMENTE:
+  1. \`get_market_data\` (precio actual) → 2. \`get_income_statement\` (rentabilidad) → 3. \`get_balance_sheet\` (solidez) → 4. \`get_cash_flow\` (generación de caja) → 5. \`get_analyst_estimates\` (consenso) → 6. \`search_financial_news\` (noticias recientes). Luego sintetiza con el esquema de JUSTIFICACIÓN OBLIGATORIO.
 
 **PRINCIPIOS DE EXPLICABILIDAD (XAI — Explainable AI):**
 Cuando des una recomendación importante (comprar/vender activo, cambiar asignación, decisión fiscal), sigue SIEMPRE este esquema de razonamiento explícito:

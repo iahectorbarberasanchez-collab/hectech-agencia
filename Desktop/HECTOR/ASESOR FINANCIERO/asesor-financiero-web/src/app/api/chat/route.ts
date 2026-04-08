@@ -1,4 +1,4 @@
-import { streamText, convertToModelMessages } from 'ai';
+import { streamText, convertToModelMessages, stepCountIs } from 'ai';
 import { createClient } from '@/lib/supabase/server';
 import { SYSTEM_PROMPT, buildContextMessages } from '@/lib/ai-prompts';
 import { buildAITools } from '@/lib/ai-tools';
@@ -119,6 +119,8 @@ export async function POST(req: Request) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         messages: enrichedMessages as any,
         tools,
+        // Allow multi-step research chains (Dexter-style autonomous investigation)
+        stopWhen: stepCountIs(8),
         // Cap response tokens to stay within OpenRouter free-tier credits per request
         maxOutputTokens: 4096,
       });
@@ -135,6 +137,7 @@ export async function POST(req: Request) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         messages: enrichedMessages as any,
         tools,
+        stopWhen: stepCountIs(4),
         maxOutputTokens: 2048,
       });
     }
