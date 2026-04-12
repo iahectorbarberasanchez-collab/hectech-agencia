@@ -1,0 +1,226 @@
+{
+  "name": "HecTechAi - Generador de Borradores de Venta",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "e7cc0983-2aae-49f1-a427-b55f9e81ed91",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1DfBdKutQISGYh-IIZOyXkrHyGoTidKc4SseUbHD1mn4",
+          "mode": "list",
+          "cachedResultName": "Posibles clientes",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DfBdKutQISGYh-IIZOyXkrHyGoTidKc4SseUbHD1mn4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 215221021,
+          "mode": "list",
+          "cachedResultName": "FARMACIA",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DfBdKutQISGYh-IIZOyXkrHyGoTidKc4SseUbHD1mn4/edit#gid=215221021"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "ENVIADO"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b51f2f76-1a86-4407-b05c-14fb41b39e4c",
+      "name": "Leer Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        208,
+        0
+      ],
+      "typeVersion": 4.7,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Rnd4IMWAccjh7Ruo",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f5338ff8-2aad-4c55-92bf-3a5da48d9673",
+              "leftValue": "={{ $json.ENVIADO }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a326da2c-eb07-4123-95ca-c3b3a347c7d5",
+      "name": "Filtrar no enviados",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        400,
+        0
+      ],
+      "typeVersion": 2.3
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "=Idea de automatización para {{ $('Leer Leads').item.json.NOMBRE }}🚀",
+        "emailType": "html",
+        "message": "={{ $json.output.replace(/\\n/g, '<br>') }}\n<br><br>\n<div style=\"font-family: Arial, sans-serif; color: #333; line-height: 1.5; border-top: 1px solid #eee; padding-top: 20px; margin-top: 20px;\">\n  <table cellpadding=\"0\" cellspacing=\"0\" style=\"vertical-align: -webkit-baseline-middle; font-size: medium; font-family: Arial;\">\n    <tbody>\n      <tr>\n        <td style=\"vertical-align: top; border-left: 3px solid #00FF94; padding-left: 20px;\">\n          <h3 style=\"margin: 0; color: #000; font-size: 18px;\">Hector Barbera Sanchez</h3>\n          <p style=\"margin: 0; color: #666; font-size: 14px; font-weight: bold;\">Founder & Automation Expert</p>\n          <p style=\"margin: 8px 0 0 0; font-size: 14px;\">\n            <span style=\"color: #00FF94; font-weight: bold;\">WEB:</span> <a href=\"https://hectechai.com\" style=\"color: #333; text-decoration: none;\">hectechai.com</a><br>\n            <span style=\"color: #00FF94; font-weight: bold;\">CORREO:</span> <a href=\"mailto:hectechia@gmail.com\" style=\"color: #333; text-decoration: none;\">hectechia@gmail.com</a>\n          </p>\n          <div style=\"margin-top: 12px;\">\n            <a href=\"https://instagram.com/hectechai\" style=\"display: inline-block; background: #00FF94; color: #000; padding: 6px 12px; border-radius: 5px; font-size: 11px; text-decoration: none; font-weight: bold; text-transform: uppercase;\">Instagram</a>\n          </div>\n        </td>\n      </tr>\n    </tbody>\n  </table>\n</div>",
+        "options": {
+          "sendTo": ""
+        }
+      },
+      "id": "8e42fc32-08db-4a3b-a16e-a27844a4ee7c",
+      "name": "Crear Borrador Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "position": [
+        1008,
+        -16
+      ],
+      "typeVersion": 2.2,
+      "webhookId": "e5a2be82-612b-4606-a5f4-e9a35b7e7ce5",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lr8yGqgpTLMrMV98",
+          "name": "Gmail - HecTech"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=\"Eres Hector Barbera Sanchez, experto en automatización de procesos con IA y fundador de HecTechAi.\n\n- Web Agencia: https://hectechai.com\n\nRedacta un email de prospección ultra-personalizado para el responsable de: {{ $('Leer Leads').item.json.NOMBRE }}.\n\nContexto:\n\n-Negocio: {{ $json.NOMBRE }}\n-Ciudad: {{ $json.CIUDAD }}\n-Sector: {{ $json.NEGOCIO }} (por ejemplo: Restaurante)\n-Su Website: {{ $('Leer Leads').item.json.WEB }}\n\nTono: Cercano, profesional y directo al grano. Usa un lenguaje de calle pero con autoridad (como hablaría un dueño de negocio a otro).\n\nEstructura del email:\n\n1. Empieza directamente con el saludo (ej: Hola [Nombre], ). No incluyas presentaciones previas sobre quién eres tú o confirmaciones del tipo \"Asumo la identidad...\".\n2. Menciona que conoces su negocio en {{ $json.CIUDAD }} y que te gusta lo que hacen (menciona sus reseñas o su web).\n3. El 'Dolor': Explica que la mayoría de [Tipo de negocio] pierden horas al día en tareas administrativas (gestión de citas, responder dudas básicas por WhatsApp, capturar leads, generando facturas, haciendo el inventario).\n4. La Solución: Menciona que en nuestra web (https://hectechai.com) puede ver ejemplos reales de cómo nuestras IAs gestionan esto 24/7.\n5. Gancho: Ofréceles 5 minutos para enseñárselo sin compromiso.\n\n\n\n\n\nRESTRICCIÓN CRÍTICA: \n- El email debe empezar POR EL SALUDO. \n- MENCIONA SIEMPRE la URL https://hectechai.com de manera natural.\n- No incluyas el campo \"Asunto:\" dentro del texto, pon únicamente el cuerpo del email.\n- No vendas un producto, vende TIEMPO RECUPERADO. Máximo 200 palabras.\"",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        608,
+        -16
+      ],
+      "id": "7b604b22-347b-424f-a42b-9381e40b1789",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "projectId": {
+          "__rl": true,
+          "value": "n8n-vertex-483221",
+          "mode": "list",
+          "cachedResultName": "N8N-Vertex"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleVertex",
+      "typeVersion": 1,
+      "position": [
+        592,
+        192
+      ],
+      "id": "93418ab3-9924-4c37-afca-c8edb162d045",
+      "name": "Google Vertex Chat Model",
+      "credentials": {
+        "googleApi": {
+          "id": "Trrrz5GhihBmk2U9",
+          "name": "Vertex - HecTech"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Leer Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Leads": {
+      "main": [
+        [
+          {
+            "node": "Filtrar no enviados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar no enviados": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Vertex Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Crear Borrador Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "3867f7f3-6995-4324-ae3e-d3b5612ade05",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9791a699843b5d5c3ab4a59b3d0465c1b31046881bb530937830bb8171d41568"
+  },
+  "id": "KiNLJ2G5ykcTLVvH",
+  "tags": []
+}

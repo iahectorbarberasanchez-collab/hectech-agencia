@@ -1,0 +1,221 @@
+{
+  "name": "Crear proyectos de clientes",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "event": "pagedUpdatedInDatabase",
+        "databaseId": {
+          "__rl": true,
+          "value": "2df8c4ece7a8807abc60ed2980efdbc0",
+          "mode": "id"
+        }
+      },
+      "type": "n8n-nodes-base.notionTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "2af94cf3-8cf8-4199-be10-9afd1b74a6ae",
+      "name": "Notion Trigger",
+      "credentials": {
+        "notionApi": {
+          "id": "mV3jL4eIIAcQZop7",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2654751a-1081-437b-b270-fe211ef58f5c",
+              "leftValue": "={{ $json.Estado }}",
+              "rightValue": "Ganado",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "29ae7a8c-ad67-4366-82c2-0bd46572ddaf",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "resource": "folder",
+        "name": "=Cliente - {{ $('Notion Trigger').item.json.Nombre }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1zbFNnLnyuNkuDRYLwK9ScVpCOVWd6UB7",
+          "mode": "list",
+          "cachedResultName": "PLANTILLA - Proyecto Cliente",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1zbFNnLnyuNkuDRYLwK9ScVpCOVWd6UB7"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "32d4bfad-3a5c-47bf-92b1-7331f945be45",
+      "name": "Create folder",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "D0WwN8stxhZmmZtY",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Notion Trigger').item.json.id }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Google Drive|url",
+              "urlValue": "=https://drive.google.com/drive/folders/ {{ $json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "8753bf33-896c-40c6-a45c-2a6d11c98f1c",
+      "name": "Update a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "mV3jL4eIIAcQZop7",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "🚀 ¡Todo listo! Ya tienes acceso a tu proyecto - HecTechAi",
+        "emailType": "html",
+        "message": "=<p>Hola <b>{{ $node[\"Notion Trigger\"].json[\"Nombre\"] }}</b>,</p>\n\n<p>¡Qué bueno tenerte a bordo! Acabo de preparar todo el ecosistema para que empecemos a trabajar en la automatización de tu negocio hoy mismo.</p>\n\n<p>Aquí tienes tus accesos directos:</p>\n\n<ul>\n    <li><b>Tu Portal de Seguimiento (Notion):</b> <a href=\"{{ $node['Update a database page'].json['url'] }}\">Hacer clic para entrar</a></li>\n    <li><b>Tu Carpeta de Archivos (Google Drive):</b> <a href=\"https://drive.google.com/drive/folders/{{ $node['Create folder'].json['id'] }}\">Ver mis archivos</a></li>\n</ul>\n\n<p>A partir de ahora, toda nuestra comunicación y entregables estarán centralizados ahí para que no pierdas ni un segundo buscando emails.</p>\n\n<p>¡Hablamos pronto!</p>\n\n<br>\n<div style=\"border-top: 2px solid #00FF94; margin-top: 20px; padding-top: 15px; font-family: Arial, sans-serif;\">\n    <span style=\"font-weight: bold; font-size: 16px; color: #111;\">Héctor Barberá Sánchez</span><br>\n    <span style=\"color: #666; font-size: 14px;\">Fundador | <b>HecTechAi</b></span><br>\n    <div style=\"margin-top: 8px;\">\n        <a href=\"https://hectechai.com\" style=\"color: #00FF94; text-decoration: none; font-weight: bold; font-size: 14px;\">www.hectechai.com</a>\n    </div>\n</div>",
+        "options": {
+          "sendTo": "={{ $('Notion Trigger').item.json['Correo electrónico'] }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "18c288a7-f168-4fda-970f-0ed123b56581",
+      "name": "Create a draft",
+      "webhookId": "92a96c0c-5c37-4880-a628-f4aa01719f7e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lr8yGqgpTLMrMV98",
+          "name": "Gmail - HecTech"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Notion Trigger": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Create folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create folder": {
+      "main": [
+        [
+          {
+            "node": "Update a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a database page": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "6171aa8a-492b-4f6d-b5c5-2cfd17c31cb3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9791a699843b5d5c3ab4a59b3d0465c1b31046881bb530937830bb8171d41568"
+  },
+  "id": "uCXV1mudH8N9Xhau",
+  "tags": []
+}

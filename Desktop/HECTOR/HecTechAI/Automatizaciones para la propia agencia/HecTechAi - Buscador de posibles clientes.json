@@ -1,0 +1,503 @@
+{
+  "name": "HecTechAi - Buscador de posibles clientes",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const existing = $input.all().map(r => r.json.NOMBRE || \"\");\nreturn { \n  negocio: $('Configurador de Búsqueda1').item.json.negocio, \n  ciudad: $('Configurador de Búsqueda1').item.json.ciudad,\n  existentes: existing\n};"
+      },
+      "name": "Prep Búsqueda",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -5536,
+        304
+      ],
+      "typeVersion": 2,
+      "id": "cfb3b796-bef2-4f2a-a5da-c456efe7092c"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "770b7aec4d634fe103d835122bb1629073efdd71"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"q\": \"site:{{ $json.website }} (contact OR contacto OR info) email\",\n  \"num\": 10\n}",
+        "options": {}
+      },
+      "name": "Buscar Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -4416,
+        224
+      ],
+      "typeVersion": 4.3,
+      "id": "5a6d4bd8-c635-48a4-8908-988a10200d47"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const text = JSON.stringify(item.json);\n  \n  // Regex mucho más estricta para evitar detectar rutas de archivos o basura\n  const emailRegex = /\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,7}\\b/g;\n  const foundEmails = text.match(emailRegex) || [];\n  // Lista negra ampliada para eliminar correos de sistemas o iconos\n  const blacklist = [\n    'example.com', 'sentry.io', 'wixpress.com', 'wordpress.org', \n    'schema.org', '2x.png', '3x.png', '1x.png', '.jpg', '.jpeg', '.webp'\n  ];\n  const cleanEmails = [...new Set(foundEmails)].filter(e => {\n    const email = e.toLowerCase();\n    return !blacklist.some(bad => email.includes(bad));\n  });\n  const datosNegocio = item.pairedItem.json;\n  return {\n    json: {\n      ...datosNegocio,\n      // Si no hay email, dejamos un texto vacío \"\" (como pediste)\n      email: cleanEmails.length > 0 ? cleanEmails[0] : \"\" \n    }\n  };\n});"
+      },
+      "name": "Extractor Final",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -4192,
+        224
+      ],
+      "typeVersion": 2,
+      "id": "5e49075e-4a66-4cdc-8282-66bd3f1b22c7"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "n",
+              "name": "negocio",
+              "value": "AUTOESCUELAS",
+              "type": "string"
+            },
+            {
+              "id": "c",
+              "name": "ciudad",
+              "value": "sitges",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c6ff7939-5d5e-497f-82cb-45177a4f3d07",
+      "name": "Configurador de Búsqueda1",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -5984,
+        304
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1DfBdKutQISGYh-IIZOyXkrHyGoTidKc4SseUbHD1mn4",
+          "mode": "list",
+          "cachedResultName": "Posibles clientes",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DfBdKutQISGYh-IIZOyXkrHyGoTidKc4SseUbHD1mn4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $json.negocio }}"
+        },
+        "options": {}
+      },
+      "id": "85ca5d62-53f9-44c9-8a64-3e4ee4fa3005",
+      "name": "Leer Datos Existentes1",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        -5760,
+        304
+      ],
+      "typeVersion": 4.5,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Rnd4IMWAccjh7Ruo",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/places",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "770b7aec4d634fe103d835122bb1629073efdd71"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.negocio }} en {{ $json.ciudad }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "HTTP Serper API1",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -5312,
+        304
+      ],
+      "typeVersion": 4.3,
+      "id": "39eeaae1-f467-4082-8d7c-1a1162c7b06a"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "places",
+        "options": {}
+      },
+      "name": "Split Results1",
+      "type": "n8n-nodes-base.itemLists",
+      "position": [
+        -5088,
+        304
+      ],
+      "typeVersion": 3.1,
+      "id": "57c86ce9-a898-4892-8ffb-578c679ca138"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $('Prep Búsqueda').item.json.existentes }}",
+              "rightValue": "={{ $json.title }}",
+              "operator": {
+                "type": "array",
+                "operation": "notContains",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Filtro: Es Nuevo?1",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        -4864,
+        304
+      ],
+      "typeVersion": 2.2,
+      "id": "ae1b40cf-3498-4052-9046-bc3fd667455c"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.website }}",
+              "operator": {
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Tiene web?1",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        -4640,
+        304
+      ],
+      "typeVersion": 2.2,
+      "id": "3661020c-3633-4bf0-8e1c-9231eb484427"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1DfBdKutQISGYh-IIZOyXkrHyGoTidKc4SseUbHD1mn4",
+          "mode": "list",
+          "cachedResultName": "Posibles clientes",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DfBdKutQISGYh-IIZOyXkrHyGoTidKc4SseUbHD1mn4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Configurador de Búsqueda1').first().json.negocio }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "NOMBRE": "={{ $('Split Results1').item.json.title }}",
+            "WEB": "={{ $('Split Results1').item.json.website }}",
+            "CIUDAD": "={{ $('Configurador de Búsqueda1').item.json.ciudad }}",
+            "NEGOCIO": "={{ $('Configurador de Búsqueda1').item.json.negocio }}",
+            "CORREO": "={{ $json.email }}",
+            "DIRECCION": "={{ $('Split Results1').item.json.address }}",
+            "RATING": "={{ $('Split Results1').item.json.rating }}",
+            "RESEÑAS": "={{ $('Split Results1').item.json.ratingCount }}",
+            "TELEFONO": "={{ \"''\" + $('Split Results1').item.json.phoneNumber }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "NOMBRE",
+              "displayName": "NOMBRE",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "TELEFONO",
+              "displayName": "TELEFONO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "WEB",
+              "displayName": "WEB",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CORREO",
+              "displayName": "CORREO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "DIRECCION",
+              "displayName": "DIRECCION",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CIUDAD",
+              "displayName": "CIUDAD",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "RATING",
+              "displayName": "RATING",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "RESEÑAS",
+              "displayName": "RESEÑAS",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "NEGOCIO",
+              "displayName": "NEGOCIO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ENVIADO",
+              "displayName": "ENVIADO",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "name": "Guardar en Google Sheets1",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        -3968,
+        304
+      ],
+      "typeVersion": 4.5,
+      "id": "36e82d7e-17d5-4624-82be-2a1e70be38e0",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Rnd4IMWAccjh7Ruo",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -6208,
+        304
+      ],
+      "id": "c220d845-4ad2-4368-936b-6ca3db29e234",
+      "name": "When clicking ‘Execute workflow’"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Prep Búsqueda": {
+      "main": [
+        [
+          {
+            "node": "HTTP Serper API1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Email": {
+      "main": [
+        [
+          {
+            "node": "Extractor Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extractor Final": {
+      "main": [
+        [
+          {
+            "node": "Guardar en Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configurador de Búsqueda1": {
+      "main": [
+        [
+          {
+            "node": "Leer Datos Existentes1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer Datos Existentes1": {
+      "main": [
+        [
+          {
+            "node": "Prep Búsqueda",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Serper API1": {
+      "main": [
+        [
+          {
+            "node": "Split Results1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Results1": {
+      "main": [
+        [
+          {
+            "node": "Filtro: Es Nuevo?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtro: Es Nuevo?1": {
+      "main": [
+        [
+          {
+            "node": "Tiene web?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tiene web?1": {
+      "main": [
+        [
+          {
+            "node": "Buscar Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Guardar en Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Configurador de Búsqueda1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "e093b0b6-45cc-4ae2-b7ce-a72019820182",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9791a699843b5d5c3ab4a59b3d0465c1b31046881bb530937830bb8171d41568"
+  },
+  "id": "uCXq3BzdSb0XhhVz",
+  "tags": []
+}

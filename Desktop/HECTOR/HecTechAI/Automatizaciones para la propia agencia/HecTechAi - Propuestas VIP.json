@@ -1,0 +1,107 @@
+{
+    "name": "HecTechAi - Generador de Propuestas VIP (PDF)",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "generar-propuesta-pdf",
+                "options": {}
+            },
+            "id": "e7bfa412-fc8d-4123-8f2b-8a46785e5efa",
+            "name": "Webhook Propuesta",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                0,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "model": "gemini-2.0-flash",
+                "prompt": "=Actúa como el Director Creativo de HecTechAi. \nGenera el CONTENIDO para una propuesta comercial en PDF para el negocio: {{ $json.business }}.\n\nDATOS DETECTADOS:\n- Deuda Técnica: {{ $json.tech_debt }}\n- Redes Sociales: {{ $json.social_media }}\n- Análisis Visual: {{ $json.visual_audit }}\n\nESTRUCTURA DEL PDF (Redacta el texto para cada sección):\n1. LA SITUACIÓN ACTUAL: Resumen crítico de su presencia digital.\n2. EL POTENCIAL PERDIDO: Cuánto dinero/tiempo están dejando en la mesa.\n3. NUESTRA SOLUCIÓN: 3 pasos concretos de automatización e IA.\n4. EL SIGUIENTE PASO: Invitación a la consultoría cerrada.\n\nTono: Élite, minimalista y directo al grano.",
+                "options": {}
+            },
+            "id": "908c483c-6b6e-4d17-bfc6-9fd89bfd86c3",
+            "name": "Gemini: Redactar Contenido",
+            "type": "n8n-nodes-base.googleVertexAi",
+            "typeVersion": 1,
+            "position": [
+                250,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "prompt": "={{ $json.mockupPrompt }}",
+                "options": {
+                    "aspectRatio": "16:9",
+                    "sampleCount": 1
+                }
+            },
+            "id": "f5e6d7c8-b9a0-4d1e-8f2c-3a4b5c6d7e8f",
+            "name": "Google Vertex: Imagenes (Espejo IA)",
+            "type": "n8n-nodes-base.googleVertexAi",
+            "typeVersion": 1,
+            "position": [
+                500,
+                150
+            ],
+            "credentials": {
+                "googleApi": {
+                    "id": "Trrrz5GhihBmk2U9",
+                    "name": "Vertex - HecTech"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "html": "=<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n    <style>\n        body { font-family: 'Inter', sans-serif; background: #050505; color: white; padding: 50px; }\n        .logo { color: #00FF94; font-weight: bold; font-size: 24px; margin-bottom: 40px; }\n        h1 { font-size: 32px; border-bottom: 1px solid #333; padding-bottom: 10px; }\n        .highlight { color: #00FF94; }\n        .section { margin-top: 30px; }\n        .mockup-container { margin-top: 40px; border: 1px solid #333; border-radius: 15px; overflow: hidden; }\n        .mockup-label { background: #111; padding: 10px; font-size: 12px; color: #00FF94; text-transform: uppercase; }\n        .footer { margin-top: 60px; font-size: 10px; color: #666; }\n    </style>\n</head>\n<body>\n    <div class=\"logo\">HecTechAi</div>\n    <h1>Propuesta de Transformación Inteligente</h1>\n    <p>Preparado para: <span class=\"highlight\">{{ $json.business }}</span></p>\n    \n    <div class=\"section\">\n        {{ $node[\"Gemini: Redactar Contenido\"].json.content }}\n    </div>\n\n    <div class=\"mockup-container\">\n        <div class=\"mockup-label\">Espejo IA: Concepto de Rediseño</div>\n        <img src=\"{{ $json.image }}\" style=\"width: 100%; display: block;\">\n    </div>\n    \n    <div class=\"footer\">HecTechAi Automation Agency - 2026</div>\n</body>\n</html>",
+                "options": {}
+            },
+            "id": "ab4dc958-7c54-49fe-b597-fadeb12ae1c8",
+            "name": "HTML Template",
+            "type": "n8n-nodes-base.html",
+            "typeVersion": 1,
+            "position": [
+                750,
+                0
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook Propuesta": {
+            "main": [
+                [
+                    {
+                        "node": "Gemini: Redactar Contenido",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Gemini: Redactar Contenido": {
+            "main": [
+                [
+                    {
+                        "node": "Google Vertex: Imagenes (Espejo IA)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Google Vertex: Imagenes (Espejo IA)": {
+            "main": [
+                [
+                    {
+                        "node": "HTML Template",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

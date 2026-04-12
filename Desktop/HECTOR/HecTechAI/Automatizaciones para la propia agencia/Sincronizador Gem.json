@@ -1,0 +1,84 @@
+{
+    "name": "HecTechAi - Sincronizador de Conocimiento Gem",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "days",
+                            "interval": 1
+                        }
+                    ]
+                }
+            },
+            "id": "e8a1b2c3-d4e5-4f6a-b7c8-d9e0f1a2b3c4",
+            "name": "Cada 24 horas",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1,
+            "position": [
+                0,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "command": "node scripts/generate_gem_knowledge.js"
+            },
+            "id": "f1a2b3c4-d5e6-4f7a-b8c9-d0e1f2a3b4c5",
+            "name": "Regenerar Archivos Brain",
+            "type": "n8n-nodes-base.executeCommand",
+            "typeVersion": 1,
+            "position": [
+                200,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "fileId": "PON_AQUI_EL_ID_DE_TU_ARCHIVO_DE_DRIVE",
+                "binaryData": true,
+                "binaryPropertyName": "data",
+                "options": {}
+            },
+            "id": "a3b4c5d6-e7f8-4a9b-b0c1-d2e3f4a5b6c7",
+            "name": "Actualizar en Google Drive",
+            "type": "n8n-nodes-base.googleDrive",
+            "typeVersion": 3,
+            "position": [
+                400,
+                0
+            ],
+            "credentials": {
+                "googleDriveOAuth2Api": {
+                    "id": "TU_ID_DE_CREDENCIALES_DE_DRIVE",
+                    "name": "Google Drive account"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Cada 24 horas": {
+            "main": [
+                [
+                    {
+                        "node": "Regenerar Archivos Brain",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Regenerar Archivos Brain": {
+            "main": [
+                [
+                    {
+                        "node": "Actualizar en Google Drive",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
